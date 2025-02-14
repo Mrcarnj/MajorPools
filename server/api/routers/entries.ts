@@ -105,4 +105,20 @@ export const entriesRouter = router({
 
       return data;
     }),
+
+  // Get entries by tournament
+  getEntriesByTournament: publicProcedure
+    .input(z.object({
+      tournament_id: z.string().uuid(),
+    }))
+    .query(async ({ input }) => {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('*')  // This will get all fields including the golfer IDs
+        .eq('tournament_id', input.tournament_id)
+        .order('entry_name', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    }),
 }); 
