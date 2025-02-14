@@ -1,8 +1,7 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
-import { useSession } from 'next-auth/react';
-import { SessionProvider } from 'next-auth/react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { useSession, SessionProvider } from 'next-auth/react';
 
 const AuthContext = createContext<{
   isAuthenticated: boolean;
@@ -17,6 +16,14 @@ const AuthContext = createContext<{
 
 // This is the provider that wraps our app
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <SessionProvider>
       <AuthContextProvider>{children}</AuthContextProvider>
