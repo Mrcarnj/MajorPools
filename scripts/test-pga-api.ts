@@ -12,13 +12,13 @@ async function testTournament() {
     
     console.log('Tournament Details:');
     console.log('------------------');
-    console.log(`ID: ${tournament._id}`);
+    console.log(`ID: ${tournament._id.$oid || tournament._id}`);
     console.log(`Org ID: ${tournament.orgId}`);
     console.log(`Year: ${tournament.year}`);
     console.log(`Tournament ID: ${tournament.tournId}`);
     console.log(`Name: ${tournament.name}`);
-    console.log(`Purse: $${tournament.purse}`);
-    console.log(`FedEx Cup Points: ${tournament.fedexCupPoints}`);
+    console.log(`Purse: $${tournament.purse.$numberInt?.toLocaleString() || tournament.purse}`);
+    console.log(`FedEx Cup Points: ${tournament.fedexCupPoints.$numberInt || tournament.fedexCupPoints}`);
     console.log('\nDates:');
     // Extract just the numbers from MongoDB format
     const startMs = Number(tournament.date.start.$date.$numberLong);
@@ -36,7 +36,7 @@ async function testTournament() {
     console.log('\nStatus:');
     console.log(`Format: ${tournament.format}`);
     console.log(`Status: ${tournament.status}`);
-    console.log(`Current Round: ${tournament.currentRound}`);
+    console.log(`Current Round: ${tournament.currentRound.$numberInt || tournament.currentRound}`);
     console.log(`Time Zone: ${tournament.timeZone}`);
     console.log('\nCourse:');
     const course = tournament.courses[0];
