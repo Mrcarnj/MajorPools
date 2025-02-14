@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <section className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">PGA Tour Fantasy Golf</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Majors SZN Pools</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Create your dream team of professional golfers and compete against other players
           in real-time during PGA Tour tournaments.

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
+import { SessionProvider } from 'next-auth/react';
 
 const AuthContext = createContext<{
   isAuthenticated: boolean;
@@ -14,7 +15,17 @@ const AuthContext = createContext<{
   user: null,
 });
 
+// This is the provider that wraps our app
 export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <SessionProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
+    </SessionProvider>
+  );
+}
+
+// This is the internal provider that uses the session
+function AuthContextProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
 
   return (
