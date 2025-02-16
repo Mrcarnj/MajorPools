@@ -15,15 +15,13 @@ export async function getTournament(tournId: string) {
   });
 }
 
-export async function getTournamentLeaderboard(tournId: string, year: string): Promise<Player[]> {
-  const leaderboard = await pgaFetch('/leaderboard', {
+export async function getTournamentLeaderboard(tournId: string) {
+  const response = await pgaFetch('/leaderboard', {
     tournId,
-    year,
+    year: '2025'
   });
-  return leaderboard.leaderboardRows.map((row: any) => ({
-    playerId: row.playerId,
-    total: row.total,
-  }));
+  
+  return response; // Return all players
 }
 
 export async function getPlayers(): Promise<Player[]> {
