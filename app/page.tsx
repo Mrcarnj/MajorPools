@@ -3,7 +3,7 @@ import { TournamentStatus } from '@/components/tournament-status';
 import { Button } from '@/components/ui/button';
 import { Goal as GolfBall, Trophy } from 'lucide-react';
 import Link from 'next/link';
-import LiveLeaderboard from '@/components/live-leaderboard';
+import { LiveLeaderboard } from '@/components/live-leaderboard';
 
 export default function Home() {
   return (

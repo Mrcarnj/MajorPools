@@ -39,18 +39,22 @@ export function LiveLeaderboard() {
       // 1. Active players by total score (lowest first)
       // 2. Cut players alphabetically by last name
       const sortedScores = data.sort((a, b) => {
-        // If both are cut, sort alphabetically
-        if (a.position === 'CUT' && b.position === 'CUT') {
-          return a.last_name.localeCompare(b.last_name);
-        }
-        // Cut players go last
-        if (a.position === 'CUT') return 1;
-        if (b.position === 'CUT') return -1;
+        // First separate CUT from non-CUT players
+        if (a.position === 'CUT' && b.position !== 'CUT') return 1;
+        if (b.position === 'CUT' && a.position !== 'CUT') return -1;
+
+        // For players with same CUT status, sort by score
+        const parseScore = (score: string) => {
+          if (score === 'E') return 0;
+          return score.startsWith('-') 
+            ? -Number(score.slice(1)) 
+            : Number(score.replace('+', ''));
+        };
+
+        const scoreA = parseScore(a.total);
+        const scoreB = parseScore(b.total);
         
-        // Convert total scores for numerical comparison
-        const totalA = parseInt(a.total.replace('+', '')) || 0;
-        const totalB = parseInt(b.total.replace('+', '')) || 0;
-        return totalA - totalB;
+        return scoreA - scoreB;
       });
 
       setScores(sortedScores);
@@ -65,27 +69,46 @@ export function LiveLeaderboard() {
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">Position</TableHead>
-            <TableHead>Player</TableHead>
-            <TableHead className="w-[100px] text-right">Total</TableHead>
-            <TableHead className="w-[100px] text-right">Thru</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {scores.map((score, index) => (
-            <TableRow key={`${score.last_name}-${score.first_name}`}>
-              <TableCell>{score.position}</TableCell>
-              <TableCell>{score.first_name} {score.last_name}</TableCell>
-              <TableCell className="text-right">{score.total}</TableCell>
-              <TableCell className="text-right">{score.thru}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold text-center">Live Leaderboard</h2>
+      <div className="rounded-md border">
+        <div className="max-h-[600px] overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
+              <TableRow>
+                <TableHead className="w-[100px]">Position</TableHead>
+                <TableHead>Player</TableHead>
+                <TableHead className="w-[100px] text-right">Total</TableHead>
+                <TableHead className="w-[100px] text-right">Thru</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scores.map((score, index) => {
+                const showPosition = score.position === 'CUT' || 
+                  index === 0 || 
+                  score.position !== scores[index - 1].position;
+
+                return (
+                  <TableRow 
+                    key={`${score.last_name}-${score.first_name}`}
+                    className={`
+                      ${index % 2 === 0 ? 'bg-muted/30' : ''}
+                      ${score.position === 'CUT' ? 'text-muted-foreground bg-muted/50' : ''}
+                    `}
+                  >
+                    <TableCell>{showPosition ? score.position : ''}</TableCell>
+                    <TableCell>{score.first_name} {score.last_name}</TableCell>
+                    <TableCell className={`text-right font-bold ${score.total.startsWith('-') ? 'text-red-500' : ''}`}>
+                      {score.total}
+                    </TableCell>
+                    <TableCell className="text-right">{score.thru}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 }
