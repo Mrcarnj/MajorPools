@@ -3,7 +3,7 @@ import type { Tournament, Leaderboard, Player, Scorecard } from './types';
 
 export async function getSchedule(year: string) {
   const response = await pgaFetch('/schedule', {
-    year,
+    year: '2025',
   });
   return response.schedule; // Return just the schedule array
 }
@@ -15,11 +15,15 @@ export async function getTournament(tournId: string) {
   });
 }
 
-export async function getTournamentLeaderboard(tournId: string, year: string): Promise<Leaderboard> {
-  return pgaFetch('/leaderboard', {
+export async function getTournamentLeaderboard(tournId: string, year: string): Promise<Player[]> {
+  const leaderboard = await pgaFetch('/leaderboard', {
     tournId,
     year,
   });
+  return leaderboard.leaderboardRows.map((row: any) => ({
+    playerId: row.playerId,
+    total: row.total,
+  }));
 }
 
 export async function getPlayers(): Promise<Player[]> {
@@ -36,4 +40,4 @@ export async function getPlayerScorecard(
     year,
     playerId,
   });
-} 
+}

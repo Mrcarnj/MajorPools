@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://cagbmvwgqnbeafgpchym.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZ2JtdndncW5iZWFmZ3BjaHltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NTcyMzYsImV4cCI6MjA1NTEzMzIzNn0.Xt1StjFqz-EjHyX-GyArtojX76qdC50vQmvh4tRFwv0';
 
 // Add debug logs
 console.log('Supabase initialization:', {
