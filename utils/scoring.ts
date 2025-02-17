@@ -4,6 +4,12 @@ export type GolferScore = {
   position: string;
 };
 
+export type Entry = {
+  entry_name: string;
+  calculated_score: number;
+  display_score: number | "CUT";
+};
+
 export function calculateEntryScore(golferScores: GolferScore[]): number {
   // Convert scores to numbers, handling special cases
   const numericScores = golferScores.map(golfer => {
@@ -49,4 +55,31 @@ export function calculateDisplayScore(golferScores: GolferScore[]): number | "CU
   numericScores.sort((a, b) => a - b);
   const top5Scores = numericScores.slice(0, 5);
   return top5Scores.reduce((sum, score) => sum + score, 0);
+}
+
+export function calculateRankings(entries: Entry[]): (string | null)[] {
+  const rankings: (string | null)[] = new Array(entries.length).fill(null);
+  let currentRank = 1;
+  let sameScoreCount = 1;
+
+  for (let i = 0; i < entries.length; i++) {
+    if (i === 0) {
+      rankings[i] = currentRank.toString();
+      continue;
+    }
+
+    if (entries[i].calculated_score === entries[i - 1].calculated_score) {
+      if (sameScoreCount === 1) {
+        rankings[i - 1] = `T${currentRank}`;
+      }
+      sameScoreCount++;
+      rankings[i] = null;
+    } else {
+      currentRank += sameScoreCount;
+      sameScoreCount = 1;
+      rankings[i] = currentRank.toString();
+    }
+  }
+
+  return rankings;
 } 

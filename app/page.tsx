@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { type Entry } from '@/utils/scoring';
 import { QuickLeaderboard } from '@/components/quick-leaderboard';
 import { TournamentStatus } from '@/components/tournament-status';
 import { Button } from '@/components/ui/button';
@@ -6,6 +11,20 @@ import Link from 'next/link';
 import { LiveLeaderboard } from '@/components/live-leaderboard';
 
 export default function Home() {
+  const [entries, setEntries] = useState<Entry[]>([]);
+
+  useEffect(() => {
+    async function fetchEntries() {
+      const { data } = await supabase
+        .from('entries')
+        .select('entry_name, calculated_score, display_score')
+        .order('calculated_score', { ascending: true });
+      
+      setEntries(data || []);
+    }
+    fetchEntries();
+  }, []);
+
   return (
     <div className="space-y-8">
       <section className="text-center space-y-4">

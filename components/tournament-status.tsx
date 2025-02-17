@@ -5,6 +5,7 @@ import { FlagIcon, CalendarIcon, TrophyIcon, LandPlot } from 'lucide-react';
 import { GolfIcon } from '@/components/icons/golf-icon';
 import { trpc } from '@/lib/trpc/client';
 import { format } from 'date-fns';
+import { PiGolfDuotone } from "react-icons/pi";
 
 export function TournamentStatus() {
   const { data: activeTournament, isLoading } = trpc.entries.getActiveTournament.useQuery();
@@ -58,7 +59,7 @@ export function TournamentStatus() {
             </div>
             
             <div className="flex items-center gap-2">
-              <LandPlot className="h-4 w-4 text-muted-foreground" />
+              <PiGolfDuotone className="h-4 w-4 text-muted-foreground" />
               <span>{activeTournament.course_name}</span>
               {activeTournament.par_total && (
                 <span className="ml-auto text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">

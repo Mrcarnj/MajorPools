@@ -13,6 +13,8 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { calculateDisplayScore } from '@/utils/scoring';
 import { Archivo } from 'next/font/google';
+import { MdLeaderboard } from "react-icons/md";
+import { TbGolf } from "react-icons/tb";
 
 type EntryGolfer = {
   player_id: string;
@@ -132,8 +134,11 @@ export default function LeaderboardPage() {
   return (
     <div className={`container mx-auto py-8 ${archivo.variable}`}>
       <Card>
-        <CardHeader>
-          <CardTitle>Tournament Entries</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-['Post_Oldstyle'] italic flex items-center justify-center gap-2">
+            Entry Leaderboard
+            <TbGolf className="text-3xl" />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
