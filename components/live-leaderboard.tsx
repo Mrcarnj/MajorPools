@@ -17,18 +17,20 @@ type GolferScore = {
   first_name: string;
   last_name: string;
   total: string;
+  current_round_score: string;
   thru: string;
 };
 
 export function LiveLeaderboard() {
   const [scores, setScores] = useState<GolferScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tournamentData, setTournamentData] = useState<{ current_round: number } | null>(null);
 
   useEffect(() => {
     async function fetchScores() {
       const { data, error } = await supabase
         .from('golfer_scores')
-        .select('position, first_name, last_name, total, thru')
+        .select('position, first_name, last_name, total, current_round_score, thru')
         .order('position', { ascending: true });
 
       if (error) {
@@ -62,7 +64,18 @@ export function LiveLeaderboard() {
       setLoading(false);
     }
 
+    async function fetchTournamentData() {
+      const { data: tournamentData } = await supabase
+        .from('tournaments')
+        .select('current_round')
+        .eq('is_active', true)
+        .single();
+
+      setTournamentData(tournamentData);
+    }
+
     fetchScores();
+    fetchTournamentData();
   }, []);
 
   if (loading) {
@@ -84,8 +97,13 @@ export function LiveLeaderboard() {
                 <TableRow>
                   <TableHead className="w-[100px]">Position</TableHead>
                   <TableHead>Player</TableHead>
-                  <TableHead className="w-[100px] text-right">Total</TableHead>
-                  <TableHead className="w-[100px] text-right">Thru</TableHead>
+                  <TableHead className="text-right w-[60px]">Total</TableHead>
+                  <TableHead className="text-right w-[60px]">
+                    <div className="flex justify-end items-center whitespace-nowrap">
+                      Rd {tournamentData?.current_round || '-'}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right w-[40px] pr-4">Thru</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -107,7 +125,10 @@ export function LiveLeaderboard() {
                       <TableCell className={`text-right font-bold ${score.total.startsWith('-') ? 'text-red-500' : ''}`}>
                         {score.total}
                       </TableCell>
-                      <TableCell className="text-right">{score.thru}</TableCell>
+                      <TableCell className="text-right">
+                        {score.current_round_score === '-' ? '' : score.current_round_score}
+                      </TableCell>
+                      <TableCell className="text-right pr-4">{score.thru}</TableCell>
                     </TableRow>
                   );
                 })}
