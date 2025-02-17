@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type GolferScore = {
   position: string;
@@ -69,46 +70,52 @@ export function LiveLeaderboard() {
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-center">Live Leaderboard</h2>
-      <div className="rounded-md border">
-        <div className="max-h-[600px] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background">
-              <TableRow>
-                <TableHead className="w-[100px]">Position</TableHead>
-                <TableHead>Player</TableHead>
-                <TableHead className="w-[100px] text-right">Total</TableHead>
-                <TableHead className="w-[100px] text-right">Thru</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {scores.map((score, index) => {
-                const showPosition = score.position === 'CUT' || 
-                  index === 0 || 
-                  score.position !== scores[index - 1].position;
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Live Leaderboard
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <div className="max-h-[400px] overflow-y-auto">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background">
+                <TableRow>
+                  <TableHead className="w-[100px]">Position</TableHead>
+                  <TableHead>Player</TableHead>
+                  <TableHead className="w-[100px] text-right">Total</TableHead>
+                  <TableHead className="w-[100px] text-right">Thru</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {scores.map((score, index) => {
+                  const showPosition = score.position === 'CUT' || 
+                    index === 0 || 
+                    score.position !== scores[index - 1].position;
 
-                return (
-                  <TableRow 
-                    key={`${score.last_name}-${score.first_name}`}
-                    className={`
-                      ${index % 2 === 0 ? 'bg-muted/30' : ''}
-                      ${score.position === 'CUT' ? 'text-muted-foreground bg-muted/50' : ''}
-                    `}
-                  >
-                    <TableCell>{showPosition ? score.position : ''}</TableCell>
-                    <TableCell>{score.first_name} {score.last_name}</TableCell>
-                    <TableCell className={`text-right font-bold ${score.total.startsWith('-') ? 'text-red-500' : ''}`}>
-                      {score.total}
-                    </TableCell>
-                    <TableCell className="text-right">{score.thru}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                  return (
+                    <TableRow 
+                      key={`${score.last_name}-${score.first_name}`}
+                      className={`
+                        ${index % 2 === 0 ? 'bg-muted/100 dark:bg-muted/50' : ''}
+                        ${score.position === 'CUT' ? 'text-muted-foreground bg-muted/90 dark:bg-muted/70' : ''}
+                      `}
+                    >
+                      <TableCell>{showPosition ? score.position : ''}</TableCell>
+                      <TableCell>{score.first_name} {score.last_name}</TableCell>
+                      <TableCell className={`text-right font-bold ${score.total.startsWith('-') ? 'text-red-500' : ''}`}>
+                        {score.total}
+                      </TableCell>
+                      <TableCell className="text-right">{score.thru}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

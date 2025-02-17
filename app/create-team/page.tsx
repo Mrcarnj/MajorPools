@@ -9,34 +9,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc/client';
+import { supabase } from '@/lib/supabase';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
-// Temporary mock data until we set up the API
-const mockGolfers = {
-  tier1: [
-    { id: '1', name: 'Scottie Scheffler', world_ranking: 1 },
-    { id: '2', name: 'Rory McIlroy', world_ranking: 2 },
-    { id: '3', name: 'Jon Rahm', world_ranking: 3 },
-  ],
-  tier2: [
-    { id: '4', name: 'Viktor Hovland', world_ranking: 4 },
-    { id: '5', name: 'Xander Schauffele', world_ranking: 5 },
-    { id: '6', name: 'Patrick Cantlay', world_ranking: 6 },
-  ],
-  tier3: [
-    { id: '7', name: 'Matt Fitzpatrick', world_ranking: 7 },
-    { id: '8', name: 'Brian Harman', world_ranking: 8 },
-    { id: '9', name: 'Max Homa', world_ranking: 9 },
-  ],
-  tier4: [
-    { id: '10', name: 'Jordan Spieth', world_ranking: 10 },
-    { id: '11', name: 'Tommy Fleetwood', world_ranking: 11 },
-    { id: '12', name: 'Justin Thomas', world_ranking: 12 },
-  ],
-  tier5: [
-    { id: '13', name: 'Shane Lowry', world_ranking: 13 },
-    { id: '14', name: 'Justin Rose', world_ranking: 14 },
-    { id: '15', name: 'Tony Finau', world_ranking: 15 },
-  ],
+type Golfer = {
+  first_name: string;
+  last_name: string;
+  ranking: number;
+  player_id: string;
+};
+
+type TieredGolfers = {
+  tier1: Golfer[];
+  tier2: Golfer[];
+  tier3: Golfer[];
+  tier4: Golfer[];
+  tier5: Golfer[];
 };
 
 export default function CreateTeam() {
@@ -59,6 +48,14 @@ export default function CreateTeam() {
   const [entryNameError, setEntryNameError] = useState('');
   const [serverEntryNameError, setServerEntryNameError] = useState('');
   const entryNameRef = useRef<HTMLInputElement>(null);
+  const [golfers, setGolfers] = useState<TieredGolfers>({
+    tier1: [],
+    tier2: [],
+    tier3: [],
+    tier4: [],
+    tier5: []
+  });
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Define createEntry mutation before any conditional returns
   const createEntry = trpc.entries.create.useMutation({
@@ -91,8 +88,11 @@ export default function CreateTeam() {
         };
       }
       
-      if (currentTierSelections.length >= 2) {
-        toast.error('You can only select 2 golfers per tier');
+      // Different max selections for different tiers
+      const maxSelections = ['tier4', 'tier5'].includes(tierId) ? 1 : 2;
+      
+      if (currentTierSelections.length >= maxSelections) {
+        toast.error(`You can only select ${maxSelections} golfer${maxSelections > 1 ? 's' : ''} in ${tierId}`);
         return prev;
       }
       
@@ -114,13 +114,21 @@ export default function CreateTeam() {
       return;
     }
 
-    // Validate all tiers have exactly 2 selections
+    // Validate tiers have correct number of selections
+    const tierValidation = {
+      tier1: 2,
+      tier2: 2,
+      tier3: 2,
+      tier4: 1,
+      tier5: 1
+    };
+
     const invalidTiers = Object.entries(formData.selections).filter(
-      ([_, selections]) => selections.length !== 2
+      ([tier, selections]) => selections.length !== tierValidation[tier as keyof typeof tierValidation]
     );
 
     if (invalidTiers.length > 0) {
-      toast.error('Please select exactly 2 golfers for each tier');
+      toast.error('Please select the correct number of golfers for each tier');
       return;
     }
 
@@ -142,22 +150,11 @@ export default function CreateTeam() {
 
     try {
       await createEntry.mutateAsync(entry);
-      // Reset form after successful submission
-      setFormData({
-        entryName: '',
-        email: user?.email || '',
-        selections: {
-          tier1: [],
-          tier2: [],
-          tier3: [],
-          tier4: [],
-          tier5: [],
-        },
-      });
+      setShowPaymentModal(true);
     } catch (error) {
       console.error('Error submitting entry:', error);
     }
-  }, [activeTournament, formData, createEntry.mutateAsync, user]);
+  }, [activeTournament, formData, createEntry.mutateAsync]);
 
   const validateEmail = useCallback((email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -190,13 +187,46 @@ export default function CreateTeam() {
   const isFormValid = useCallback(() => {
     if (!formData.entryName || !formData.email) return false;
     if (entryNameError || emailError) return false;
-    return Object.values(formData.selections).every(
-      selections => selections.length === 2
+    
+    return (
+      formData.selections.tier1.length === 2 &&
+      formData.selections.tier2.length === 2 &&
+      formData.selections.tier3.length === 2 &&
+      formData.selections.tier4.length === 1 &&
+      formData.selections.tier5.length === 1
     );
   }, [formData, entryNameError, emailError]);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    async function fetchGolfers() {
+      const { data, error } = await supabase
+        .from('golfer_scores')
+        .select('first_name, last_name, ranking, player_id')
+        .not('ranking', 'is', null)
+        .order('ranking', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching golfers:', error);
+        return;
+      }
+
+      // Organize golfers into tiers
+      const tieredGolfers = {
+        tier1: data.slice(0, 6),                    // Top 6
+        tier2: data.slice(6, 21),                   // Next 15
+        tier3: data.slice(21, 41),                  // Next 20
+        tier4: data.slice(41, 61),                  // Next 20
+        tier5: data.slice(61)                       // Remaining
+      };
+
+      setGolfers(tieredGolfers);
+    }
+
+    fetchGolfers();
   }, []);
 
   // Now we can have our conditional returns
@@ -214,10 +244,37 @@ export default function CreateTeam() {
 
   // The rest of your render logic
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-center">
         {activeTournament?.name} {activeTournament?.start_date ? new Date(activeTournament.start_date).getFullYear() : ''}
       </h1>
+
+      <div className="prose dark:prose-invert max-w-none">
+        <div className="space-y-4">
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <h3 className="font-semibold">Entry Instructions</h3>
+            <ul className="list-disc pl-4 space-y-1">
+              <li>Entry fee: $25 via Venmo (@dieter21)</li>
+              <li>Include your entry name in Venmo description</li>
+              <li>Payment must be received before last group finishes 2nd round</li>
+              <li>Multiple entries encouraged</li>
+            </ul>
+          </div>
+
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <h3 className="font-semibold">Rules</h3>
+            <p>Select 8 golfers across 5 tiers:</p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li>2 Golfers from Tier 1</li>
+              <li>2 Golfers from Tier 2</li>
+              <li>2 Golfers from Tier 3</li>
+              <li>1 Golfer from Tier 4</li>
+              <li>1 Golfer from Tier 5</li>
+            </ul>
+            <p className="text-sm mt-2">Your score will be based on your best 5 golfers. Playoff holes not included.</p>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <Card>
@@ -274,43 +331,125 @@ export default function CreateTeam() {
           </CardContent>
         </Card>
 
-        {Object.entries(mockGolfers).map(([tier, golfers]) => (
-          <Card key={tier}>
-            <CardHeader>
-              <CardTitle>
-                Tier {tier.replace('tier', '')} Golfers
-                <span className="text-sm font-normal ml-2 text-muted-foreground">
-                  (Select 2)
-                  <span className="ml-1">
-                    - {formData.selections[tier as keyof typeof formData.selections].length}/2 selected
-                  </span>
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {golfers.map((golfer) => (
-                  <div key={golfer.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`golfer-${golfer.id}`}
-                      checked={formData.selections[tier as keyof typeof formData.selections].includes(golfer.id)}
-                      onCheckedChange={() => handleGolferSelection(tier, golfer.id)}
-                    />
-                    <Label 
-                      htmlFor={`golfer-${golfer.id}`}
-                      className="flex items-center gap-2"
-                    >
-                      {golfer.name}
-                      <span className="text-sm text-muted-foreground">
-                        (Rank: {golfer.world_ranking})
-                      </span>
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Tier 1 <span className="text-sm font-normal">({formData.selections.tier1.length}/2)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {golfers.tier1.map((golfer) => (
+                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    id={golfer.player_id}
+                    checked={formData.selections.tier1.includes(golfer.player_id)}
+                    onCheckedChange={() => handleGolferSelection('tier1', golfer.player_id)}
+                  />
+                  <label htmlFor={golfer.player_id} className="text-sm">
+                    {golfer.first_name} {golfer.last_name} (OWGR: {golfer.ranking})
+                  </label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Tier 2 <span className="text-sm font-normal">({formData.selections.tier2.length}/2)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {golfers.tier2.map((golfer) => (
+                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    id={golfer.player_id}
+                    checked={formData.selections.tier2.includes(golfer.player_id)}
+                    onCheckedChange={() => handleGolferSelection('tier2', golfer.player_id)}
+                  />
+                  <label htmlFor={golfer.player_id} className="text-sm">
+                    {golfer.first_name} {golfer.last_name} (OWGR: {golfer.ranking})
+                  </label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Tier 3 <span className="text-sm font-normal">({formData.selections.tier3.length}/2)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {golfers.tier3.map((golfer) => (
+                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    id={golfer.player_id}
+                    checked={formData.selections.tier3.includes(golfer.player_id)}
+                    onCheckedChange={() => handleGolferSelection('tier3', golfer.player_id)}
+                  />
+                  <label htmlFor={golfer.player_id} className="text-sm">
+                    {golfer.first_name} {golfer.last_name} (OWGR: {golfer.ranking})
+                  </label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Tier 4 <span className="text-sm font-normal">({formData.selections.tier4.length}/1)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {golfers.tier4.map((golfer) => (
+                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    id={golfer.player_id}
+                    checked={formData.selections.tier4.includes(golfer.player_id)}
+                    onCheckedChange={() => handleGolferSelection('tier4', golfer.player_id)}
+                  />
+                  <label htmlFor={golfer.player_id} className="text-sm">
+                    {golfer.first_name} {golfer.last_name} (OWGR: {golfer.ranking})
+                  </label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Tier 5 <span className="text-sm font-normal">({formData.selections.tier5.length}/1)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {golfers.tier5.map((golfer) => (
+                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    id={golfer.player_id}
+                    checked={formData.selections.tier5.includes(golfer.player_id)}
+                    onCheckedChange={() => handleGolferSelection('tier5', golfer.player_id)}
+                  />
+                  <label htmlFor={golfer.player_id} className="text-sm">
+                    {golfer.first_name} {golfer.last_name} (OWGR: {golfer.ranking})
+                  </label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <Button 
           type="submit" 
@@ -320,6 +459,49 @@ export default function CreateTeam() {
           Submit Entry
         </Button>
       </form>
+
+      <Dialog 
+        open={showPaymentModal} 
+        onOpenChange={(open) => {
+          setShowPaymentModal(open);
+          if (!open) {  // When dialog is closed
+            setFormData({
+              entryName: '',
+              email: user?.email || '',
+              selections: {
+                tier1: [],
+                tier2: [],
+                tier3: [],
+                tier4: [],
+                tier5: [],
+              },
+            });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold">Pay Now!</DialogTitle>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            </DialogClose>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            <img 
+              src="/images/venmo.jpg" 
+              alt="Venmo QR Code" 
+              className="w-64 h-64 object-contain"
+            />
+            <p className="text-center text-sm text-muted-foreground">
+              Please send $25 to @dieter21 with your entry name in the description
+            </p>
+            <DialogClose asChild>
+              <Button variant="outline" className="w-full">
+                Close
+              </Button>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

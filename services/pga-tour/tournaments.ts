@@ -24,6 +24,15 @@ export async function getTournamentLeaderboard(tournId: string) {
   return response; // Return all players
 }
 
+export async function getWorldRankings() {
+  const response = await pgaFetch('/stats', {
+    statId: '186',
+    year: '2025'
+  });
+  
+  return response.rankings; // Return just the rankings array
+}
+
 export async function getPlayers(): Promise<Player[]> {
   return pgaFetch('/players');
 }

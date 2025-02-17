@@ -30,14 +30,15 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="grid gap-8 md:grid-cols-2">
+      <div className="flex justify-center">
         <TournamentStatus />
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2">
+        <LiveLeaderboard />
         <QuickLeaderboard />
       </div>
 
-      <div className="flex justify-center">
-        <LiveLeaderboard />
-      </div>
     </div>
   );
 }
