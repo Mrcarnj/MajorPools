@@ -16,14 +16,20 @@ import { Archivo } from 'next/font/google';
 import { MdLeaderboard } from "react-icons/md";
 import { TbGolf } from "react-icons/tb";
 
+type Tournament = {
+  current_round: number;
+};
+
 type EntryGolfer = {
   player_id: string;
   first_name: string;
   last_name: string;
   total: string;
+  current_round_score: string;
   thru: string;
   position: string;
   status: string;
+  tee_time: string;
 };
 
 type Entry = {
@@ -45,6 +51,7 @@ export default function LeaderboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
 
   useEffect(() => {
     async function fetchEntries() {
@@ -70,10 +77,17 @@ export default function LeaderboardPage() {
         return;
       }
 
+      // Get tournament info
+      const { data: tournamentData } = await supabase
+        .from('tournaments')
+        .select('current_round')
+        .eq('is_active', true)
+        .single();
+
       // Get current scores for all golfers
       const { data: scoresData, error: scoresError } = await supabase
         .from('golfer_scores')
-        .select('player_id, first_name, last_name, total, thru, position, status');
+        .select('player_id, first_name, last_name, total, current_round_score, thru, position, status, tee_time');
 
       if (scoresError) {
         console.error('Error fetching scores:', scoresError);
@@ -103,11 +117,13 @@ export default function LeaderboardPage() {
             first_name: score?.first_name || 'Unknown',
             last_name: score?.last_name || 'Golfer',
             total: score?.total || 'N/A',
+            current_round_score: score?.current_round_score || '-',
             thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes(score?.position || '') 
               ? score?.position 
               : score?.thru || '-',
             position: score?.position || '-',
-            status: score?.status || '-'
+            status: score?.status || '-',
+            tee_time: score?.tee_time || '-'
           };
         });
 
@@ -120,6 +136,7 @@ export default function LeaderboardPage() {
       });
 
       setEntries(entriesWithGolfers);
+      setTournament(tournamentData);
       setLoading(false);
     }
 
@@ -178,7 +195,7 @@ export default function LeaderboardPage() {
                       </span>
                     </span>
                   </h3>
-                  <div className={`${archivo.className} text-2xl text-muted-foreground pl-4 pr-2`}>
+                  <div className={`${archivo.className} text-2xl text-foreground dark:text-muted-foreground pl-4 pr-2`}>
                     {rankingMap.get(entry.entry_name) || '\u00A0'}
                   </div>
                 </div>
@@ -186,9 +203,12 @@ export default function LeaderboardPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[160px]">Name</TableHead>
-                        <TableHead className="text-right w-[70px]">Total</TableHead>
-                        <TableHead className="text-right w-[50px]">Thru</TableHead>
+                        <TableHead className="w-[140px] px-2">Name</TableHead>
+                        <TableHead className="text-right w-[60px] px-2">Total</TableHead>
+                        <TableHead className="text-right w-[60px] px-2">
+                          Rd {tournament?.current_round || '-'}
+                        </TableHead>
+                        <TableHead className="text-right w-[40px] px-2 pr-4">Thru</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -198,11 +218,11 @@ export default function LeaderboardPage() {
                             const absoluteIndex = rowIndex * 5 + index;  // Calculate absolute position
                             return (
                               <>
-                                <TableCell className={`py-2 w-[160px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                <TableCell className={`py-2 px-2 w-[140px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
                                   {golfer.first_name} {golfer.last_name}
                                 </TableCell>
                                 <TableCell 
-                                  className={`text-right font-bold py-2 w-[70px] ${
+                                  className={`text-right py-2 px-2 w-[60px] font-bold ${
                                     absoluteIndex > 4 
                                       ? 'bg-muted ' + (golfer.total.startsWith('-') ? '!text-red-600' : 'text-muted-foreground')
                                       : golfer.total.startsWith('-') 
@@ -212,14 +232,20 @@ export default function LeaderboardPage() {
                                 >
                                   {golfer.total}
                                 </TableCell>
-                                <TableCell className={`text-right py-2 w-[50px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                  {golfer.thru}
+                                <TableCell className={`text-right py-2 px-2 w-[60px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                  {golfer.current_round_score === '-' ? '' : golfer.current_round_score}
+                                </TableCell>
+                                <TableCell className={`text-right py-2 px-2 pr-4 w-[40px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                  {golfer.thru === '-' && !['CUT', 'WD', 'DQ'].includes(golfer.position) 
+                                    ? golfer.tee_time 
+                                    : golfer.thru}
                                 </TableCell>
                               </>
                             );
                           })}
                           {[...Array(5 - rowGolfers.length)].map((_, i) => (
                             <>
+                              <TableCell className="py-2"></TableCell>
                               <TableCell className="py-2"></TableCell>
                               <TableCell className="py-2"></TableCell>
                               <TableCell className="py-2"></TableCell>

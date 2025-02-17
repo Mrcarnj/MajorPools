@@ -73,7 +73,7 @@ export function LiveLeaderboard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Live Leaderboard
+          Tournament Live Leaderboard
         </CardTitle>
       </CardHeader>
       <CardContent>

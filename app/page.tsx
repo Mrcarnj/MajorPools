@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Goal as GolfBall, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { LiveLeaderboard } from '@/components/live-leaderboard';
+import { TbGolf } from "react-icons/tb";
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);

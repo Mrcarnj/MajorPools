@@ -86,7 +86,7 @@ export function QuickLeaderboard() {
           {top10Entries.map((entry, index) => (
             <div key={entry.entry_name} className="flex items-center justify-between even:bg-muted/100 even:dark:bg-muted/50 p-2">
               <div className="flex items-center gap-2 w-full">
-                <span className={`${archivo.className} text-lg text-muted-foreground w-12 text-right`}>
+                <span className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-12 text-right`}>
                   {rankings[index] || '\u00A0'}
                 </span>
                 <span className="font-medium flex-1 text-center">{entry.entry_name}</span>
