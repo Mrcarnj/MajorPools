@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { calculateDisplayScore } from '@/utils/scoring';
+import { Archivo } from 'next/font/google';
 
 type EntryGolfer = {
   player_id: string;
@@ -27,8 +28,16 @@ type Entry = {
   entry_name: string;
   calculated_score: number;
   golfers: EntryGolfer[];
-  display_score: number;
+  display_score: number | "CUT";
 };
+
+const archivo = Archivo({
+  subsets: ['latin'],
+  weight: ['500'],
+  style: ['italic'],
+  variable: '--font-archivo',
+  display: 'swap',
+});
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -49,9 +58,7 @@ export default function LeaderboardPage() {
           tier3_golfer1,
           tier3_golfer2,
           tier4_golfer1,
-          tier4_golfer2,
-          tier5_golfer1,
-          tier5_golfer2
+          tier5_golfer1
         `)
         .order('calculated_score', { ascending: true });
 
@@ -81,8 +88,8 @@ export default function LeaderboardPage() {
           entry.tier1_golfer1, entry.tier1_golfer2,
           entry.tier2_golfer1, entry.tier2_golfer2,
           entry.tier3_golfer1, entry.tier3_golfer2,
-          entry.tier4_golfer1, entry.tier4_golfer2,
-          entry.tier5_golfer1, entry.tier5_golfer2,
+          entry.tier4_golfer1,
+          entry.tier5_golfer1
         ];
 
         const golfers = golferIds.map(id => {
@@ -120,23 +127,35 @@ export default function LeaderboardPage() {
     return <div>Loading entries...</div>;
   }
 
+  const rankings = calculateRankings(entries);
+
   return (
-    <div className="container mx-auto py-8">
+    <div className={`container mx-auto py-8 ${archivo.variable}`}>
       <Card>
         <CardHeader>
           <CardTitle>Tournament Entries</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {entries.map((entry) => (
+            {entries.map((entry, index) => (
               <div key={entry.entry_name} className="space-y-2">
-                <h3 className="font-semibold text-lg px-4">
-                  {entry.entry_name} 
-                  <span className="ml-4 text-muted-foreground">
-                    Score: {entry.calculated_score?.toFixed(10)}
-                    <span className="ml-2">({entry.display_score})</span>
-                  </span>
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    {entry.entry_name} 
+                    <span className="ml-4 text-muted-foreground">
+                      <span className={`ml-2 ${archivo.className} text-lg ${
+                        typeof entry.display_score === 'number' && entry.display_score < 0 
+                          ? '!text-red-600' 
+                          : ''
+                      }`}>
+                        ({entry.display_score})
+                      </span>
+                    </span>
+                  </h3>
+                  <div className={`${archivo.className} text-2xl text-muted-foreground pl-4 pr-2`}>
+                    {rankings[index] || '\u00A0'}
+                  </div>
+                </div>
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -144,34 +163,36 @@ export default function LeaderboardPage() {
                         <TableHead className="w-[160px]">Name</TableHead>
                         <TableHead className="text-right w-[70px]">Total</TableHead>
                         <TableHead className="text-right w-[50px]">Thru</TableHead>
-                        <TableHead className="w-[160px]">Name</TableHead>
-                        <TableHead className="text-right w-[70px]">Total</TableHead>
-                        <TableHead className="text-right w-[50px]">Thru</TableHead>
-                        <TableHead className="w-[160px]">Name</TableHead>
-                        <TableHead className="text-right w-[70px]">Total</TableHead>
-                        <TableHead className="text-right w-[50px]">Thru</TableHead>
-                        <TableHead className="w-[160px]">Name</TableHead>
-                        <TableHead className="text-right w-[70px]">Total</TableHead>
-                        <TableHead className="text-right w-[50px]">Thru</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {chunk(entry.golfers, 4).map((rowGolfers, rowIndex) => (
+                      {chunk(entry.golfers, 5).map((rowGolfers, rowIndex) => (
                         <TableRow key={`${entry.entry_name}-${rowIndex}`} className="h-[40px]">
-                          {rowGolfers.map((golfer, index) => (
-                            <>
-                              <TableCell className="py-2 w-[160px]">
-                                {golfer.first_name} {golfer.last_name}
-                              </TableCell>
-                              <TableCell className="text-right font-bold py-2 w-[70px]">
-                                {golfer.total}
-                              </TableCell>
-                              <TableCell className="text-right py-2 w-[50px]">
-                                {golfer.thru}
-                              </TableCell>
-                            </>
-                          ))}
-                          {[...Array(4 - rowGolfers.length)].map((_, i) => (
+                          {rowGolfers.map((golfer, index) => {
+                            const absoluteIndex = rowIndex * 5 + index;  // Calculate absolute position
+                            return (
+                              <>
+                                <TableCell className={`py-2 w-[160px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                  {golfer.first_name} {golfer.last_name}
+                                </TableCell>
+                                <TableCell 
+                                  className={`text-right font-bold py-2 w-[70px] ${
+                                    absoluteIndex > 4 
+                                      ? 'bg-muted ' + (golfer.total.startsWith('-') ? '!text-red-600' : 'text-muted-foreground')
+                                      : golfer.total.startsWith('-') 
+                                        ? '!text-red-600' 
+                                        : ''
+                                  }`}
+                                >
+                                  {golfer.total}
+                                </TableCell>
+                                <TableCell className={`text-right py-2 w-[50px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                  {golfer.thru}
+                                </TableCell>
+                              </>
+                            );
+                          })}
+                          {[...Array(5 - rowGolfers.length)].map((_, i) => (
                             <>
                               <TableCell className="py-2"></TableCell>
                               <TableCell className="py-2"></TableCell>
@@ -210,4 +231,33 @@ function sortGolfers(golfers: EntryGolfer[]): EntryGolfer[] {
     const scoreB = b.total === 'E' ? 0 : Number(b.total.replace('+', ''));
     return scoreA - scoreB;
   });
+}
+
+function calculateRankings(entries: Entry[]): (string | null)[] {
+  const rankings: (string | null)[] = new Array(entries.length).fill(null);
+  let currentRank = 1;
+  let sameScoreCount = 1;
+
+  for (let i = 0; i < entries.length; i++) {
+    if (i === 0) {
+      rankings[i] = currentRank.toString();
+      continue;
+    }
+
+    if (entries[i].calculated_score === entries[i - 1].calculated_score) {
+      if (sameScoreCount === 1) {
+        // First tie encountered, update previous rank to show T
+        rankings[i - 1] = `T${currentRank}`;
+      }
+      sameScoreCount++;
+      // Don't show rank for subsequent ties
+      rankings[i] = null;
+    } else {
+      currentRank += sameScoreCount;
+      sameScoreCount = 1;
+      rankings[i] = currentRank.toString();
+    }
+  }
+
+  return rankings;
 }

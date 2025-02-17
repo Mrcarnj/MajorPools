@@ -16,9 +16,7 @@ export const entriesRouter = router({
       tier3_golfer1: z.string(),
       tier3_golfer2: z.string(),
       tier4_golfer1: z.string(),
-      tier4_golfer2: z.string(),
       tier5_golfer1: z.string(),
-      tier5_golfer2: z.string(),
     }))
     .mutation(async ({ input }) => {
       // Normalize the entry name for comparison (remove extra spaces, lowercase)

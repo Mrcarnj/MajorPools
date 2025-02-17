@@ -114,24 +114,6 @@ export default function CreateTeam() {
       return;
     }
 
-    // Validate tiers have correct number of selections
-    const tierValidation = {
-      tier1: 2,
-      tier2: 2,
-      tier3: 2,
-      tier4: 1,
-      tier5: 1
-    };
-
-    const invalidTiers = Object.entries(formData.selections).filter(
-      ([tier, selections]) => selections.length !== tierValidation[tier as keyof typeof tierValidation]
-    );
-
-    if (invalidTiers.length > 0) {
-      toast.error('Please select the correct number of golfers for each tier');
-      return;
-    }
-
     const entry = {
       tournament_id: activeTournament.id,
       entry_name: formData.entryName,
@@ -143,9 +125,7 @@ export default function CreateTeam() {
       tier3_golfer1: formData.selections.tier3[0],
       tier3_golfer2: formData.selections.tier3[1],
       tier4_golfer1: formData.selections.tier4[0],
-      tier4_golfer2: formData.selections.tier4[1],
-      tier5_golfer1: formData.selections.tier5[0],
-      tier5_golfer2: formData.selections.tier5[1],
+      tier5_golfer1: formData.selections.tier5[0]
     };
 
     try {
