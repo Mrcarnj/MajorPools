@@ -31,7 +31,7 @@ export default function Home() {
         <h1 className="text-4xl font-bold tracking-tight">Majors SZN Pools</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Create your dream team of professional golfers and compete against other players
-          in real-time during PGA Tour tournaments.
+          in real-time during golf's major tournaments.
         </p>
         <div className="flex gap-4 justify-center">
           <Button asChild size="lg">

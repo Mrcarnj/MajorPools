@@ -43,6 +43,7 @@ const archivo = Archivo({
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -129,7 +130,18 @@ export default function LeaderboardPage() {
     return <div>Loading entries...</div>;
   }
 
+  // Calculate rankings for all entries first
   const rankings = calculateRankings(entries);
+
+  // Create a map of entry name to ranking
+  const rankingMap = new Map(
+    entries.map((entry, index) => [entry.entry_name, rankings[index]])
+  );
+
+  // Then filter entries
+  const filteredEntries = entries.filter(entry => 
+    entry.entry_name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className={`container mx-auto py-8 ${archivo.variable}`}>
@@ -139,10 +151,19 @@ export default function LeaderboardPage() {
             Entry Leaderboard
             <TbGolf className="text-3xl" />
           </CardTitle>
+          <div className="relative mt-4 max-w-sm mx-auto">
+            <input
+              type="text"
+              placeholder="Search entries..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {entries.map((entry, index) => (
+            {filteredEntries.map((entry, index) => (
               <div key={entry.entry_name} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">
@@ -158,7 +179,7 @@ export default function LeaderboardPage() {
                     </span>
                   </h3>
                   <div className={`${archivo.className} text-2xl text-muted-foreground pl-4 pr-2`}>
-                    {rankings[index] || '\u00A0'}
+                    {rankingMap.get(entry.entry_name) || '\u00A0'}
                   </div>
                 </div>
                 <div className="rounded-md border">
