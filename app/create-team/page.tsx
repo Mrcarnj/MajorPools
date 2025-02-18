@@ -59,6 +59,8 @@ export default function CreateTeam() {
   const [showForm, setShowForm] = useState(true);
   const [loading, setLoading] = useState(true);
   const [hasActiveTournament, setHasActiveTournament] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   // Define createEntry mutation before any conditional returns
   const createEntry = trpc.entries.create.useMutation({
@@ -109,35 +111,54 @@ export default function CreateTeam() {
     });
   }, []);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!activeTournament) {
-      toast.error('No active tournament found');
-      return;
-    }
-
-    const entry = {
-      tournament_id: activeTournament.id,
-      entry_name: formData.entryName,
-      email: formData.email,
-      tier1_golfer1: formData.selections.tier1[0],
-      tier1_golfer2: formData.selections.tier1[1],
-      tier2_golfer1: formData.selections.tier2[0],
-      tier2_golfer2: formData.selections.tier2[1],
-      tier3_golfer1: formData.selections.tier3[0],
-      tier3_golfer2: formData.selections.tier3[1],
-      tier4_golfer1: formData.selections.tier4[0],
-      tier5_golfer1: formData.selections.tier5[0]
-    };
+    setSubmitting(true);
 
     try {
-      await createEntry.mutateAsync(entry);
+      // First check if email exists in email_list
+      const { data: emailExists } = await supabase
+        .from('email_list')
+        .select('email')
+        .eq('email', formData.email)
+        .single();
+
+      // If email doesn't exist, add it to email_list
+      if (!emailExists) {
+        await supabase
+          .from('email_list')
+          .insert({ email: formData.email });
+      }
+
+      // Continue with existing entry submission logic
+      const { data: entry, error } = await supabase
+        .from('entries')
+        .insert([
+          {
+            entry_name: formData.entryName,
+            email: formData.email,
+            tournament_id: activeTournament.id,
+            tier1_golfer1: formData.selections.tier1[0],
+            tier1_golfer2: formData.selections.tier1[1],
+            tier2_golfer1: formData.selections.tier2[0],
+            tier2_golfer2: formData.selections.tier2[1],
+            tier3_golfer1: formData.selections.tier3[0],
+            tier3_golfer2: formData.selections.tier3[1],
+            tier4_golfer1: formData.selections.tier4[0],
+            tier5_golfer1: formData.selections.tier5[0]
+          }
+        ]);
+
+      if (error) throw error;
+
       setShowPaymentModal(true);
     } catch (error) {
-      console.error('Error submitting entry:', error);
+      console.error('Error:', error);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-  }, [activeTournament, formData, createEntry.mutateAsync]);
+  };
 
   const validateEmail = useCallback((email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -477,7 +498,7 @@ export default function CreateTeam() {
         <Button 
           type="submit" 
           className="w-full"
-          disabled={!isFormValid()}
+          disabled={!isFormValid() || submitting}
         >
           Submit Entry
         </Button>

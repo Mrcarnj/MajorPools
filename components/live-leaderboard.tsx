@@ -52,7 +52,31 @@ export function LiveLeaderboard() {
         return;
       }
 
-      setScores(data);
+      // Sort data by total score, handling string scores with +/- signs
+      const sortedData = [...data].sort((a, b) => {
+        // First handle non-numeric positions
+        const nonNumericPositions = ['CUT', 'WD', 'DQ'];
+        const aIsNonNumeric = nonNumericPositions.includes(a.position);
+        const bIsNonNumeric = nonNumericPositions.includes(b.position);
+        
+        // If both are non-numeric, sort by their totals
+        if (aIsNonNumeric && bIsNonNumeric) {
+          const scoreA = parseInt(a.total.replace('+', '')) || 0;
+          const scoreB = parseInt(b.total.replace('+', '')) || 0;
+          return scoreA - scoreB;
+        }
+        
+        // Put non-numeric positions at the bottom
+        if (aIsNonNumeric) return 1;
+        if (bIsNonNumeric) return -1;
+        
+        // For numeric positions, sort by total score
+        const scoreA = parseInt(a.total.replace('+', '')) || 0;
+        const scoreB = parseInt(b.total.replace('+', '')) || 0;
+        return scoreA - scoreB;
+      });
+
+      setScores(sortedData);
       setLoading(false);
     }
 
