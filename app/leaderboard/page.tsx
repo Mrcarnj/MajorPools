@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Table,
@@ -16,6 +16,7 @@ import { Archivo } from 'next/font/google';
 import { MdLeaderboard } from "react-icons/md";
 import { TbGolf } from "react-icons/tb";
 import { Input } from "@/components/ui/input";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 type Tournament = {
   current_round: number;
@@ -54,6 +55,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [hasActiveTournament, setHasActiveTournament] = useState(false);
   const [tournament, setTournament] = useState<{ current_round?: number } | null>(null);
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     async function fetchData() {
@@ -163,10 +165,20 @@ export default function Leaderboard() {
     entry.entry_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const toggleExpand = (entryName: string) => {
+    setExpandedEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryName)) {
+        newSet.delete(entryName);
+      } else {
+        newSet.add(entryName);
+      }
+      return newSet;
+    });
+  };
+
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <h1 className="text-3xl font-bold text-center">Tournament Leaderboard</h1>
-      
+    <div className="container mx-auto py-8 space-y-8">   
       <div className="max-w-md mx-auto">
         <Input
           placeholder="Search entries..."
@@ -183,91 +195,95 @@ export default function Leaderboard() {
           There is no leaderboard due to no majors being in progress.
         </div>
       ) : (
-        <Card>
+        <Card className="max-w-fit mx-auto">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-['Post_Oldstyle'] italic flex items-center justify-center gap-2">
               Entry Leaderboard
               <TbGolf className="text-3xl" />
             </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tap entry to expand
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-0">
               {filteredEntries.map((entry, index) => (
                 <div key={entry.entry_name} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">
-                      {entry.entry_name} 
-                      <span className="ml-4 text-muted-foreground">
-                        <span className={`ml-2 ${archivo.className} text-lg ${
-                          typeof entry.display_score === 'number' && entry.display_score < 0 
-                            ? '!text-red-600' 
-                            : ''
-                        }`}>
-                          ({entry.display_score})
-                        </span>
-                      </span>
-                    </h3>
-                    <div className={`${archivo.className} text-2xl text-foreground dark:text-muted-foreground pl-4 pr-2`}>
+                  <div 
+                    className={`grid
+                      grid-cols-[2rem_auto_4rem] md:grid-cols-[2rem_minmax(200px,auto)_auto_4rem] 
+                      gap-6 items-center cursor-pointer hover:bg-muted/50 px-4 ${
+                      index % 2 === 0 ? '' : 'dark:bg-zinc-800/90 bg-zinc-800/30'
+                    }`}
+                    onClick={() => toggleExpand(entry.entry_name)}
+                  >
+                    <div className={`${archivo.className} text-lg md:text-2xl text-foreground dark:text-muted-foreground text-left`}>
                       {rankingMap.get(entry.entry_name) || '\u00A0'}
                     </div>
-                  </div>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[140px] px-2">Name</TableHead>
-                          <TableHead className="text-right w-[60px] px-2">Total</TableHead>
-                          <TableHead className="text-right w-[60px] px-2">
-                            Rd {tournament?.current_round || '-'}
-                          </TableHead>
-                          <TableHead className="text-right w-[40px] px-2 pr-4">Thru</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {chunk(entry.golfers, 5).map((rowGolfers, rowIndex) => (
-                          <TableRow key={`${entry.entry_name}-${rowIndex}`} className="h-[40px]">
-                            {rowGolfers.map((golfer, index) => {
-                              const absoluteIndex = rowIndex * 5 + index;  // Calculate absolute position
-                              return (
-                                <>
-                                  <TableCell className={`py-2 px-2 w-[140px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                    {golfer.first_name} {golfer.last_name}
-                                  </TableCell>
-                                  <TableCell 
-                                    className={`text-right py-2 px-2 w-[60px] font-bold ${
-                                      absoluteIndex > 4 
-                                        ? 'bg-muted ' + (golfer.total.startsWith('-') ? '!text-red-600' : 'text-muted-foreground')
-                                        : golfer.total.startsWith('-') 
-                                          ? '!text-red-600' 
-                                          : ''
-                                    }`}
-                                  >
-                                    {golfer.total}
-                                  </TableCell>
-                                  <TableCell className={`text-right py-2 px-2 w-[60px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                    {golfer.current_round_score === '-' ? '' : golfer.current_round_score}
-                                  </TableCell>
-                                  <TableCell className={`text-right py-2 px-2 pr-4 w-[40px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                    {golfer.thru === '-' && !['CUT', 'WD', 'DQ'].includes(golfer.position) 
-                                      ? golfer.tee_time 
-                                      : golfer.thru}
-                                  </TableCell>
-                                </>
-                              );
-                            })}
-                            {[...Array(5 - rowGolfers.length)].map((_, i) => (
-                              <>
-                                <TableCell className="py-2"></TableCell>
-                                <TableCell className="py-2"></TableCell>
-                                <TableCell className="py-2"></TableCell>
-                                <TableCell className="py-2"></TableCell>
-                              </>
-                            ))}
-                          </TableRow>
+                    <h3 className="font-semibold text-sm md:text-lg">
+                      {entry.entry_name} 
+                    </h3>
+                    <div className="hidden md:flex gap-1 items-center justify-end text-md text-muted-foreground">
+                      {entry.golfers
+                        .slice(0, 5)
+                        .sort((a, b) => parseInt(a.total.replace('+', '')) - parseInt(b.total.replace('+', '')))
+                        .map(golfer => (
+                          <span key={golfer.player_id} className={golfer.total.startsWith('-') ? 'text-red-600' : ''}>
+                            {golfer.total}
+                          </span>
                         ))}
-                      </TableBody>
-                    </Table>
+                    </div>
+                    <span className={`${archivo.className} text-lg md:text-2xl text-muted-foreground text-right ${
+                      typeof entry.display_score === 'number' && entry.display_score < 0 
+                        ? '!text-red-600' 
+                        : ''
+                    }`}>
+                      {entry.display_score}
+                    </span>
                   </div>
+                  
+                  {expandedEntries.has(entry.entry_name) && (
+                    <div className="rounded-md border overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[8rem] md:min-w-[10rem]">Golfer</TableHead>
+                            <TableHead className="text-left w-[3rem] md:min-w-[2rem] px-1 md:px-5">Total</TableHead>
+                            <TableHead className="w-[2rem] md:min-w-[2rem] px-1 md:px-5 whitespace-nowrap">R{tournament?.current_round}</TableHead>
+                            <TableHead className="w-[2rem] md:min-w-[2rem] px-1 md:px-5">Thru</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {entry.golfers.map((golfer, absoluteIndex) => (
+                            <TableRow key={golfer.player_id}>
+                              <TableCell className={`px-1 md:px-2 ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                {golfer.first_name} {golfer.last_name}
+                              </TableCell>
+                              <TableCell 
+                                className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[20px] font-bold ${
+                                  absoluteIndex > 4 
+                                    ? 'bg-muted ' + (golfer.total.startsWith('-') ? '!text-red-600' : 'text-muted-foreground')
+                                    : golfer.total.startsWith('-') 
+                                      ? '!text-red-600' 
+                                      : ''
+                                }`}
+                              >
+                                {golfer.total}
+                              </TableCell>
+                              <TableCell className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[20px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                {golfer.current_round_score === '-' ? '' : `${golfer.current_round_score}`}
+                              </TableCell>
+                              <TableCell className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[40px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                {golfer.thru === '-' && !['CUT', 'WD', 'DQ'].includes(golfer.position) 
+                                  ? golfer.tee_time 
+                                  : golfer.thru}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
