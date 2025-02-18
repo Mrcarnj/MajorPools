@@ -11,10 +11,27 @@ import { MoonIcon, SunIcon, UserIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
+  const [showCreateTeam, setShowCreateTeam] = useState(true);
+
+  useEffect(() => {
+    async function checkTournamentStatus() {
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('status')
+        .eq('is_active', true)
+        .single();
+
+      setShowCreateTeam(!tournament || tournament.status !== 'In Progress');
+    }
+
+    checkTournamentStatus();
+  }, []);
 
   return (
     <header className="border-b">
@@ -27,9 +44,11 @@ export function Header() {
           <Link href="/leaderboard" className="hover:text-primary">
             Leaderboard
           </Link>
-          <Link href="/create-team" className="hover:text-primary">
-            Create Team
-          </Link>
+          {showCreateTeam && (
+            <Link href="/create-team" className="hover:text-primary">
+              Create Team
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center space-x-4">

@@ -56,6 +56,8 @@ export default function CreateTeam() {
     tier5: []
   });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showForm, setShowForm] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Define createEntry mutation before any conditional returns
   const createEntry = trpc.entries.create.useMutation({
@@ -208,6 +210,34 @@ export default function CreateTeam() {
 
     fetchGolfers();
   }, []);
+
+  useEffect(() => {
+    async function checkTournamentStatus() {
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('status')
+        .eq('is_active', true)
+        .single();
+
+      setShowForm(!tournament || tournament.status !== 'In Progress');
+      setLoading(false);
+    }
+
+    checkTournamentStatus();
+  }, []);
+
+  if (loading) return null;
+
+  if (!showForm) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Submissions Closed</h1>
+        <p className="text-muted-foreground">
+          Team submissions are closed due to tournament being in progress.
+        </p>
+      </div>
+    );
+  }
 
   // Now we can have our conditional returns
   if (!mounted) {

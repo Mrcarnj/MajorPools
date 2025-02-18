@@ -13,6 +13,7 @@ import { TbGolf } from "react-icons/tb";
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [showCreateTeam, setShowCreateTeam] = useState(true);
 
   useEffect(() => {
     async function fetchEntries() {
@@ -21,9 +22,24 @@ export default function Home() {
         .select('entry_name, calculated_score, display_score')
         .order('calculated_score', { ascending: true });
       
-      setEntries(data || []);
+      setEntries((data || []).map(entry => ({
+        ...entry,
+        topFiveGolfers: []  // Add empty array for home page since we don't need golfer details here
+      })));
     }
+
+    async function checkTournamentStatus() {
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('status')
+        .eq('is_active', true)
+        .single();
+
+      setShowCreateTeam(!tournament || tournament.status !== 'In Progress');
+    }
+
     fetchEntries();
+    checkTournamentStatus();
   }, []);
 
   return (
@@ -35,12 +51,14 @@ export default function Home() {
           in real-time during golf's major tournaments.
         </p>
         <div className="flex gap-4 justify-center">
-          <Button asChild size="lg">
-            <Link href="/create-team">
-              <GolfBall className="mr-2 h-5 w-5" />
-              Create Team
-            </Link>
-          </Button>
+          {showCreateTeam && (
+            <Button asChild size="lg">
+              <Link href="/create-team">
+                <GolfBall className="mr-2 h-5 w-5" />
+                Create Team
+              </Link>
+            </Button>
+          )}
           <Button asChild size="lg" variant="outline">
             <Link href="/leaderboard">
               <Trophy className="mr-2 h-5 w-5" />
