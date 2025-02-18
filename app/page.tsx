@@ -21,7 +21,7 @@ export default function Home() {
         .from('entries')
         .select('entry_name, calculated_score, display_score')
         .order('calculated_score', { ascending: true });
-      
+
       setEntries((data || []).map(entry => ({
         ...entry,
         topFiveGolfers: []  // Add empty array for home page since we don't need golfer details here
@@ -46,7 +46,7 @@ export default function Home() {
     <div className="space-y-8">
       <section className="text-center space-y-4">
         <h1 className="text-4xl font-bold tracking-tight">Majors SZN Pools</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
           Create your dream team of professional golfers and compete against other players
           in real-time during golf's major tournaments.
         </p>
@@ -73,8 +73,8 @@ export default function Home() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-2">
-        <LiveLeaderboard />
         <QuickLeaderboard />
+        <LiveLeaderboard />
       </div>
 
     </div>

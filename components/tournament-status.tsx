@@ -76,18 +76,18 @@ export function TournamentStatus() {
   return (
     <div className="space-y-2">
       {!tournament.is_active && (
-        <h2 className="text-lg font-semibold text-center">Next Major:</h2>
+        <h2 className="text-base md:text-lg font-semibold text-center">Next Major:</h2>
       )}
       <Card className="overflow-hidden bg-card/50">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 px-2 md:px-6">
           <CardTitle className="flex items-center gap-2">
-            <FlagIcon className="h-5 w-5 text-primary" />
-            <div className="font-semibold flex items-center gap-2">
+            <FlagIcon className="h-4 md:h-5 w-4 md:w-5 text-primary" />
+            <div className="font-semibold flex items-center gap-2 text-sm md:text-lg">
               {tournament.name}
               {tournament.is_active && tournament.status && (
                 <>
-                  <span className="text-muted-foreground/40 px-2">•</span>
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground/40 px-1 md:px-2">•</span>
+                  <span className="text-muted-foreground text-sm md:text-base">
                     {tournament.status}
                     {tournament.status !== 'Complete' && tournament.current_round && 
                       ` (Round ${tournament.current_round})`
@@ -98,26 +98,26 @@ export function TournamentStatus() {
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 px-2 md:px-6">
           <div className="grid gap-y-3">
             <div className="flex justify-between items-center border-b pb-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <CalendarIcon className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-base">
+                <CalendarIcon className="h-3 md:h-4 w-3 md:w-4" />
                 {format(new Date(tournament.start_date), 'MMM d')} - {format(new Date(tournament.end_date), 'MMM d, yyyy')}
               </div>
               {tournament.is_active && tournament.purse && (
                 <div className="flex items-center gap-2 text-primary">
-                  <TrophyIcon className="h-4 w-4" />
-                  <span className="font-medium">${tournament.purse.toLocaleString()}</span>
+                  <TrophyIcon className="h-3 md:h-4 w-3 md:w-4" />
+                  <span className="font-medium text-xs md:text-sm">${tournament.purse.toLocaleString()}</span>
                 </div>
               )}
             </div>
             
             <div className="flex items-center gap-2">
-              <PiGolfDuotone className="h-4 w-4 text-muted-foreground" />
-              <span>{tournament.course_name}</span>
+              <PiGolfDuotone className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
+              <span className="text-xs md:text-sm">{tournament.course_name}</span>
               {tournament.par_total && (
-                <span className="ml-auto text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
+                <span className="ml-auto text-xs md:text-sm font-semibold bg-primary/10 text-primary px-3 md:px-3 py-1 rounded-full">
                   Par {tournament.par_total}
                 </span>
               )}

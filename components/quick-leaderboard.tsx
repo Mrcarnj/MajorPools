@@ -131,11 +131,14 @@ export function QuickLeaderboard() {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-0">
-          {top10Entries.map((entry, index) => (
-            <div key={entry.entry_name} className={index % 2 === 1 ? 'bg-muted/100 dark:bg-muted/50' : ''}>
+      <CardContent className="p-1 md:p-6">
+        <div className="space-y-1">
+          {entries.map((entry, index) => (
+            <div key={entry.entry_name} className="space-y-1">
               <div 
+                className={`cursor-pointer hover:bg-muted/50 rounded-sm ${
+                  index % 2 === 1 ? 'dark:bg-zinc-800/90 bg-zinc-800/10' : ''
+                }`}
                 onClick={() => {
                   setExpandedEntries(prev => {
                     const next = new Set(prev);
@@ -147,19 +150,18 @@ export function QuickLeaderboard() {
                     return next;
                   });
                 }}
-                className="flex items-center justify-between p-2 cursor-pointer hover:bg-muted/50"
               >
-                <div className="flex items-center gap-2 w-full">
-                  <span className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-12 text-right`}>
+                <div className="flex items-center gap-1 md:gap-2 w-full px-1 md:px-2">
+                  <span className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-8 md:w-12 text-center md:text-right`}>
                     {rankings[index] || '\u00A0'}
                   </span>
                   {tournamentStarted && payouts.get(entry.entry_name) && (
-                    <span className="text-green-600 w-16 text-right">
+                    <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
                       ${payouts.get(entry.entry_name)}
                     </span>
                   )}
-                  <span className="font-medium flex-1 text-center">{entry.entry_name}</span>
-                  <span className={`${archivo.className} w-12 text-right ${
+                  <span className="font-medium flex-1 text-center text-sm md:text-base">{entry.entry_name}</span>
+                  <span className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
                     typeof entry.display_score === 'number' && entry.display_score < 0 
                       ? 'text-red-600' 
                       : 'text-muted-foreground'
@@ -170,8 +172,8 @@ export function QuickLeaderboard() {
               </div>
               
               {expandedEntries.has(entry.entry_name) && (
-                <div className="pl-12 pr-4 py-2">
-                  <div className="flex flex-wrap gap-x-4 text-sm">
+                <div className="pl-8 md:pl-12 pr-2 md:pr-4 py-1 md:py-2">
+                  <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
                     {entry.topFiveGolfers.map(golfer => (
                       <div key={golfer.player_id} className="flex items-center gap-1">
                         <span>{golfer.first_name} {golfer.last_name}</span>
@@ -187,11 +189,6 @@ export function QuickLeaderboard() {
               )}
             </div>
           ))}
-          {entries.length === 0 && (
-            <p className="text-muted-foreground text-sm">
-              No teams have been created yet.
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>

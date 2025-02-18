@@ -105,25 +105,25 @@ export function LiveLeaderboard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center">
           Tournament Live Leaderboard
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-1 md:p-6">
         <div className="rounded-md border">
           <div className="max-h-[400px] overflow-y-auto">
             <Table>
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
-                  <TableHead className="w-[100px]">Position</TableHead>
-                  <TableHead>Player</TableHead>
-                  <TableHead className="text-right w-[60px]">Total</TableHead>
-                  <TableHead className="text-right w-[60px]">
+                  <TableHead className="text-center md:text-left w-[60px] md:w-[100px] px-1 md:px-4">Pos</TableHead>
+                  <TableHead className="px-1 md:px-4">Player</TableHead>
+                  <TableHead className="text-right w-[40px] md:w-[60px] px-1 md:px-4">Total</TableHead>
+                  <TableHead className="text-right w-[40px] md:w-[60px] px-1 md:px-4">
                     <div className="flex justify-end items-center whitespace-nowrap">
-                      Rd {tournamentData?.current_round || '-'}
+                      R{tournamentData?.current_round || '-'}
                     </div>
                   </TableHead>
-                  <TableHead className="text-right w-[40px] pr-4">Thru</TableHead>
+                  <TableHead className="text-right w-[30px] md:w-[40px] px-1 md:pr-4">Thru</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -136,19 +136,27 @@ export function LiveLeaderboard() {
                     <TableRow 
                       key={`${score.last_name}-${score.first_name}`}
                       className={`
-                        ${index % 2 === 0 ? 'bg-muted/100 dark:bg-muted/50' : ''}
+                        ${index % 2 === 0 ? 'dark:bg-zinc-800/90 bg-zinc-800/10' : ''}
                         ${score.position === 'CUT' ? 'text-muted-foreground bg-muted/90 dark:bg-muted/70' : ''}
                       `}
                     >
-                      <TableCell>{showPosition ? score.position : ''}</TableCell>
-                      <TableCell>{score.first_name} {score.last_name}</TableCell>
-                      <TableCell className={`text-right font-bold ${score.total.startsWith('-') ? 'text-red-500' : ''}`}>
+                      <TableCell className="text-center md:text-left py-2 px-1 md:px-4">
+                        {showPosition ? score.position : ''}
+                      </TableCell>
+                      <TableCell className="py-2 px-1 md:px-4 whitespace-nowrap">
+                        {score.first_name} {score.last_name}
+                      </TableCell>
+                      <TableCell className={`text-center py-2 px-1 md:px-4 font-bold ${
+                        score.total.startsWith('-') ? 'text-red-600' : ''
+                      }`}>
                         {score.total}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-center py-2 px-1 md:px-4">
                         {score.current_round_score === '-' ? '' : score.current_round_score}
                       </TableCell>
-                      <TableCell className="text-right pr-4">{score.thru}</TableCell>
+                      <TableCell className="text-center py-2 px-1 md:pr-4">
+                        {score.thru}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

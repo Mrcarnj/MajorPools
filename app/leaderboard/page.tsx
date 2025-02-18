@@ -213,7 +213,7 @@ export default function Leaderboard() {
                     className={`grid
                       grid-cols-[2rem_auto_4rem] md:grid-cols-[2rem_minmax(200px,auto)_auto_4rem] 
                       gap-6 items-center cursor-pointer hover:bg-muted/50 px-4 ${
-                      index % 2 === 0 ? '' : 'dark:bg-zinc-800/90 bg-zinc-800/30'
+                      index % 2 === 0 ? '' : 'dark:bg-zinc-800/90 bg-zinc-800/10'
                     }`}
                     onClick={() => toggleExpand(entry.entry_name)}
                   >
