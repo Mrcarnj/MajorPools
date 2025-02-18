@@ -23,16 +23,21 @@ export function QuickLeaderboard() {
 
   useEffect(() => {
     async function fetchData() {
-      // Get tournament status
+      // First get active tournament
       const { data: tournament } = await supabase
         .from('tournaments')
-        .select('status')
+        .select('id, status')
         .eq('is_active', true)
         .single();
 
-      setTournamentStarted(tournament?.status !== 'Not Started');
+      if (!tournament) {
+        setEntries([]);
+        return;
+      }
 
-      // First get all entries
+      setTournamentStarted(tournament.status !== 'Not Started');
+
+      // Get entries for active tournament
       const { data: entriesData } = await supabase
         .from('entries')
         .select(`
@@ -44,6 +49,7 @@ export function QuickLeaderboard() {
           tier4_golfer1,
           tier5_golfer1
         `)
+        .eq('tournament_id', tournament.id)
         .order('calculated_score', { ascending: true });
 
       // Get current scores for all golfers
@@ -95,6 +101,24 @@ export function QuickLeaderboard() {
   const rankings = calculateRankings(entries);
   const { totalPot, payouts } = calculatePrizePool(entries);
   const top10Entries = entries.slice(0, 10);
+
+  if (entries.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrophyIcon className="h-5 w-5" />
+            Top Teams
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">
+            No teams have been created for the current tournament.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

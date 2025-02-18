@@ -27,7 +27,7 @@ export function Header() {
         .eq('is_active', true)
         .single();
 
-      setShowCreateTeam(!tournament || tournament.status !== 'In Progress');
+      setShowCreateTeam(!tournament || (tournament.status !== 'In Progress' && tournament.status !== 'Complete'));
     }
 
     checkTournamentStatus();

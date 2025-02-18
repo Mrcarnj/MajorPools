@@ -35,7 +35,7 @@ export default function Home() {
         .eq('is_active', true)
         .single();
 
-      setShowCreateTeam(!tournament || tournament.status !== 'In Progress');
+      setShowCreateTeam(!tournament || (tournament.status !== 'In Progress' && tournament.status !== 'Complete'));
     }
 
     fetchEntries();

@@ -58,6 +58,7 @@ export default function CreateTeam() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showForm, setShowForm] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [hasActiveTournament, setHasActiveTournament] = useState(false);
 
   // Define createEntry mutation before any conditional returns
   const createEntry = trpc.entries.create.useMutation({
@@ -219,7 +220,8 @@ export default function CreateTeam() {
         .eq('is_active', true)
         .single();
 
-      setShowForm(!tournament || tournament.status !== 'In Progress');
+      setHasActiveTournament(!!tournament);
+      setShowForm(!tournament || (tournament.status !== 'In Progress' && tournament.status !== 'Complete'));
       setLoading(false);
     }
 
@@ -227,6 +229,17 @@ export default function CreateTeam() {
   }, []);
 
   if (loading) return null;
+
+  if (!hasActiveTournament) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">No Entry Form Available</h1>
+        <p className="text-muted-foreground">
+          There is no entry form due to it not being a major's week.
+        </p>
+      </div>
+    );
+  }
 
   if (!showForm) {
     return (

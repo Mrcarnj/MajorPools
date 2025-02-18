@@ -27,7 +27,21 @@ export function LiveLeaderboard() {
   const [tournamentData, setTournamentData] = useState<{ current_round: number } | null>(null);
 
   useEffect(() => {
-    async function fetchScores() {
+    async function fetchData() {
+      // First check if there's an active tournament
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('id, current_round')
+        .eq('is_active', true)
+        .single();
+
+      if (!tournament) {
+        setLoading(false);
+        return;
+      }
+
+      setTournamentData(tournament);
+
       const { data, error } = await supabase
         .from('golfer_scores')
         .select('position, first_name, last_name, total, current_round_score, thru')
@@ -38,48 +52,30 @@ export function LiveLeaderboard() {
         return;
       }
 
-      // Sort the data:
-      // 1. Active players by total score (lowest first)
-      // 2. Cut players alphabetically by last name
-      const sortedScores = data.sort((a, b) => {
-        // First separate CUT from non-CUT players
-        if (a.position === 'CUT' && b.position !== 'CUT') return 1;
-        if (b.position === 'CUT' && a.position !== 'CUT') return -1;
-
-        // For players with same CUT status, sort by score
-        const parseScore = (score: string) => {
-          if (score === 'E') return 0;
-          return score.startsWith('-') 
-            ? -Number(score.slice(1)) 
-            : Number(score.replace('+', ''));
-        };
-
-        const scoreA = parseScore(a.total);
-        const scoreB = parseScore(b.total);
-        
-        return scoreA - scoreB;
-      });
-
-      setScores(sortedScores);
+      setScores(data);
       setLoading(false);
     }
 
-    async function fetchTournamentData() {
-      const { data: tournamentData } = await supabase
-        .from('tournaments')
-        .select('current_round')
-        .eq('is_active', true)
-        .single();
-
-      setTournamentData(tournamentData);
-    }
-
-    fetchScores();
-    fetchTournamentData();
+    fetchData();
   }, []);
 
   if (loading) {
     return <div>Loading leaderboard...</div>;
+  }
+
+  if (!tournamentData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Tournament Leaderboard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">
+            No major tournament is currently active.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

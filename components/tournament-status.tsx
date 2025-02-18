@@ -6,11 +6,46 @@ import { GolfIcon } from '@/components/icons/golf-icon';
 import { trpc } from '@/lib/trpc/client';
 import { format } from 'date-fns';
 import { PiGolfDuotone } from "react-icons/pi";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function TournamentStatus() {
-  const { data: activeTournament, isLoading } = trpc.entries.getActiveTournament.useQuery();
+  const [tournament, setTournament] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (isLoading) {
+  useEffect(() => {
+    async function fetchTournament() {
+      // First try to get active tournament
+      const { data: activeTournament } = await supabase
+        .from('tournaments')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+
+      if (activeTournament) {
+        setTournament(activeTournament);
+        setLoading(false);
+        return;
+      }
+
+      // If no active tournament, get the next upcoming one
+      const today = new Date().toISOString();
+      const { data: nextTournament } = await supabase
+        .from('tournaments')
+        .select('*')
+        .gt('start_date', today)
+        .order('start_date', { ascending: true })
+        .limit(1)
+        .single();
+
+      setTournament(nextTournament);
+      setLoading(false);
+    }
+
+    fetchTournament();
+  }, []);
+
+  if (loading) {
     return (
       <Card className="bg-card/50">
         <CardHeader className="pb-0">
@@ -23,59 +58,73 @@ export function TournamentStatus() {
     );
   }
 
+  if (!tournament) {
+    return (
+      <Card className="bg-card/50">
+        <CardHeader>
+          <CardTitle>Tournament Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            No upcoming tournaments scheduled.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="overflow-hidden bg-card/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2">
-          <FlagIcon className="h-5 w-5 text-primary" />
-          <div className="font-semibold flex items-center gap-2">
-            {activeTournament?.name}
-            {activeTournament?.status && (
-              <>
-                <span className="text-muted-foreground/40 px-2">•</span>
-                <span className="text-muted-foreground">
-                  {activeTournament.status}
-                  {activeTournament.current_round && ` (Round ${activeTournament.current_round})`}
-                </span>
-              </>
-            )}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      {activeTournament ? (
+    <div className="space-y-2">
+      {!tournament.is_active && (
+        <h2 className="text-lg font-semibold text-center">Next Major:</h2>
+      )}
+      <Card className="overflow-hidden bg-card/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <FlagIcon className="h-5 w-5 text-primary" />
+            <div className="font-semibold flex items-center gap-2">
+              {tournament.name}
+              {tournament.is_active && tournament.status && (
+                <>
+                  <span className="text-muted-foreground/40 px-2">•</span>
+                  <span className="text-muted-foreground">
+                    {tournament.status}
+                    {tournament.status !== 'Complete' && tournament.current_round && 
+                      ` (Round ${tournament.current_round})`
+                    }
+                  </span>
+                </>
+              )}
+            </div>
+          </CardTitle>
+        </CardHeader>
         <CardContent className="pt-0">
           <div className="grid gap-y-3">
             <div className="flex justify-between items-center border-b pb-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <CalendarIcon className="h-4 w-4" />
-                {format(new Date(activeTournament.start_date), 'MMM d')} - {format(new Date(activeTournament.end_date), 'MMM d, yyyy')}
+                {format(new Date(tournament.start_date), 'MMM d')} - {format(new Date(tournament.end_date), 'MMM d, yyyy')}
               </div>
-              {activeTournament.purse && (
+              {tournament.is_active && tournament.purse && (
                 <div className="flex items-center gap-2 text-primary">
                   <TrophyIcon className="h-4 w-4" />
-                  <span className="font-medium">${activeTournament.purse.toLocaleString()}</span>
+                  <span className="font-medium">${tournament.purse.toLocaleString()}</span>
                 </div>
               )}
             </div>
             
             <div className="flex items-center gap-2">
               <PiGolfDuotone className="h-4 w-4 text-muted-foreground" />
-              <span>{activeTournament.course_name}</span>
-              {activeTournament.par_total && (
+              <span>{tournament.course_name}</span>
+              {tournament.par_total && (
                 <span className="ml-auto text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
-                  Par {activeTournament.par_total}
+                  Par {tournament.par_total}
                 </span>
               )}
             </div>
           </div>
         </CardContent>
-      ) : (
-        <CardContent>
-          <div className="text-muted-foreground text-sm">
-            No active tournament.
-          </div>
-        </CardContent>
-      )}
-    </Card>
+      </Card>
+    </div>
   );
 }
