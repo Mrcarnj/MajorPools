@@ -6,9 +6,8 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { TrpcProvider } from '@/components/providers/trpc-provider';
-import { AuthProvider } from '@/lib/auth-context';
+import { AuthProvider } from '@/lib/auth/auth-context';
 import { Header } from '@/components/header';
-import { SessionProvider } from 'next-auth/react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,24 +25,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SessionProvider>
-          <AuthProvider>
-            <TrpcProvider>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <Header />
-                <main className="container mx-auto px-4 py-8">
-                  {children}
-                </main>
-                <Toaster />
-              </ThemeProvider>
-            </TrpcProvider>
-          </AuthProvider>
-        </SessionProvider>
+        <AuthProvider>
+          <TrpcProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Header />
+              <main className="container mx-auto px-4 py-8">
+                {children}
+              </main>
+              <Toaster />
+            </ThemeProvider>
+          </TrpcProvider>
+        </AuthProvider>
       </body>
     </html>
   );

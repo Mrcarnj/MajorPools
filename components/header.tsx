@@ -10,14 +10,16 @@ import {
 import { MoonIcon, SunIcon, UserIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import { useSession, signIn, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { LoginModal } from '@/components/auth/login-modal';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
-  const { data: session } = useSession();
   const [showCreateTeam, setShowCreateTeam] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { session: authSession } = useAuth();
 
   useEffect(() => {
     async function checkTournamentStatus() {
@@ -49,6 +51,11 @@ export function Header() {
               Create Team
             </Link>
           )}
+          {authSession && (
+            <Link href="/admin" className="hover:text-primary">
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -62,26 +69,38 @@ export function Header() {
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          {session ? (
+          {authSession ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <UserIcon className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => signOut()}>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="p-2 text-sm text-muted-foreground border-b">
+                  {authSession.user.email}
+                </div>
+                <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => signIn()}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowLoginModal(true)}
+            >
               Sign in
             </Button>
           )}
         </div>
       </div>
+
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+      />
     </header>
   );
 }
