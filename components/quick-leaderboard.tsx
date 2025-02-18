@@ -178,7 +178,7 @@ export function QuickLeaderboard() {
                         <span className={`${archivo.className} ${
                           golfer.total.startsWith('-') ? 'text-red-600' : ''
                         }`}>
-                          ({golfer.total})
+                          ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
                         </span>
                       </div>
                     ))}
