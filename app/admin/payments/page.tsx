@@ -16,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MdOutlineEmail } from "react-icons/md";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 type Entry = {
   id: string;
@@ -35,6 +37,7 @@ export default function PaymentsPage() {
   const [groupedEntries, setGroupedEntries] = useState<GroupedEntries>({});
   const [loading, setLoading] = useState(true);
   const [activeTournament, setActiveTournament] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchEntries();
@@ -121,8 +124,32 @@ export default function PaymentsPage() {
     window.location.href = mailtoLink;
   };
 
+  const filterEntries = () => {
+    if (!searchTerm) return groupedEntries;
+
+    const searchLower = searchTerm.toLowerCase();
+    const filtered: GroupedEntries = {};
+
+    Object.entries(groupedEntries).forEach(([email, group]) => {
+      // Filter entries within each group
+      const matchingEntries = group.entries.filter(entry => 
+        entry.email.toLowerCase().includes(searchLower) ||
+        entry.entry_name.toLowerCase().includes(searchLower)
+      );
+
+      if (matchingEntries.length > 0) {
+        filtered[email] = {
+          ...group,
+          entries: matchingEntries
+        };
+      }
+    });
+
+    return filtered;
+  };
+
   const renderTableRows = () => {
-    return Object.entries(groupedEntries).map(([email, group]) => {
+    return Object.entries(filterEntries()).map(([email, group]) => {
       // If only one entry, render a simple row
       if (group.entries.length === 1) {
         const entry = group.entries[0];
@@ -188,8 +215,8 @@ export default function PaymentsPage() {
   return (
     <div className="container mx-auto py-8">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="flex flex-row items-center justify-between space-x-4">
+          <div className="flex-shrink-0">
             <CardTitle>Payment Management</CardTitle>
             {activeTournament && (
               <p className="text-muted-foreground">
@@ -197,10 +224,26 @@ export default function PaymentsPage() {
               </p>
             )}
           </div>
+          
+          <div className="flex items-center space-x-2 flex-1 max-w-xl">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search email or entry name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              {Object.values(filterEntries()).reduce((acc, group) => acc + group.entries.length, 0)} entries
+            </div>
+          </div>
+
           <Button 
             variant="outline" 
             onClick={handleSendEmails}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-shrink-0"
           >
             <MdOutlineEmail className="h-4 w-4" />
             Email Unpaid
