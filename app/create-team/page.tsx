@@ -288,7 +288,7 @@ export default function CreateTeam() {
 
   // The rest of your render logic
   return (
-    <div className="space-y-8 max-w-4xl mx-auto p-6">
+    <div className="space-y-8 max-w-4xl mx-auto p-0 md:p-6">
       <h1 className="text-3xl font-bold text-center">
         {activeTournament?.name} {activeTournament?.start_date ? new Date(activeTournament.start_date).getFullYear() : ''}
       </h1>
@@ -297,7 +297,7 @@ export default function CreateTeam() {
         <div className="space-y-4">
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <h3 className="font-semibold">Entry Instructions</h3>
-            <ul className="list-disc pl-4 space-y-1">
+            <ul className="list-disc pl-4 space-y-1 text-sm md:text-base">
               <li>Entry fee: $25 via Venmo (@dieter21)</li>
               <li>Include your entry name in Venmo description</li>
               <li>Payment must be received before last group finishes 2nd round</li>
@@ -307,8 +307,8 @@ export default function CreateTeam() {
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <h3 className="font-semibold">Rules</h3>
-            <p>Select 8 golfers across 5 tiers:</p>
-            <ul className="list-disc pl-4 space-y-1">
+            <p className="text-sm md:text-base">Select 8 golfers across 5 tiers:</p>
+            <ul className="list-disc pl-4 space-y-1 text-sm md:text-base">
               <li>2 Golfers from Tier 1</li>
               <li>2 Golfers from Tier 2</li>
               <li>2 Golfers from Tier 3</li>

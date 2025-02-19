@@ -43,14 +43,14 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-2 md:px-6">
       <section className="text-center space-y-4">
         <h1 className="text-4xl font-bold tracking-tight">Majors SZN Pools</h1>
         <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
           Create your dream team of professional golfers and compete against other players
           in real-time during golf's major tournaments.
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-col md:flex-row gap-4 justify-center">
           {showCreateTeam && (
             <Button asChild size="lg">
               <Link href="/create-team">
@@ -72,7 +72,7 @@ export default function Home() {
         <TournamentStatus />
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-8 md:grid-cols-2">
         <QuickLeaderboard />
         <LiveLeaderboard />
       </div>
