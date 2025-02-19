@@ -8,6 +8,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoonIcon, SunIcon, UserIcon } from 'lucide-react';
+import { PiSignOut } from "react-icons/pi";
+import { RxDashboard } from "react-icons/rx";
+import { RiAdminLine } from "react-icons/ri";
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -52,9 +55,14 @@ export function Header() {
             </Link>
           )}
           {authSession && (
-            <Link href="/admin" className="hover:text-primary">
-              Admin
-            </Link>
+            <>
+              <Link href="/dashboard" className="hover:text-primary">
+                Dashboard
+              </Link>
+              <Link href="/admin" className="hover:text-primary">
+                Admin
+              </Link>
+            </>
           )}
         </nav>
 
@@ -80,7 +88,22 @@ export function Header() {
                 <div className="p-2 text-sm text-muted-foreground border-b">
                   {authSession.user.email}
                 </div>
+                <DropdownMenuItem asChild className="md:hidden">
+                  <Link href="/dashboard">
+                    <RxDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                {authSession && (
+                  <DropdownMenuItem asChild className="md:hidden">
+                    <Link href="/admin">
+                      <RiAdminLine className="mr-2 h-4 w-4" />
+                      Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
+                  <PiSignOut className="mr-2 h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>

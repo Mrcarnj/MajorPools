@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth/auth-context';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc/client';
 import { supabase } from '@/lib/supabase';
@@ -30,12 +30,12 @@ type TieredGolfers = {
 
 export default function CreateTeam() {
   // All hooks must be at the top level, before any conditional returns
-  const { user } = useAuth();
+  const { session } = useAuth();
   const { data: activeTournament, isLoading } = trpc.entries.getActiveTournament.useQuery();
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     entryName: '',
-    email: user?.email || '',
+    email: session?.user?.email || '',
     selections: {
       tier1: [] as string[],
       tier2: [] as string[],
@@ -248,6 +248,15 @@ export default function CreateTeam() {
 
     checkTournamentStatus();
   }, []);
+
+  useEffect(() => {
+    if (mounted && session?.user?.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: session.user.email || prev.email
+      }));
+    }
+  }, [mounted, session?.user?.email]);
 
   if (loading) return null;
 
@@ -511,7 +520,7 @@ export default function CreateTeam() {
           if (!open) {  // When dialog is closed
             setFormData({
               entryName: '',
-              email: user?.email || '',
+              email: session?.user?.email || '',
               selections: {
                 tier1: [],
                 tier2: [],

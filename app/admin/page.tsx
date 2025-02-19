@@ -87,12 +87,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+    <div className="px-1 md:container md:mx-auto py-4 md:py-8 space-y-4 md:space-y-8">
+      <h1 className="text-xl md:text-2xl font-bold px-1 md:px-0">Admin Dashboard</h1>
       
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Tournament Management</CardTitle>
+      <Card className="md:rounded-lg rounded-none">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 pb-2 md:pb-6">
+          <CardTitle className="text-lg md:text-xl">Tournament Management</CardTitle>
           <Button 
             variant="outline"
             onClick={() => {
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
                 handleSendInvite(activeTournament.name, activeTournament.year);
               }
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full md:w-auto text-sm md:text-base"
             disabled={!tournaments.some(t => t.is_active)}
           >
             <MdOutlineEmail className="h-4 w-4" />
@@ -109,9 +109,12 @@ export default function AdminDashboard() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {tournaments.map(tournament => (
-              <div key={tournament.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div 
+                key={tournament.id} 
+                className="flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-4 border rounded-lg space-y-2 md:space-y-0"
+              >
                 <div>
                   <h3 className="font-medium">{tournament.name}</h3>
                   <p className="text-sm text-muted-foreground">
@@ -121,7 +124,7 @@ export default function AdminDashboard() {
                 <Button
                   variant={tournament.is_active ? "secondary" : "default"}
                   onClick={() => handleActivateTournament(tournament.id, tournament.is_active)}
-                  disabled={false}
+                  className="w-full md:w-auto"
                 >
                   {tournament.is_active ? 'Deactivate' : 'Activate'}
                 </Button>
