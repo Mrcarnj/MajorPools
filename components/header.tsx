@@ -10,13 +10,14 @@ import {
 import { MoonIcon, SunIcon, UserIcon } from 'lucide-react';
 import { PiSignOut } from "react-icons/pi";
 import { RxDashboard } from "react-icons/rx";
-import { RiAdminLine } from "react-icons/ri";
+import { RiAdminLine, RiTeamLine } from "react-icons/ri";
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { LoginModal } from '@/components/auth/login-modal';
 import { useAuth } from '@/lib/auth/auth-context';
+import { MdOutlineLeaderboard } from 'react-icons/md';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -46,20 +47,24 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/leaderboard" className="hover:text-primary">
+          <Link href="/leaderboard" className="hover:text-primary flex items-center">
+            <MdOutlineLeaderboard className="mr-2 h-4 w-4"/>
             Leaderboard
           </Link>
           {showCreateTeam && (
-            <Link href="/create-team" className="hover:text-primary">
+            <Link href="/create-team" className="hover:text-primary flex items-center">
+              <RiTeamLine className="mr-2 h-4 w-4" />
               Create Team
             </Link>
           )}
           {authSession && (
             <>
-              <Link href="/dashboard" className="hover:text-primary">
+              <Link href="/dashboard" className="hover:text-primary flex items-center">
+                <RxDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
-              <Link href="/admin" className="hover:text-primary">
+              <Link href="/admin" className="hover:text-primary flex items-center">
+                <RiAdminLine className="mr-2 h-4 w-4" />
                 Admin
               </Link>
             </>

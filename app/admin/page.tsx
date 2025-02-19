@@ -16,22 +16,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const checkAuth = async () => {
-
       if (!loading) {
         if (!session) {
           console.log('No session, redirecting');
           router.replace('/');
-        } else {
-          console.log('Session found, fetching tournaments');
-          const { data } = await supabase
-            .from('tournaments')
-            .select('*')
-            .order('start_date', { ascending: true });
-          setTournaments(data || []);
         }
       }
     };
-
     checkAuth();
   }, [session, loading, router]);
 
