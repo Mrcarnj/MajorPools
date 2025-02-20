@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { getTournament } from '../services/pga-tour/tournaments';
+import { getTournament, getSchedule } from '../services/pga-tour/tournaments';
 import { supabaseAdmin } from '../lib/supabase-admin';
 
 
@@ -9,15 +9,7 @@ async function testTournament(tournId: string) {
 
     const tournament = await getTournament(tournId);
     
-    console.log('Tournament Details:');
-    console.log('------------------');
-    console.log(`ID: ${tournament._id.$oid || tournament._id}`);
-    console.log(`Org ID: ${tournament.orgId}`);
-    console.log(`Year: ${tournament.year}`);
-    console.log(`Tournament ID: ${tournament.tournId}`);
-    console.log(`Name: ${tournament.name}`);
-    console.log(`Purse: $${tournament.purse.$numberInt?.toLocaleString() || tournament.purse}`);
-    console.log('\nDates:');
+
     // Extract just the numbers from MongoDB format
     const startMs = Number(tournament.date.start.$date.$numberLong);
     const endMs = Number(tournament.date.end.$date.$numberLong);
@@ -26,19 +18,8 @@ async function testTournament(tournId: string) {
     const startDate = new Date(startMs);
     const endDate = new Date(endMs);
 
-    // Get just the date part from UTC string
-    console.log(`Start: ${startDate.toUTCString().split(' ').slice(0, 4).join(' ')}`);
-    console.log(`End: ${endDate.toUTCString().split(' ').slice(0, 4).join(' ')}`);
-
-    console.log('\nStatus:');
-    console.log(`Format: ${tournament.format}`);
-    console.log(`Status: ${tournament.status}`);
-    console.log(`Current Round: ${tournament.currentRound.$numberInt || tournament.currentRound}`);
-    console.log('\nCourse:');
     const course = tournament.courses[0];
-    console.log(`ID: ${course.courseId}`);
-    console.log(`Name: ${course.courseName}`);
-    console.log(`Par Total: ${course.parTotal}`);
+
 
     // Check if the tournament already exists
     const { data: existingTournament, error: fetchError } = await supabaseAdmin
@@ -103,14 +84,30 @@ async function testTournament(tournId: string) {
     }
 
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error(`❌ Error processing tournament ${tournId}:`, error);
   }
 }
 
 async function testAllTournaments() {
-  const tournamentIds = ['540'];
-  for (const tournId of tournamentIds) {
-    await testTournament(tournId);
+  try {
+    // Get the schedule first
+    const schedule = await getSchedule('2025');
+    
+    console.log('Schedule response:', JSON.stringify(schedule, null, 2));
+    
+    if (!Array.isArray(schedule)) {
+      throw new Error(`Invalid schedule format: ${typeof schedule}`);
+    }
+    
+    // Process each tournament in the schedule
+    for (const tournament of schedule) {
+      await testTournament(tournament.tournId);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    console.log('✅ All tournaments processed');
+  } catch (error) {
+    console.error('❌ Error getting schedule:', error);
   }
 }
 
