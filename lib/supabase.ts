@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = 'https://cagbmvwgqnbeafgpchym.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZ2JtdndncW5iZWFmZ3BjaHltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NTcyMzYsImV4cCI6MjA1NTEzMzIzNn0.Xt1StjFqz-EjHyX-GyArtojX76qdC50vQmvh4tRFwv0';
 
 // Add debug logs
 console.log('Supabase initialization:', {
@@ -15,11 +14,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Create a single supabase client for the entire session
-export const supabase = createPagesBrowserClient({
-  supabaseUrl,
-  supabaseKey: supabaseAnonKey,
-});
+// Create a regular Supabase client for scripts
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Listen for auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
