@@ -1,7 +1,5 @@
-import { config } from 'dotenv';
 import { getWorldRankings } from '../services/pga-tour/tournaments';
 
-config({ path: '.env.local' });
 
 async function testWorldRankings() {
   try {

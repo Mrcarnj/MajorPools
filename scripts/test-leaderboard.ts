@@ -1,11 +1,5 @@
-import { config } from 'dotenv';
-import path from 'path';
-
-// Load env variables before other imports
-config({ path: path.resolve(__dirname, '../.env.local') });
-
 import { getTournamentLeaderboard } from '../services/pga-tour/tournaments';
-import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase-admin';
 
 async function testLeaderboard(tournId: string) {
   try {
@@ -22,7 +16,7 @@ async function testLeaderboard(tournId: string) {
       console.log(`Cut Score: ${cutScore}`);
 
       // Update tournament with cut score as-is
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('tournaments')
         .update({ cut_score: cutScore })
         .eq('pga_tournament_id', tournId);

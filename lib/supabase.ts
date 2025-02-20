@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import path from 'path';
+// Load env variables before other imports
+config({ path: path.resolve(__dirname, '../.env.local') });
 
-const supabaseUrl = 'https://cagbmvwgqnbeafgpchym.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZ2JtdndncW5iZWFmZ3BjaHltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NTcyMzYsImV4cCI6MjA1NTEzMzIzNn0.Xt1StjFqz-EjHyX-GyArtojX76qdC50vQmvh4tRFwv0';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Add debug logs
 console.log('Supabase initialization:', {

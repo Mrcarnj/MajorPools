@@ -1,9 +1,7 @@
 import { config } from 'dotenv';
 import { getTournament } from '../services/pga-tour/tournaments';
-import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase-admin';
 
-// Load environment variables
-config({ path: '.env.local' });
 
 async function testTournament(tournId: string) {
   try {
@@ -43,7 +41,7 @@ async function testTournament(tournId: string) {
     console.log(`Par Total: ${course.parTotal}`);
 
     // Check if the tournament already exists
-    const { data: existingTournament, error: fetchError } = await supabase
+    const { data: existingTournament, error: fetchError } = await supabaseAdmin
       .from('tournaments')
       .select('id')
       .eq('pga_tournament_id', tournId)
@@ -55,7 +53,7 @@ async function testTournament(tournId: string) {
 
     if (existingTournament) {
       // Update the existing tournament
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('tournaments')
         .update({
           name: tournament.name,
@@ -80,7 +78,7 @@ async function testTournament(tournId: string) {
       console.log('Database updated successfully:', data);
     } else {
       // Insert a new tournament
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('tournaments')
         .insert({
           name: tournament.name,

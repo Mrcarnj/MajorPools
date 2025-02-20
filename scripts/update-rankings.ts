@@ -1,8 +1,7 @@
-import { config } from 'dotenv';
 import { getWorldRankings } from '../services/pga-tour/tournaments';
-import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase-admin';
 
-config({ path: '.env.local' });
+
 
 async function updateRankings() {
   try {
@@ -14,7 +13,7 @@ async function updateRankings() {
     // Process each ranking
     for (const player of rankings) {
       // First check if player exists in golfer_scores
-      const { data, error: checkError } = await supabase
+      const { data, error: checkError } = await supabaseAdmin
         .from('golfer_scores')
         .select('player_id')
         .eq('player_id', player.playerId)
@@ -26,7 +25,7 @@ async function updateRankings() {
       }
 
       // Update ranking for existing player
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('golfer_scores')
         .update({ 
           ranking: Number(player.rank.$numberInt)

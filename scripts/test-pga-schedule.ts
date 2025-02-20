@@ -1,8 +1,4 @@
-import { config } from 'dotenv';
 import { getSchedule } from '../services/pga-tour/tournaments';
-
-// Load environment variables
-config({ path: '.env.local' });
 
 async function testSchedule(year: string) {
   try {
