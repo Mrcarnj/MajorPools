@@ -24,14 +24,17 @@ type GolferScore = {
 export function LiveLeaderboard() {
   const [scores, setScores] = useState<GolferScore[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tournamentData, setTournamentData] = useState<{ current_round: number } | null>(null);
+  const [tournamentData, setTournamentData] = useState<{
+    current_round: number;
+    cut_score?: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       // First check if there's an active tournament
       const { data: tournament } = await supabase
         .from('tournaments')
-        .select('id, current_round')
+        .select('id, current_round, cut_score')
         .eq('is_active', true)
         .single();
 
@@ -105,8 +108,13 @@ export function LiveLeaderboard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          Tournament Live Leaderboard
+        <CardTitle className="flex items-center justify-between">
+          <span>Tournament Live Leaderboard</span>
+          {tournamentData?.current_round === 2 && tournamentData.cut_score && (
+            <span className="text-sm md:text-lg font-normal">
+              Projected Cut: {tournamentData.cut_score}
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-1 md:p-6">

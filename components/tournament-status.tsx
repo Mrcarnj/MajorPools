@@ -84,14 +84,19 @@ export function TournamentStatus() {
             <FlagIcon className="h-4 md:h-5 w-4 md:w-5 text-primary" />
             <div className="font-semibold flex items-center gap-2 text-sm md:text-lg">
               {tournament.name}
-              {tournament.is_active && tournament.status && (
+              {tournament.is_active && (
                 <>
                   <span className="text-muted-foreground/40 px-1 md:px-2">•</span>
                   <span className="text-muted-foreground text-sm md:text-base">
-                    {tournament.status}
-                    {tournament.status !== 'Complete' && tournament.current_round && 
-                      ` (R${tournament.current_round})`
-                    }
+                    {tournament.status === 'Not Started' ? (
+                      'Not Started'
+                    ) : tournament.status === 'In Progress' ? (
+                      `Round ${tournament.current_round}`
+                    ) : tournament.status === 'Official' ? (
+                      'Complete'
+                    ) : (
+                      tournament.status
+                    )}
                   </span>
                 </>
               )}
