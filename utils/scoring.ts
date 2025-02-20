@@ -28,14 +28,18 @@ export function calculateEntryScore(golferScores: GolferScore[]): number {
   // Sort scores from lowest to highest
   numericScores.sort((a, b) => a - b);
 
-  // Calculate weighted scores
-  let totalScore = 0;
+  // Calculate weighted scores (for tiebreaker)
+  let weightedScore = 0;
   numericScores.forEach((score, index) => {
     const divisor = Math.pow(10, (index + 3)); // Starts at 1000 and increases
-    totalScore += score / divisor;
+    weightedScore += score / divisor;
   });
 
-  return totalScore;
+  // Take best 5 scores and sum them
+  const bestFiveSum = numericScores.slice(0, 5).reduce((sum, score) => sum + score, 0);
+
+  // Combine both scores - raw sum for display, weighted for tiebreakers
+  return bestFiveSum + weightedScore;
 }
 
 export function calculateDisplayScore(golferScores: GolferScore[]): number | "CUT" {
@@ -100,11 +104,18 @@ const PAYOUT_PERCENTAGES = {
   10: 0.02128
 };
 
+// Helper function to round up to nearest 5
+function roundUpToNearest5(num: number): number {
+  return Math.ceil(num / 5) * 5;
+}
+
 export function calculatePrizePool(entries: Entry[]): { 
   totalPot: number;
   payouts: Map<string, number>;
 } {
-  const totalPot = Math.round(entries.length * 25 * 0.9); // 90% of total entries * $25
+  // Use full pot (entries * $25)
+  const rawPot = entries.length * 25;
+  const totalPot = roundUpToNearest5(rawPot);
   const payouts = new Map<string, number>();
   
   // Get rankings with ties
@@ -139,19 +150,32 @@ export function calculatePrizePool(entries: Entry[]): {
     const numTied = entryNames.length;
     let totalPayout = 0;
     
-    // Sum up the payouts for the positions being shared
-    for (let i = 0; i < numTied; i++) {
-      const payoutPosition = currentPosition + i;
-      if (payoutPosition <= 10) { // Only include payouts for top 10
-        totalPayout += totalPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
+    // Special handling for position 10 ties
+    if (currentPosition === 10 || (currentPosition < 10 && currentPosition + numTied > 10)) {
+      // Get the 10th position percentage and split it among ties
+      const tenthPlacePercentage = PAYOUT_PERCENTAGES[10];
+      const splitPercentage = tenthPlacePercentage / numTied;
+      totalPayout = totalPot * splitPercentage;
+      
+      const splitPayout = Math.ceil(totalPayout);
+      entryNames.forEach(entryName => {
+        payouts.set(entryName, splitPayout);
+      });
+    } else {
+      // For positions 1-9, sum percentages and split evenly
+      for (let i = 0; i < numTied; i++) {
+        const payoutPosition = currentPosition + i;
+        if (payoutPosition <= 9) { // Only include payouts through position 9
+          totalPayout += totalPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
+        }
       }
+      
+      // For non-10th positions, split the total payout evenly
+      const splitPayout = Math.ceil(totalPayout / numTied);
+      entryNames.forEach(entryName => {
+        payouts.set(entryName, splitPayout);
+      });
     }
-    
-    // Split the payout evenly among tied entries
-    const splitPayout = Math.round(totalPayout / numTied);
-    entryNames.forEach(entryName => {
-      payouts.set(entryName, splitPayout);
-    });
     
     currentPosition += numTied;
   });

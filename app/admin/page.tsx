@@ -16,13 +16,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const checkAuth = async () => {
-
       if (!loading) {
-        if (!session) {
-          console.log('No session, redirecting');
+        if (!session || session.user.user_metadata?.role !== 'admin') {
+          console.log('Not admin, redirecting');
           router.replace('/');
         } else {
-          console.log('Session found, fetching tournaments');
+          console.log('Admin session found, fetching tournaments');
           const { data } = await supabase
             .from('tournaments')
             .select('*')

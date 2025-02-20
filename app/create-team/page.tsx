@@ -12,6 +12,9 @@ import { trpc } from '@/lib/trpc/client';
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useRouter } from 'next/navigation';
+import { IoIosCloseCircle, IoIosCheckmarkCircle } from "react-icons/io";
 
 type Golfer = {
   first_name: string;
@@ -61,6 +64,13 @@ export default function CreateTeam() {
   const [hasActiveTournament, setHasActiveTournament] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [signupPassword, setSignupPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const router = useRouter();
+  const [submittedEmail, setSubmittedEmail] = useState('');
 
   // Define createEntry mutation before any conditional returns
   const createEntry = trpc.entries.create.useMutation({
@@ -116,6 +126,7 @@ export default function CreateTeam() {
     setSubmitting(true);
 
     try {
+      setSubmittedEmail(formData.email);
       // First check if email exists in email_list
       const { data: emailExists } = await supabase
         .from('email_list')
@@ -257,6 +268,68 @@ export default function CreateTeam() {
       }));
     }
   }, [mounted, session?.user?.email]);
+
+  // Add these handler functions before the return statement
+  const handleSignup = async () => {
+    setAuthError('');
+    
+    if (signupPassword !== confirmPassword) {
+      setAuthError('Passwords do not match');
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+      setAuthError('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: submittedEmail,
+        password: signupPassword,
+      });
+
+      if (error) {
+        setAuthError(error.message);
+        return;
+      }
+
+      if (data?.user?.identities?.length === 0) {
+        setAuthError('This email is already registered. Please log in instead.');
+        return;
+      }
+
+      toast.success('Account created successfully!');
+      setShowAuthModal(false);
+      router.push('/dashboard');
+    } catch (error: any) {
+      setAuthError(error.message);
+    }
+  };
+
+  const handleLogin = async () => {
+    setAuthError('');
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: submittedEmail,
+        password: loginPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success('Logged in successfully!');
+      setShowAuthModal(false);
+      router.push('/dashboard');
+    } catch (error: any) {
+      setAuthError(error.message);
+    }
+  };
+
+  // Add this function to check if passwords match
+  const doPasswordsMatch = () => {
+    return signupPassword && confirmPassword && signupPassword === confirmPassword;
+  };
 
   if (loading) return null;
 
@@ -517,7 +590,10 @@ export default function CreateTeam() {
         open={showPaymentModal} 
         onOpenChange={(open) => {
           setShowPaymentModal(open);
-          if (!open) {  // When dialog is closed
+          if (!open) {  // When payment dialog is closed
+            if (!session) {  // If user is not logged in
+              setShowAuthModal(true);  // Show auth dialog
+            }
             setFormData({
               entryName: '',
               email: session?.user?.email || '',
@@ -529,6 +605,8 @@ export default function CreateTeam() {
                 tier5: [],
               },
             });
+            // Scroll to top smoothly
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         }}
       >
@@ -553,6 +631,135 @@ export default function CreateTeam() {
               </Button>
             </DialogClose>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add new Auth Dialog */}
+      <Dialog 
+        open={showAuthModal} 
+        onOpenChange={(open) => {
+          setShowAuthModal(open);
+          if (!open) {  // When auth dialog is closed (either by "No Thank You" or X button)
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Access Your Dashboard</DialogTitle>
+            <p className="text-sm text-muted-foreground pt-2">
+              Log in or create account to access your dashboard! View current entries, historical entries and much more!
+            </p>
+          </DialogHeader>
+
+          <Tabs defaultValue="signup" className="pt-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login">Log In</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="signup" className="space-y-4">
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input 
+                    id="signup-email" 
+                    type="email" 
+                    value={submittedEmail} 
+                    disabled 
+                    className="opacity-100 cursor-not-allowed bg-muted"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input 
+                    id="signup-password" 
+                    type="password"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    placeholder="Enter a password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input 
+                    id="confirm-password" 
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                  />
+                  {confirmPassword && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {doPasswordsMatch() ? (
+                        <>
+                          <IoIosCheckmarkCircle className="h-5 w-5 text-green-500" />
+                          <span className="text-sm text-green-500">Passwords match</span>
+                        </>
+                      ) : (
+                        <>
+                          <IoIosCloseCircle className="h-5 w-5 text-red-500" />
+                          <span className="text-sm text-red-500">Passwords do not match</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {authError && (
+                  <p className="text-sm text-red-500">{authError}</p>
+                )}
+                <Button 
+                  className="w-full" 
+                  onClick={handleSignup}
+                  disabled={!signupPassword || !confirmPassword}
+                >
+                  Create Account
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowAuthModal(false)}
+                  className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  No Thank You
+                </button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="login" className="space-y-4">
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input 
+                    id="login-email" 
+                    type="email" 
+                    value={submittedEmail} 
+                    disabled 
+                    className="opacity-100 cursor-not-allowed bg-muted"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input 
+                    id="login-password" 
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter your password"
+                  />
+                </div>
+                {authError && (
+                  <p className="text-sm text-red-500">{authError}</p>
+                )}
+                <Button 
+                  className="w-full" 
+                  onClick={handleLogin}
+                  disabled={!loginPassword}
+                >
+                  Log In
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

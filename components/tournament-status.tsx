@@ -90,7 +90,7 @@ export function TournamentStatus() {
                   <span className="text-muted-foreground text-sm md:text-base">
                     {tournament.status}
                     {tournament.status !== 'Complete' && tournament.current_round && 
-                      ` (Round ${tournament.current_round})`
+                      ` (R${tournament.current_round})`
                     }
                   </span>
                 </>

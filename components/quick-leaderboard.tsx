@@ -100,7 +100,7 @@ export function QuickLeaderboard() {
 
   const rankings = calculateRankings(entries);
   const { totalPot, payouts } = calculatePrizePool(entries);
-  const top10Entries = entries.slice(0, 10);
+  const top13Entries = entries.slice(0, 13);
 
   if (entries.length === 0) {
     return (
@@ -133,7 +133,7 @@ export function QuickLeaderboard() {
       </CardHeader>
       <CardContent className="p-1 md:p-6">
         <div className="space-y-1">
-          {entries.map((entry, index) => (
+          {top13Entries.map((entry, index) => (
             <div key={entry.entry_name} className="space-y-1">
               <div 
                 className={`cursor-pointer hover:bg-muted/50 rounded-sm ${
@@ -155,9 +155,9 @@ export function QuickLeaderboard() {
                   <span className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-8 md:w-12 text-center md:text-right`}>
                     {rankings[index] || '\u00A0'}
                   </span>
-                  {tournamentStarted && payouts.get(entry.entry_name) && (
+                  {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
                     <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
-                      ${payouts.get(entry.entry_name)}
+                      {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
                     </span>
                   )}
                   <span className="font-medium flex-1 text-center text-sm md:text-base">{entry.entry_name}</span>

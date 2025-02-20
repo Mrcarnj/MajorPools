@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from 'next/navigation';
 
 
 type UserEntry = {
@@ -39,6 +40,7 @@ export default function UserDashboard() {
   const { session } = useAuth();
   const [entries, setEntries] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchUserEntries() {
@@ -119,6 +121,12 @@ export default function UserDashboard() {
     fetchUserEntries();
   }, [session?.user?.email]);
 
+  useEffect(() => {
+    if (!loading && !session) {
+      router.replace('/');
+    }
+  }, [session, loading, router]);
+
   const activeEntries = entries.filter(entry => entry.is_active);
   const historicalEntries = entries.filter(entry => !entry.is_active);
 
@@ -127,7 +135,7 @@ export default function UserDashboard() {
   }
 
   if (!session) {
-    return <div>Please sign in to view your dashboard.</div>;
+    return null;
   }
 
   return (

@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { calculateEntryScore } from '@/utils/scoring';
 import type { GolferScore } from '@/utils/scoring';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
@@ -51,4 +53,15 @@ export async function GET() {
     console.error('Error calculating scores:', error);
     return new Response('Error calculating scores', { status: 500 });
   }
-} 
+}
+
+export async function POST(request: Request) {
+  const supabase = createRouteHandlerClient({ cookies });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session || session.user.user_metadata?.role !== 'admin') {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // Rest of your calculate scores logic
+}
