@@ -68,9 +68,9 @@ export default function Leaderboard() {
 
       setTournament(tournament);
 
-      setHasActiveTournament(!!tournament && ['In Progress', 'Complete'].includes(tournament.status));
+      setHasActiveTournament(!!tournament && ['In Progress', 'Official'].includes(tournament.status));
 
-      if (!tournament || !['In Progress', 'Complete'].includes(tournament.status)) {
+      if (!tournament || !['In Progress', 'Official'].includes(tournament.status)) {
         setEntries([]);
         setLoading(false);
         return;

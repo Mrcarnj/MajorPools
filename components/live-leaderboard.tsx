@@ -119,7 +119,7 @@ export function LiveLeaderboard() {
       </CardHeader>
       <CardContent className="p-1 md:p-6">
         <div className="rounded-md border">
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="max-h-[408px] overflow-y-auto">
             <Table>
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
