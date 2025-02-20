@@ -110,7 +110,7 @@ async function testTournament(tournId: string) {
 }
 
 async function testAllTournaments() {
-  const tournamentIds = ['007', '014', '033', '100', '026'];
+  const tournamentIds = ['540'];
   for (const tournId of tournamentIds) {
     await testTournament(tournId);
   }

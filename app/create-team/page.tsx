@@ -473,7 +473,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier1', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name} ({golfer.ranking})
+                    {golfer.first_name} {golfer.last_name}
                   </label>
                 </div>
               ))}
@@ -497,7 +497,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier2', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name} ({golfer.ranking})
+                    {golfer.first_name} {golfer.last_name}
                   </label>
                 </div>
               ))}
@@ -521,7 +521,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier3', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name} ({golfer.ranking})
+                    {golfer.first_name} {golfer.last_name}
                   </label>
                 </div>
               ))}
@@ -545,7 +545,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier4', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name} ({golfer.ranking})
+                    {golfer.first_name} {golfer.last_name}
                   </label>
                 </div>
               ))}
@@ -569,7 +569,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier5', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name} ({golfer.ranking})
+                    {golfer.first_name} {golfer.last_name}
                   </label>
                 </div>
               ))}

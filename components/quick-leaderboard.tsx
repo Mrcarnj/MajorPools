@@ -100,7 +100,7 @@ export function QuickLeaderboard() {
 
   const rankings = calculateRankings(entries);
   const { totalPot, payouts } = calculatePrizePool(entries);
-  const top13Entries = entries.slice(0, 13);
+  const top10Entries = entries.slice(0, 10);
 
   if (entries.length === 0) {
     return (
@@ -133,7 +133,7 @@ export function QuickLeaderboard() {
       </CardHeader>
       <CardContent className="p-1 md:p-6">
         <div className="space-y-1">
-          {top13Entries.map((entry, index) => (
+          {entries.map((entry, index) => (
             <div key={entry.entry_name} className="space-y-1">
               <div 
                 className={`cursor-pointer hover:bg-muted/50 rounded-sm ${
