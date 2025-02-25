@@ -96,6 +96,26 @@ export function QuickLeaderboard() {
     }
 
     fetchData();
+
+    // Subscribe to relevant changes
+    const channel = supabase
+      .channel('quick_leaderboard_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'entries'
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   const rankings = calculateRankings(entries);

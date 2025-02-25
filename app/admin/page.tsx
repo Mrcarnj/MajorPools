@@ -31,7 +31,28 @@ export default function AdminDashboard() {
         }
       }
     };
+
     checkAuth();
+
+    // Subscribe to tournament changes
+    const channel = supabase
+      .channel('tournament_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments'
+        },
+        () => {
+          checkAuth(); // Refetch tournaments when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, [session, loading, router]);
 
   const handleActivateTournament = async (id: string, currentStatus: boolean) => {

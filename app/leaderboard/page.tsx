@@ -146,6 +146,28 @@ export default function Leaderboard() {
     }
 
     fetchData();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel('leaderboard_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes
+          schema: 'public',
+          table: 'golfer_scores' // and/or other tables you want to monitor
+        },
+        () => {
+          // Refetch data when changes occur
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   if (loading) {

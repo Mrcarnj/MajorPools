@@ -43,6 +43,26 @@ export function TournamentStatus() {
     }
 
     fetchTournament();
+
+    // Subscribe to tournament changes
+    const channel = supabase
+      .channel('tournament_status_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments'
+        },
+        () => {
+          fetchTournament();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   if (loading) {

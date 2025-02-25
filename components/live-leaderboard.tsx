@@ -48,6 +48,7 @@ export function LiveLeaderboard() {
       const { data, error } = await supabase
         .from('golfer_scores')
         .select('position, first_name, last_name, total, current_round_score, thru')
+        .eq('tournament_id', tournament.id)
         .order('position', { ascending: true });
 
       if (error) {
@@ -84,6 +85,37 @@ export function LiveLeaderboard() {
     }
 
     fetchData();
+
+    // Subscribe to both tournament and golfer_scores changes
+    const channel = supabase
+      .channel('live_leaderboard_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'golfer_scores'
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments'  // Also listen for tournament changes (like current_round updates)
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
 
   if (loading) {

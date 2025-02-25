@@ -9,15 +9,16 @@ async function testTournament(tournId: string) {
 
     const tournament = await getTournament(tournId);
     
+    // Skip tournaments without course data
+    if (!tournament.courses?.length) {
+      console.log(`⚠️ Skipping tournament ${tournId} (${tournament.name}): No course data\n`);
+      return;
+    }
 
-    // Extract just the numbers from MongoDB format
     const startMs = Number(tournament.date.start.$date.$numberLong);
     const endMs = Number(tournament.date.end.$date.$numberLong);
-
-    // Now we can create proper dates
     const startDate = new Date(startMs);
     const endDate = new Date(endMs);
-
     const course = tournament.courses[0];
 
 
