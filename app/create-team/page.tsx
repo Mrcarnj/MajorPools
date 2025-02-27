@@ -218,31 +218,56 @@ export default function CreateTeam() {
 
   useEffect(() => {
     async function fetchGolfers() {
+      if (!activeTournament?.id) {
+        console.log('No active tournament ID available');
+        return;
+      }
+
+      console.log('Fetching golfers for tournament ID:', activeTournament.id);
+
+      // Fetch all golfers with the tournament_id, including those with NULL rankings
       const { data, error } = await supabase
         .from('golfer_scores')
         .select('first_name, last_name, ranking, player_id')
-        .not('ranking', 'is', null)
-        .order('ranking', { ascending: true });
+        .eq('tournament_id', activeTournament.id)
+        .order('ranking', { ascending: true, nullsFirst: false }); // Put NULL rankings at the end
 
       if (error) {
         console.error('Error fetching golfers:', error);
         return;
       }
 
+      console.log(`Found ${data.length} golfers for tournament ID ${activeTournament.id}`);
+
+      if (data.length === 0) {
+        console.log('No golfers found for this tournament. Make sure to run the test-leaderboard script first.');
+        toast.error('No golfers found for this tournament. Please contact the administrator.');
+        return;
+      }
+
+      // Separate golfers with rankings and those without
+      const golfersWithRanking = data.filter(golfer => golfer.ranking !== null);
+      const golfersWithoutRanking = data.filter(golfer => golfer.ranking === null);
+
+      console.log(`${golfersWithRanking.length} golfers with ranking, ${golfersWithoutRanking.length} without ranking`);
+
+      // Combine the lists, with ranked golfers first, then unranked
+      const sortedGolfers = [...golfersWithRanking, ...golfersWithoutRanking];
+
       // Organize golfers into tiers
       const tieredGolfers = {
-        tier1: data.slice(0, 6),                    // Top 6
-        tier2: data.slice(6, 21),                   // Next 15
-        tier3: data.slice(21, 41),                  // Next 20
-        tier4: data.slice(41, 61),                  // Next 20
-        tier5: data.slice(61)                       // Remaining
+        tier1: sortedGolfers.slice(0, 8),                    // Top 6
+        tier2: sortedGolfers.slice(8, 23),                   // Next 15
+        tier3: sortedGolfers.slice(23, 53),                  // Next 20
+        tier4: sortedGolfers.slice(53, 83),                  // Next 20
+        tier5: sortedGolfers.slice(83)                       // Remaining
       };
 
       setGolfers(tieredGolfers);
     }
 
     fetchGolfers();
-  }, []);
+  }, [activeTournament?.id]);
 
   useEffect(() => {
     async function checkTournamentStatus() {

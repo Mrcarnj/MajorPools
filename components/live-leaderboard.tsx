@@ -19,6 +19,7 @@ type GolferScore = {
   total: string;
   current_round_score: string;
   thru: string;
+  tee_time?: string;
 };
 
 export function LiveLeaderboard() {
@@ -47,7 +48,7 @@ export function LiveLeaderboard() {
 
       const { data, error } = await supabase
         .from('golfer_scores')
-        .select('position, first_name, last_name, total, current_round_score, thru')
+        .select('position, first_name, last_name, total, current_round_score, thru, tee_time')
         .eq('tournament_id', tournament.id)
         .order('position', { ascending: true });
 
@@ -58,7 +59,39 @@ export function LiveLeaderboard() {
 
       // Sort data by total score, handling string scores with +/- signs
       const sortedData = [...data].sort((a, b) => {
-        // First handle non-numeric positions
+        // First handle position '-' (move to bottom)
+        if (a.position === '-' && b.position !== '-') return 1;
+        if (a.position !== '-' && b.position === '-') return -1;
+        
+        // If both have position '-', sort by tee_time
+        if (a.position === '-' && b.position === '-') {
+          if (a.tee_time && b.tee_time) {
+            // Convert time strings like "11:50am" to comparable values
+            const parseTimeString = (timeStr: string) => {
+              const [timePart, ampm] = timeStr.match(/(\d+:\d+)([ap]m)/i)?.slice(1) || [];
+              if (!timePart || !ampm) return 0;
+              
+              const [hours, minutes] = timePart.split(':').map(Number);
+              let totalMinutes = hours * 60 + minutes;
+              
+              // Adjust for PM times
+              if (ampm.toLowerCase() === 'pm' && hours !== 12) {
+                totalMinutes += 12 * 60;
+              }
+              // Adjust for 12am
+              if (ampm.toLowerCase() === 'am' && hours === 12) {
+                totalMinutes -= 12 * 60;
+              }
+              
+              return totalMinutes;
+            };
+            
+            return parseTimeString(a.tee_time) - parseTimeString(b.tee_time);
+          }
+          return 0;
+        }
+        
+        // Then handle non-numeric positions
         const nonNumericPositions = ['CUT', 'WD', 'DQ'];
         const aIsNonNumeric = nonNumericPositions.includes(a.position);
         const bIsNonNumeric = nonNumericPositions.includes(b.position);
@@ -195,7 +228,9 @@ export function LiveLeaderboard() {
                         {score.current_round_score === '-' ? '' : score.current_round_score}
                       </TableCell>
                       <TableCell className="text-center py-2 px-1 md:pr-4">
-                        {score.thru}
+                        {score.position === '-' && score.tee_time 
+                          ? score.tee_time
+                          : score.thru}
                       </TableCell>
                     </TableRow>
                   );
