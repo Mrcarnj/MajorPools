@@ -18,22 +18,35 @@ export function TrpcProvider({ children }: { children: React.ReactNode }) {
     },
   }));
 
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
+  const [trpcClient] = useState(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return trpc.createClient({
+        links: [
+          httpBatchLink({
+            url: '/api/trpc',
+          }),
+        ],
+      });
+    }
+    
+    return trpc.createClient({
       links: [
         httpBatchLink({
           url: '/api/trpc',
         }),
       ],
-      transformer: superjson,
-    })
-  );
+    });
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+
+  if (process.env.NODE_ENV === 'production') {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
