@@ -64,4 +64,7 @@ export async function POST(request: Request) {
   }
 
   // Rest of your calculate scores logic
+  
+  // Add a return statement at the end to ensure we always return a Response
+  return new Response('Scores calculation initiated', { status: 200 });
 }
