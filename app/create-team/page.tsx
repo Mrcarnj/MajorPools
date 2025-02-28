@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/lib/auth/auth-context';
 import { toast } from 'sonner';
-import { trpc } from '@/lib/trpc/client';
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
@@ -34,7 +33,8 @@ type TieredGolfers = {
 export default function CreateTeam() {
   // All hooks must be at the top level, before any conditional returns
   const { session } = useAuth();
-  const { data: activeTournament, isLoading } = trpc.entries.getActiveTournament.useQuery();
+  const [activeTournament, setActiveTournament] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     entryName: '',
@@ -73,20 +73,6 @@ export default function CreateTeam() {
   const [submittedEmail, setSubmittedEmail] = useState('');
 
   // Define createEntry mutation before any conditional returns
-  const createEntry = trpc.entries.create.useMutation({
-    onSuccess: () => {
-      toast.success('Team created successfully!');
-      setServerEntryNameError('');
-    },
-    onError: (error) => {
-      if (error.message.includes('entry with this name already exists')) {
-        setServerEntryNameError(error.message);
-        entryNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        toast.error(error.message || 'Failed to create team');
-      }
-    },
-  });
 
   // Define all your callbacks before any conditional returns
   const handleGolferSelection = useCallback((tierId: string, golferId: string) => {
@@ -126,6 +112,13 @@ export default function CreateTeam() {
     setSubmitting(true);
 
     try {
+      // Check if we have an active tournament
+      if (!activeTournament?.id) {
+        setError('No active tournament found');
+        setSubmitting(false);
+        return;
+      }
+
       setSubmittedEmail(formData.email);
       // First check if email exists in email_list
       const { data: emailExists } = await supabase
@@ -261,6 +254,7 @@ export default function CreateTeam() {
     async function fetchGolfers() {
       if (!activeTournament?.id) {
         console.log('No active tournament ID available');
+        setLoading(false);
         return;
       }
 
@@ -308,7 +302,7 @@ export default function CreateTeam() {
     }
 
     fetchGolfers();
-  }, [activeTournament?.id]);
+  }, [activeTournament]);
 
   useEffect(() => {
     async function checkTournamentStatus() {
@@ -396,6 +390,28 @@ export default function CreateTeam() {
   const doPasswordsMatch = () => {
     return signupPassword && confirmPassword && signupPassword === confirmPassword;
   };
+
+  // Add useEffect to fetch active tournament
+  useEffect(() => {
+    async function fetchActiveTournament() {
+      try {
+        const { data, error } = await supabase
+          .from('tournaments')
+          .select('*')
+          .eq('is_active', true)
+          .single();
+        
+        if (error) throw error;
+        setActiveTournament(data);
+      } catch (error) {
+        console.error('Error fetching active tournament:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchActiveTournament();
+  }, []);
 
   if (loading) return null;
 
