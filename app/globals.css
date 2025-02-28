@@ -16,6 +16,18 @@
   }
 }
 
+@keyframes highlightBorder {
+  0% { border: 4px solid rgba(251, 191, 36, 1); }
+  50% { border: 4px solid rgba(251, 191, 36, 0.5); }
+  100% { border: 4px solid rgba(251, 191, 36, 1); }
+}
+
+.moving-border {
+  animation: highlightBorder 1s infinite alternate;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;
