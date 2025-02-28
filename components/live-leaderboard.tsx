@@ -359,7 +359,9 @@ export function LiveLeaderboard() {
                         <TableCell className="text-center py-2 px-1 md:pr-4">
                           {score.position === '-' && score.tee_time
                             ? score.tee_time
-                            : score.thru}
+                            : (tournamentData?.current_round && score.current_round_score === null && score.tee_time)
+                              ? score.tee_time
+                              : score.thru}
                         </TableCell>
                       </motion.tr>
                     );

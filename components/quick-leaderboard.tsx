@@ -327,6 +327,19 @@ export function QuickLeaderboard() {
       setHighlightedEntries({});
       setMovingEntries({});
       setAnimationComplete(true);
+      
+      // Create a new map with current rankings to use for future comparisons
+      const currentRankMap: Record<string, number> = {};
+      entries.forEach((entry, index) => {
+        const rankValue = newRankings[index] ?? index + 1;
+        currentRankMap[entry.entry_name] = typeof rankValue === 'string' ? Number(rankValue) : rankValue;
+      });
+      debug('Updating prevRankings with current rankings for next comparison:', currentRankMap);
+      setPrevRankings(currentRankMap);
+      
+      // Also update prevEntries to match current entries
+      debug('Updating prevEntries with current entries for next comparison');
+      setPrevEntries([...entries]);
     }, 3000);
     
     return () => {
@@ -397,7 +410,7 @@ export function QuickLeaderboard() {
               return (
                 <motion.div
                   key={entry.entry_name}
-                  layout
+                  layout="position"
                   initial={{ opacity: 1 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -468,18 +481,18 @@ export function QuickLeaderboard() {
                           <motion.span 
                             className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-8 md:w-12 text-center md:text-right`}
                             animate={isMovingUp ? {
-                              color: ['', '#10b981', '#10b981', ''],
+                              color: ['', '#10b981', '#10b981', 'currentColor'],
                               fontWeight: [400, 800, 800, 400],
                               scale: [1, 1.3, 1.3, 1],
                               textShadow: ['0 0 0px transparent', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 0px transparent']
                             } : isMovingDown ? {
-                              color: ['', '#ef4444', '#ef4444', ''],
+                              color: ['', '#ef4444', '#ef4444', 'currentColor'],
                               fontWeight: [400, 800, 800, 400],
                               scale: [1, 1.3, 1.3, 1],
                               textShadow: ['0 0 0px transparent', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 0px transparent']
-                            } : {}}
+                            }: {}}
                             transition={{
-                              duration: 4,
+                              duration: 3,
                               times: [0, 0.1, 0.9, 1]
                             }}
                           >
@@ -513,22 +526,34 @@ export function QuickLeaderboard() {
                     );
                   })()}
                   
-                  {expandedEntries.has(entry.entry_name) && (
-                    <div className="pl-8 md:pl-12 pr-2 md:pr-4 py-1 md:py-2">
-                      <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
-                        {entry.topFiveGolfers.map(golfer => (
-                          <div key={golfer.player_id} className="flex items-center gap-1">
-                            <span>{golfer.first_name} {golfer.last_name}</span>
-                            <span className={`${archivo.className} ${
-                              golfer.total.startsWith('-') ? 'text-red-600' : ''
-                            }`}>
-                              ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Expanded content in a separate div outside of layout animation */}
+                  <AnimatePresence mode="wait" initial={false}>
+                    {expandedEntries.has(entry.entry_name) && (
+                      <motion.div 
+                        className="pl-8 md:pl-12 pr-2 md:pr-4 py-1 md:py-2"
+                        initial={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 1, height: "auto" }}
+                        style={{ 
+                          position: 'relative', 
+                          zIndex: 1,
+                          visibility: expandedEntries.has(entry.entry_name) ? 'visible' : 'hidden'
+                        }}
+                      >
+                        <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
+                          {entry.topFiveGolfers.map(golfer => (
+                            <div key={golfer.player_id} className="flex items-center gap-1">
+                              <span>{golfer.first_name} {golfer.last_name}</span>
+                              <span className={`${archivo.className} ${
+                                golfer.total.startsWith('-') ? 'text-red-600' : ''
+                              }`}>
+                                ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               );
             })}
