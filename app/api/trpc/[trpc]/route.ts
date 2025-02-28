@@ -9,7 +9,6 @@ const handler = (req: Request) =>
     req,
     router: appRouter,
     createContext: () => createTRPCContext({ headers: req.headers }),
-    transformer: superjson,
   });
 
 export { handler as GET, handler as POST }; 
