@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, Fragment, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Table,
@@ -17,6 +17,7 @@ import { MdLeaderboard } from "react-icons/md";
 import { TbGolf } from "react-icons/tb";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Tournament = {
   current_round: number;
@@ -56,6 +57,12 @@ export default function Leaderboard() {
   const [hasActiveTournament, setHasActiveTournament] = useState(false);
   const [tournament, setTournament] = useState<{ current_round?: number } | null>(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [prevEntries, setPrevEntries] = useState<Entry[]>([]);
+  const [highlightedEntries, setHighlightedEntries] = useState<Record<string, boolean>>({});
+  const [movingEntries, setMovingEntries] = useState<Record<string, 'up' | 'down' | null>>({});
+  const [animationComplete, setAnimationComplete] = useState(true);
+  const [prevRankings, setPrevRankings] = useState<Record<string, number>>({});
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -141,8 +148,22 @@ export default function Leaderboard() {
         };
       }) || [];
 
-      setEntries(entriesWithGolfers);
-      setLoading(false);
+      // Save previous entries for comparison BEFORE updating state
+      if (entries.length > 0) {
+        setPrevEntries([...entries]);
+      } else if (initialLoadRef.current) {
+        // This is the first load - just store the data without animations
+        initialLoadRef.current = false;
+        setEntries(entriesWithGolfers);
+        setLoading(false);
+        return;
+      }
+
+      // Use a short timeout to ensure prevEntries is set before entries state updates
+      setTimeout(() => {
+        setEntries(entriesWithGolfers);
+        setLoading(false);
+      }, 10);
     }
 
     fetchData();
@@ -162,6 +183,18 @@ export default function Leaderboard() {
           fetchData();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes
+          schema: 'public',
+          table: 'entries' // Add subscription to entries table
+        },
+        () => {
+          // Refetch data when entries change
+          fetchData();
+        }
+      )
       .subscribe();
 
     // Cleanup subscription
@@ -169,6 +202,85 @@ export default function Leaderboard() {
       channel.unsubscribe();
     };
   }, []);
+
+  // When entries change, detect position changes and highlight entries
+  useEffect(() => {
+    if (entries.length === 0) {
+      return;
+    }
+    
+    if (prevEntries.length === 0) {
+      setPrevEntries([...entries]);
+      return;
+    }
+
+    setAnimationComplete(false);
+    
+    const newRankings = calculateRankings(entries);
+    const oldRankings = calculateRankings(prevEntries);
+    
+    // Create a map of entry names to their previous rankings
+    const prevRankMap: Record<string, number> = {};
+    prevEntries.forEach((entry, index) => {
+      const rankValue = oldRankings[index] ?? index + 1;
+      prevRankMap[entry.entry_name] = typeof rankValue === 'string' ? Number(rankValue.replace('T', '')) : rankValue;
+    });
+    
+    // Track which entries moved up or down
+    const newMovingEntries: Record<string, 'up' | 'down' | null> = {};
+    const newHighlightedEntries: Record<string, boolean> = {};
+    
+    entries.forEach((entry, index) => {
+      const rankValue = newRankings[index] ?? index + 1;
+      const currentRank = typeof rankValue === 'string' ? Number(rankValue.replace('T', '')) : rankValue;
+      const previousRank = prevRankMap[entry.entry_name];
+      
+      if (previousRank !== undefined) {
+        if (currentRank < previousRank) {
+          // Entry moved up
+          newMovingEntries[entry.entry_name] = 'up';
+          newHighlightedEntries[entry.entry_name] = true;
+        } else if (currentRank > previousRank) {
+          // Entry moved down
+          newMovingEntries[entry.entry_name] = 'down';
+          newHighlightedEntries[entry.entry_name] = true;
+        } else {
+          const prevEntryScore = prevEntries.find(e => e.entry_name === entry.entry_name)?.calculated_score;
+          
+          if (entry.calculated_score !== prevEntryScore) {
+            // Score changed but ranking didn't
+            newHighlightedEntries[entry.entry_name] = true;
+          }
+        }
+      }
+    });
+    
+    setPrevRankings(prevRankMap);
+    setMovingEntries(newMovingEntries);
+    setHighlightedEntries(newHighlightedEntries);
+    
+    // Clear animations after 3 seconds
+    const animationTimer = setTimeout(() => {
+      setHighlightedEntries({});
+      setMovingEntries({});
+      setAnimationComplete(true);
+      
+      // Create a new map with current rankings to use for future comparisons
+      const currentRankMap: Record<string, number> = {};
+      entries.forEach((entry, index) => {
+        const rankValue = newRankings[index] ?? index + 1;
+        currentRankMap[entry.entry_name] = typeof rankValue === 'string' ? Number(rankValue.replace('T', '')) : rankValue;
+      });
+      setPrevRankings(currentRankMap);
+      
+      // Also update prevEntries to match current entries
+      setPrevEntries([...entries]);
+    }, 3000);
+    
+    return () => {
+      clearTimeout(animationTimer);
+    };
+  }, [entries]);
 
   if (loading) {
     return <div>Loading entries...</div>;
@@ -229,85 +341,163 @@ export default function Leaderboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-0">
-              {filteredEntries.map((entry, index) => (
-                <div key={entry.entry_name} className="space-y-2">
-                  <div 
-                    className={`grid
-                      grid-cols-[2rem_auto_4rem] md:grid-cols-[2rem_minmax(200px,auto)_auto_4rem] 
-                      gap-6 items-center cursor-pointer hover:bg-muted/50 px-4 ${
-                      index % 2 === 0 ? '' : 'dark:bg-zinc-800/90 bg-zinc-800/10'
-                    }`}
-                    onClick={() => toggleExpand(entry.entry_name)}
-                  >
-                    <div className={`${archivo.className} text-lg md:text-2xl text-foreground dark:text-muted-foreground text-left`}>
-                      {rankingMap.get(entry.entry_name) || '\u00A0'}
-                    </div>
-                    <h3 className="font-semibold text-sm md:text-lg">
-                      {entry.entry_name} 
-                    </h3>
-                    <div className="hidden md:flex gap-1 items-center justify-end text-md text-muted-foreground">
-                      {entry.golfers
-                        .slice(0, 5)
-                        .sort((a, b) => parseInt(a.total.replace('+', '')) - parseInt(b.total.replace('+', '')))
-                        .map(golfer => (
-                          <span key={golfer.player_id} className={golfer.total.startsWith('-') ? 'text-red-600' : ''}>
-                            {golfer.total}
-                          </span>
-                        ))}
-                    </div>
-                    <span className={`${archivo.className} text-lg md:text-2xl text-muted-foreground text-right ${
-                      typeof entry.display_score === 'number' && entry.display_score < 0 
-                        ? '!text-red-600' 
-                        : ''
-                    }`}>
-                      {entry.display_score}
-                    </span>
-                  </div>
+              <AnimatePresence initial={false}>
+                {filteredEntries.map((entry, index) => {
+                  const isMoving = !!movingEntries[entry.entry_name];
+                  const isMovingUp = movingEntries[entry.entry_name] === 'up';
+                  const isMovingDown = movingEntries[entry.entry_name] === 'down';
+                  const isHighlighted = highlightedEntries[entry.entry_name];
                   
-                  {expandedEntries.has(entry.entry_name) && (
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="min-w-[8rem] md:min-w-[10rem]">Golfer</TableHead>
-                            <TableHead className="text-left w-[3rem] md:min-w-[2rem] px-1 md:px-5">Total</TableHead>
-                            <TableHead className="w-[2rem] md:min-w-[2rem] px-1 md:px-5 whitespace-nowrap">R{tournament?.current_round}</TableHead>
-                            <TableHead className="w-[2rem] md:min-w-[2rem] px-1 md:px-5">Thru</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {entry.golfers.map((golfer, absoluteIndex) => (
-                            <TableRow key={golfer.player_id}>
-                              <TableCell className={`px-1 md:px-2 ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                {golfer.first_name} {golfer.last_name}
-                              </TableCell>
-                              <TableCell 
-                                className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[20px] font-bold ${
-                                  absoluteIndex > 4 
-                                    ? 'bg-muted ' + (golfer.total.startsWith('-') ? '!text-red-600' : 'text-muted-foreground')
-                                    : golfer.total.startsWith('-') 
-                                      ? '!text-red-600' 
-                                      : ''
-                                }`}
-                              >
+                  // Only apply alternating colors when animation is complete
+                  const rowBgClass = animationComplete
+                    ? index % 2 === 1 ? 'dark:bg-zinc-800/90 bg-zinc-800/10' : ''
+                    : '';
+                  
+                  // Determine background and border colors for moving rows
+                  let bgColor = undefined;
+                  let borderColor = 'transparent';
+                  let borderWidth = isMoving || isHighlighted ? '2px' : '0px';
+                  let borderStyle = isMoving || isHighlighted ? 'solid' : 'none';
+                  
+                  if (isMoving) {
+                    borderColor = '#fbbf24'; // Amber/gold color
+                    bgColor = isMovingUp
+                      ? 'rgba(16, 185, 129, 0.3)' // More visible green
+                      : isMovingDown
+                        ? 'rgba(239, 68, 68, 0.3)' // More visible red
+                        : 'rgba(251, 191, 36, 0.3)'; // Amber for position change without direction
+                  } else if (isHighlighted) {
+                    borderColor = '#fbbf24'; // Amber/gold color
+                    bgColor = 'rgba(251, 191, 36, 0.1)'; // Very light amber for updates
+                  }
+                  
+                  return (
+                    <motion.div 
+                      key={entry.entry_name}
+                      layout="position"
+                      initial={{ opacity: 1 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 30,
+                        damping: 12,
+                        duration: 1.5
+                      }}
+                      className="space-y-2"
+                    >
+                      <div 
+                        style={{ 
+                          backgroundColor: bgColor,
+                          borderColor,
+                          borderWidth,
+                          borderStyle,
+                        }}
+                        className={`grid
+                          grid-cols-[2rem_auto_4rem] md:grid-cols-[2rem_minmax(200px,auto)_auto_4rem] 
+                          gap-6 items-center cursor-pointer hover:bg-muted/50 px-4 rounded-sm ${rowBgClass} ${(isHighlighted || isMoving) ? 'moving-border' : ''}`}
+                        onClick={() => toggleExpand(entry.entry_name)}
+                      >
+                        <motion.div 
+                          className={`${archivo.className} text-lg md:text-2xl text-foreground dark:text-muted-foreground text-left`}
+                          animate={isMovingUp ? {
+                            color: ['', '#10b981', '#10b981', 'currentColor'],
+                            fontWeight: [400, 800, 800, 400],
+                            scale: [1, 1.3, 1.3, 1],
+                            textShadow: ['0 0 0px transparent', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 0px transparent']
+                          } : isMovingDown ? {
+                            color: ['', '#ef4444', '#ef4444', 'currentColor'],
+                            fontWeight: [400, 800, 800, 400],
+                            scale: [1, 1.3, 1.3, 1],
+                            textShadow: ['0 0 0px transparent', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 0px transparent']
+                          }: {}}
+                          transition={{
+                            duration: 3,
+                            times: [0, 0.1, 0.9, 1]
+                          }}
+                        >
+                          {rankingMap.get(entry.entry_name) || '\u00A0'}
+                        </motion.div>
+                        <h3 className="font-semibold text-sm md:text-lg">
+                          {entry.entry_name} 
+                        </h3>
+                        <div className="hidden md:flex gap-1 items-center justify-end text-md text-muted-foreground">
+                          {entry.golfers
+                            .slice(0, 5)
+                            .sort((a, b) => parseInt(a.total.replace('+', '')) - parseInt(b.total.replace('+', '')))
+                            .map(golfer => (
+                              <span key={golfer.player_id} className={golfer.total.startsWith('-') ? 'text-red-600' : ''}>
                                 {golfer.total}
-                              </TableCell>
-                              <TableCell className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[20px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                {golfer.current_round_score === '-' ? '' : `${golfer.current_round_score}`}
-                              </TableCell>
-                              <TableCell className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[40px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
-                                {golfer.thru === '-' && !['CUT', 'WD', 'DQ'].includes(golfer.position) 
-                                  ? golfer.tee_time 
-                                  : golfer.thru}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
-              ))}
+                              </span>
+                            ))}
+                        </div>
+                        <motion.span 
+                          className={`${archivo.className} text-lg md:text-2xl text-muted-foreground text-right ${
+                            typeof entry.display_score === 'number' && entry.display_score < 0 
+                              ? '!text-red-600' 
+                              : ''
+                          }`}
+                          animate={isHighlighted && !isMovingUp && !isMovingDown ? {
+                            scale: [1, 1.15, 1],
+                            fontWeight: [400, 800, 400],
+                          } : {}}
+                          transition={{
+                            duration: 3, 
+                            times: [0, 0.5, 1]
+                          }}
+                        >
+                          {entry.display_score}
+                        </motion.span>
+                      </div>
+                      
+                      <AnimatePresence mode="wait" initial={false}>
+                        {expandedEntries.has(entry.entry_name) && (
+                          <div className="rounded-md border overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="min-w-[8rem] md:min-w-[10rem]">Golfer</TableHead>
+                                  <TableHead className="text-left w-[3rem] md:min-w-[2rem] px-1 md:px-5">Total</TableHead>
+                                  <TableHead className="w-[2rem] md:min-w-[2rem] px-1 md:px-5 whitespace-nowrap">R{tournament?.current_round}</TableHead>
+                                  <TableHead className="w-[2rem] md:min-w-[2rem] px-1 md:px-5">Thru</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {entry.golfers.map((golfer, absoluteIndex) => (
+                                  <TableRow key={golfer.player_id}>
+                                    <TableCell className={`px-1 md:px-2 ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                      {golfer.first_name} {golfer.last_name}
+                                    </TableCell>
+                                    <TableCell 
+                                      className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[20px] font-bold ${
+                                        absoluteIndex > 4 
+                                          ? 'bg-muted ' + (golfer.total.startsWith('-') ? '!text-red-600' : 'text-muted-foreground')
+                                          : golfer.total.startsWith('-') 
+                                            ? '!text-red-600' 
+                                            : ''
+                                      }`}
+                                    >
+                                      {golfer.total}
+                                    </TableCell>
+                                    <TableCell className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[20px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                      {golfer.current_round_score === '-' ? '' : `${golfer.current_round_score}`}
+                                    </TableCell>
+                                    <TableCell className={`text-center py-1 md:py-2 px-1 md:px-2 w-[2rem] md:w-[40px] ${absoluteIndex > 4 ? 'text-muted-foreground bg-muted' : ''}`}>
+                                      {golfer.thru === '-' && !['CUT', 'WD', 'DQ'].includes(golfer.position) 
+                                        ? golfer.tee_time 
+                                        : golfer.thru}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           </CardContent>
         </Card>

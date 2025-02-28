@@ -141,7 +141,48 @@ export default function CreateTeam() {
           .insert({ email: formData.email });
       }
 
-      // Continue with existing entry submission logic
+      // Check if an entry with the same name already exists for this tournament
+      const normalizedEntryName = formData.entryName.toLowerCase().replace(/\s+/g, ' ').trim();
+      const { data: existingEntry } = await supabase
+        .from('entries')
+        .select('id, email')
+        .eq('tournament_id', activeTournament.id)
+        .ilike('entry_name', normalizedEntryName)
+        .maybeSingle();
+
+      // If entry exists but with a different email, reject it
+      if (existingEntry && existingEntry.email !== formData.email) {
+        setError('An entry with this name already exists for this tournament by another user');
+        setEntryNameError('An entry with this name already exists for this tournament by another user');
+        entryNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setSubmitting(false);
+        return;
+      }
+
+      // If entry exists with the same email, update it
+      if (existingEntry && existingEntry.email === formData.email) {
+        const { error: updateError } = await supabase
+          .from('entries')
+          .update({
+            email: formData.email,
+            tier1_golfer1: formData.selections.tier1[0],
+            tier1_golfer2: formData.selections.tier1[1],
+            tier2_golfer1: formData.selections.tier2[0],
+            tier2_golfer2: formData.selections.tier2[1],
+            tier3_golfer1: formData.selections.tier3[0],
+            tier3_golfer2: formData.selections.tier3[1],
+            tier4_golfer1: formData.selections.tier4[0],
+            tier5_golfer1: formData.selections.tier5[0]
+          })
+          .eq('id', existingEntry.id);
+
+        if (updateError) throw updateError;
+        
+        setShowPaymentModal(true);
+        return;
+      }
+
+      // If no existing entry, create a new one
       const { data: entry, error } = await supabase
         .from('entries')
         .insert([
@@ -601,6 +642,12 @@ export default function CreateTeam() {
             </div>
           </CardContent>
         </Card>
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-4">
+            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          </div>
+        )}
 
         <Button 
           type="submit" 
