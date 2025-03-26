@@ -7,12 +7,15 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res });
 
   // Refresh session if it exists
-  await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
   if (req.nextUrl.pathname.startsWith('/admin')) {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
+    // Check if user has admin role
+    if (session.user.user_metadata?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }

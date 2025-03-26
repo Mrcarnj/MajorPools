@@ -38,14 +38,49 @@ export function LiveLeaderboard() {
   const tableRef = useRef<HTMLDivElement>(null);
   const [highlightedRows, setHighlightedRows] = useState<Record<string, boolean>>({});
   const [prevPositions, setPrevPositions] = useState<Record<string, string>>({}); // Track previous positions
+  // Create a ref to store the previous scores between renders
+  const prevScoresRef = useRef<Record<string, string>>({});
+  // Force a re-render to clear animations
+  const forceUpdate = useState({})[1];
 
   // Function to generate a unique ID for each golfer
   const generateGolferId = (firstName: string, lastName: string) => {
     return `${lastName}-${firstName}`;
   };
 
+  // Helper function to compare positions
+  const comparePositions = (posA: string, posB: string): number | null => {
+    // Handle non-numeric positions
+    const nonNumericPositions = ['CUT', 'WD', 'DQ', '-'];
+    if (nonNumericPositions.includes(posA) || nonNumericPositions.includes(posB)) {
+      return null; // Can't compare these positions
+    }
+
+    // Extract numeric part from positions like "T1", "2", etc.
+    const numA = parseInt(posA.replace(/^T/, ''));
+    const numB = parseInt(posB.replace(/^T/, ''));
+    
+    if (isNaN(numA) || isNaN(numB)) {
+      return null;
+    }
+    
+    // For golf positions, LOWER numbers are BETTER
+    // So if going from 5 -> 3, that's moving UP (improving)
+    // If going from 3 -> 5, that's moving DOWN (getting worse)
+    // If going from T3 -> T7, that's moving DOWN (getting worse)
+    
+    // Using oldPosition - newPosition:
+    // Return positive if moving UP (improving position)
+    // Return negative if moving DOWN (worsening position)
+    
+    // If numA > numB (e.g., 5 > 3), result is positive (5-3=2), meaning moving UP (better)
+    // If numA < numB (e.g., 3 < 7), result is negative (3-7=-4), meaning moving DOWN (worse)
+    return numA - numB;
+  };
 
   useEffect(() => {
+    // Create a ref to store the previous scores between renders
+    
     async function fetchData() {
       // First check if there's an active tournament
       const { data: tournament } = await supabase
@@ -72,73 +107,123 @@ export function LiveLeaderboard() {
         return;
       }
 
-      // Sort data by total score, handling string scores with +/- signs
-      const sortedData = [...data].sort((a, b) => {
-        // First handle position '-' (move to bottom)
-        if (a.position === '-' && b.position !== '-') return 1;
-        if (a.position !== '-' && b.position === '-') return -1;
-
-        // If both have position '-', sort by tee_time
-        if (a.position === '-' && b.position === '-') {
-          if (a.tee_time && b.tee_time) {
-            // Convert time strings like "11:50am" to comparable values
-            const parseTimeString = (timeStr: string) => {
-              const [timePart, ampm] = timeStr.match(/(\d+:\d+)([ap]m)/i)?.slice(1) || [];
-              if (!timePart || !ampm) return 0;
-
-              const [hours, minutes] = timePart.split(':').map(Number);
-              let totalMinutes = hours * 60 + minutes;
-
-              // Adjust for PM times
-              if (ampm.toLowerCase() === 'pm' && hours !== 12) {
-                totalMinutes += 12 * 60;
-              }
-              // Adjust for 12am
-              if (ampm.toLowerCase() === 'am' && hours === 12) {
-                totalMinutes -= 12 * 60;
-              }
-
-              return totalMinutes;
-            };
-
-            return parseTimeString(a.tee_time) - parseTimeString(b.tee_time);
-          }
-          return 0;
-        }
-
-        // Then handle non-numeric positions
-        const nonNumericPositions = ['CUT', 'WD', 'DQ'];
-        const aIsNonNumeric = nonNumericPositions.includes(a.position);
-        const bIsNonNumeric = nonNumericPositions.includes(b.position);
-
-        // If both are non-numeric, sort by their totals
-        if (aIsNonNumeric && bIsNonNumeric) {
-          const scoreA = parseInt(a.total.replace('+', '')) || 0;
-          const scoreB = parseInt(b.total.replace('+', '')) || 0;
-          return scoreA - scoreB;
-        }
-
-        // Put non-numeric positions at the bottom
-        if (aIsNonNumeric) return 1;
-        if (bIsNonNumeric) return -1;
-
-        // For numeric positions, sort by total score
-        const scoreA = parseInt(a.total.replace('+', '')) || 0;
-        const scoreB = parseInt(b.total.replace('+', '')) || 0;
-        return scoreA - scoreB;
-      });
-
       // Add unique IDs to each golfer
-      const dataWithIds = sortedData.map(golfer => ({
+      const dataWithIds = data.map(golfer => ({
         ...golfer,
         id: generateGolferId(golfer.first_name, golfer.last_name)
       }));
 
-      // Save previous scores for comparison AFTER sorting but BEFORE updating state
-      // Only save if we have existing scores to compare against
-      if (scores.length > 0) {
-        setPrevScores([...scores]);
-      }
+      // Sort the data by position
+      // This ensures proper ordering and handling of tied positions
+      dataWithIds.sort((a, b) => {
+        // Handle special positions like 'CUT', 'WD', etc.
+        const specialPositions = ['CUT', 'WD', 'DQ'];
+        if (specialPositions.includes(a.position) && !specialPositions.includes(b.position)) {
+          return 1; // a comes after b
+        }
+        if (!specialPositions.includes(a.position) && specialPositions.includes(b.position)) {
+          return -1; // a comes before b
+        }
+        if (specialPositions.includes(a.position) && specialPositions.includes(b.position)) {
+          return a.position.localeCompare(b.position); // alphabetical order for special positions
+        }
+
+        // For normal positions, sort by numeric value (removing 'T' prefix if present)
+        const posA = parseInt(a.position.replace(/^T/, ''));
+        const posB = parseInt(b.position.replace(/^T/, ''));
+        
+        if (posA === posB) {
+          // If positions are tied, sort alphabetically by last name
+          return a.last_name.localeCompare(b.last_name);
+        }
+        
+        return posA - posB;
+      });
+
+      // Debug: Log the raw data we received
+      console.log('Raw data from database:', dataWithIds.map(g => ({
+        name: `${g.first_name} ${g.last_name}`,
+        position: g.position,
+        total: g.total
+      })));
+      
+      // Create a map of current positions for comparison
+      const newPositions: Record<string, string> = {};
+      const newMovingRows: Record<string, 'up' | 'down' | null> = {};
+      const newUpdatedRows: Record<string, boolean> = {};
+      const newHighlightedRows: Record<string, boolean> = {};
+      
+      // Debug: Log the previous positions we have stored
+      console.log('Previous positions stored:', prevScoresRef.current);
+      
+      dataWithIds.forEach(golfer => {
+        const golferId = golfer.id || generateGolferId(golfer.first_name, golfer.last_name);
+        const prevPosition = prevScoresRef.current[golferId];
+        
+        // Store the new position for next comparison
+        newPositions[golferId] = golfer.position;
+        
+        // Debug: Log position for each golfer
+        console.log(`${golfer.first_name} ${golfer.last_name}: Previous=${prevPosition || 'none'}, New=${golfer.position}`);
+        
+        if (prevPosition && prevPosition !== golfer.position) {
+          newHighlightedRows[golferId] = true;
+          newUpdatedRows[golferId] = true;
+          
+          // Determine if moved up or down
+          const positionComparison = comparePositions(prevPosition, golfer.position);
+          console.log(`Position comparison for ${golfer.first_name} ${golfer.last_name}: ${positionComparison} (${prevPosition} -> ${golfer.position})`);
+          
+          if (positionComparison !== null) {
+            if (positionComparison > 0) {
+              // Positive value means moved UP (improved position)
+              // e.g., going from 5 -> 3: comparePositions(5, 3) = 5-3 = 2 (positive)
+              newMovingRows[golferId] = 'up';
+              console.log(`🟢 ${golfer.first_name} ${golfer.last_name} moved UP from ${prevPosition} to ${golfer.position}`);
+            } else if (positionComparison < 0) {
+              // Negative value means moved DOWN (worsened position)
+              // e.g., going from 3 -> 7: comparePositions(3, 7) = 3-7 = -4 (negative)
+              newMovingRows[golferId] = 'down';
+              console.log(`🔴 ${golfer.first_name} ${golfer.last_name} moved DOWN from ${prevPosition} to ${golfer.position}`);
+            }
+          }
+        }
+      });
+      
+      // Debug: Log the final state updates
+      console.log('New moving rows:', newMovingRows);
+      console.log('New highlighted rows:', newHighlightedRows);
+      
+      // Update state with new information
+      setHighlightedRows(newHighlightedRows);
+      setMovingRows(newMovingRows);
+      setUpdatedRows(newUpdatedRows);
+      
+      // Update our ref with the new positions for next comparison
+      prevScoresRef.current = newPositions;
+      
+      // Reset animations after a delay
+      setTimeout(() => {
+        // Reset animations for all golfers with position changes
+        Object.keys(newMovingRows).forEach(golferId => {
+          const golfer = dataWithIds.find(g => g.id === golferId || generateGolferId(g.first_name, g.last_name) === golferId);
+          if (golfer) {
+            console.log(`🔄 Resetting animations for ${golfer.first_name} ${golfer.last_name}`);
+          }
+        });
+        
+        // Make sure we're actually clearing the state
+        console.log('🧹 Clearing all animation states');
+        setHighlightedRows({});
+        setMovingRows({});
+        setUpdatedRows({});
+        
+        // Force a re-render to ensure animations are cleared
+        forceUpdate({});
+        
+        // Set animation complete flag
+        setAnimationComplete(true);
+      }, 5000); // 5 seconds to allow animations to complete
 
       // Update scores state with the new data
       setScores(dataWithIds);
@@ -158,7 +243,112 @@ export function LiveLeaderboard() {
           table: 'golfer_scores'
         },
         (payload) => {
-          console.log('Golfer scores changed:', payload);
+          // Enhanced log - show the golfer's name and position if available
+          if (payload.new && typeof payload.new === 'object') {
+            const golfer = payload.new as any;
+            console.log('🔍 GOLFER UPDATE RECEIVED:', {
+              id: golfer.id,
+              first_name: golfer.first_name,
+              last_name: golfer.last_name,
+              position: golfer.position,
+              old_position: payload.old ? (payload.old as any).position : undefined,
+              total: golfer.total,
+              old_total: payload.old ? (payload.old as any).total : undefined,
+              full_payload: payload
+            });
+            
+            // Debug: Show the current state of our position tracking
+            console.log('🧠 Current position tracking state:', {
+              prevScoresRef: prevScoresRef.current,
+              golferId: golfer.id ? golfer.id : generateGolferId(golfer.first_name, golfer.last_name)
+            });
+            
+            // If we have both old and new position, we can detect position changes directly
+            if (payload.old && typeof payload.old === 'object' && 
+                'position' in golfer && 'position' in (payload.old as any)) {
+              
+              const oldPosition = (payload.old as any).position;
+              const newPosition = golfer.position;
+              
+              console.log(`🔄 Position comparison: "${oldPosition}" vs "${newPosition}"`);
+              
+              if (oldPosition !== newPosition) {
+                console.log(`⚠️ POSITION CHANGE DETECTED: ${oldPosition} -> ${newPosition}`);
+                
+                // Determine if moved up or down
+                const positionComparison = comparePositions(oldPosition, newPosition);
+                console.log(`Position comparison result: ${positionComparison}`);
+                
+                if (positionComparison !== null) {
+                  const golferId = golfer.id ? golfer.id : generateGolferId(golfer.first_name, golfer.last_name);
+                  
+                  if (positionComparison > 0) {
+                    console.log(`🟢 ${golfer.first_name} ${golfer.last_name} moved UP from ${oldPosition} to ${newPosition}`);
+                    // Directly update the moving rows state
+                    setMovingRows(prev => ({ ...prev, [golferId]: 'up' }));
+                    setHighlightedRows(prev => ({ ...prev, [golferId]: true }));
+                    setUpdatedRows(prev => ({ ...prev, [golferId]: true }));
+                  } else if (positionComparison < 0) {
+                    console.log(`🔴 ${golfer.first_name} ${golfer.last_name} moved DOWN from ${oldPosition} to ${newPosition}`);
+                    // Directly update the moving rows state
+                    setMovingRows(prev => ({ ...prev, [golferId]: 'down' }));
+                    setHighlightedRows(prev => ({ ...prev, [golferId]: true }));
+                    setUpdatedRows(prev => ({ ...prev, [golferId]: true }));
+                  }
+                  
+                  // Reset animations after a delay
+                  setTimeout(() => {
+                    console.log(`🔄 Resetting animations for ${golfer.first_name} ${golfer.last_name}`);
+                    
+                    // Create new objects instead of modifying existing ones
+                    setHighlightedRows(prev => {
+                      const newState = {...prev};
+                      delete newState[golferId];
+                      return newState;
+                    });
+                    
+                    setMovingRows(prev => {
+                      const newState = {...prev};
+                      delete newState[golferId];
+                      return newState;
+                    });
+                    
+                    setUpdatedRows(prev => {
+                      const newState = {...prev};
+                      delete newState[golferId];
+                      return newState;
+                    });
+                    
+                    console.log('Animation states reset for', golferId);
+                    
+                    // Force a re-render to ensure animations are cleared
+                    forceUpdate({});
+                    
+                    // Set animation complete flag
+                    setAnimationComplete(true);
+
+                    // Force the background color to be explicitly set to transparent using DOM manipulation
+                    // This is a fallback to ensure the background color is reset even if React state updates don't trigger a re-render
+                    setTimeout(() => {
+                      const rowElement = document.querySelector(`tr[data-golfer-id="${golferId}"]`) as HTMLElement | null;
+                      if (rowElement) {
+                        rowElement.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+                        console.log(`Explicitly reset background color for ${golfer.first_name} ${golfer.last_name}`);
+                      }
+                    }, 100); // Small delay to ensure DOM is updated
+                  }, 5000); // 5 seconds to allow animations to complete
+                }
+              } else {
+                console.log(`⚪ NO POSITION CHANGE: Position remained at ${newPosition}`);
+              }
+            } else {
+              console.log('⚠️ Cannot compare positions - missing old or new position data');
+            }
+          } else {
+            console.log('⚠️ Received payload without valid golfer data:', payload);
+          }
+          
+          // Always fetch new data
           fetchData();
         }
       )
@@ -170,7 +360,8 @@ export function LiveLeaderboard() {
           table: 'tournaments'  // Also listen for tournament changes (like current_round updates)
         },
         (payload) => {
-          console.log('Tournament data changed:', payload);
+          // Simplified log - just show that we received an update
+          console.log('Tournament data changed - fetching new data');
           fetchData();
         }
       )
@@ -180,34 +371,6 @@ export function LiveLeaderboard() {
       channel.unsubscribe();
     };
   }, []); // Empty dependency array - only run on mount
-
-  useEffect(() => {
-    if (scores.length === 0) return;
-  
-    const newHighlightedRows: Record<string, boolean> = {};
-    const newPositions: Record<string, string> = {};
-  
-    scores.forEach((golfer) => {
-      const golferId = generateGolferId(golfer.first_name, golfer.last_name);
-      newPositions[golferId] = golfer.position;
-  
-      // Check if position changed from the previous state
-      if (prevPositions[golferId] && prevPositions[golferId] !== golfer.position) {
-        newHighlightedRows[golferId] = true;
-      }
-    });
-  
-    // Update highlighted rows
-    setHighlightedRows(newHighlightedRows);
-  
-    // Store new positions for the next comparison
-    setPrevPositions(newPositions);
-  
-    // Remove highlight after 3 seconds
-    setTimeout(() => {
-      setHighlightedRows({});
-    }, 3000);
-  }, [scores]); // Depend only on scores
 
   if (loading) {
     return <div>Loading leaderboard...</div>;
@@ -264,7 +427,7 @@ export function LiveLeaderboard() {
                       index === 0 ||
                       score.position !== scores[index - 1].position;
 
-                    const golferId = generateGolferId(score.first_name, score.last_name);
+                    const golferId = score.id || generateGolferId(score.first_name, score.last_name);
                     const isUpdated = updatedRows[golferId];
                     const movingDirection = movingRows[golferId];
                     const isMoving = !!movingDirection;
@@ -279,30 +442,34 @@ export function LiveLeaderboard() {
 
                     const cutClass = score.position === 'CUT' ? 'text-muted-foreground bg-muted/90 dark:bg-muted/70' : '';
 
-                    // Determine border color based on movement
-                    let borderColor = 'transparent';
-                    if (isMoving) {
-                      borderColor = '#fbbf24'; // Amber/gold color
-                    }
-
                     // Determine background color for moving rows
                     let bgColor = undefined;
+                    let bgColorClass = '';
                     if (isMoving) {
-                      bgColor = isMovingUp
-                        ? 'rgba(16, 185, 129, 0.3)' // More visible green
-                        : isMovingDown
-                          ? 'rgba(239, 68, 68, 0.3)' // More visible red
-                          : 'rgba(251, 191, 36, 0.3)'; // Amber for position change without direction
+                      if (isMovingUp) {
+                        bgColor = 'rgba(16, 185, 129, 0.5)'; // Brighter green
+                        bgColorClass = 'bg-green-500/50'; // Tailwind class for green background
+                      } else if (isMovingDown) {
+                        bgColor = 'rgba(239, 68, 68, 0.5)'; // Brighter red
+                        bgColorClass = 'bg-red-500/50'; // Tailwind class for red background
+                      } else {
+                        bgColor = 'rgba(251, 191, 36, 0.5)'; // Brighter amber
+                        bgColorClass = 'bg-amber-500/50'; // Tailwind class for amber background
+                      }
                     } else if (isUpdated) {
-                      bgColor = 'rgba(251, 191, 36, 0.1)'; // Very light amber for updates
+                      bgColor = 'rgba(251, 191, 36, 0.2)'; // Light amber for updates
+                      bgColorClass = 'bg-amber-500/20'; // Tailwind class for light amber background
                     }
 
                     // For debugging - log when a row should be animated
-                    if (isMoving && process.env.NODE_ENV !== 'production') {
-                      console.log(`Rendering moving row for ${score.first_name} ${score.last_name}:`, {
+                    if (isMoving) {
+                      console.log(`⚠️ Rendering row with animation:`, {
+                        name: `${score.first_name} ${score.last_name}`,
                         direction: movingDirection,
                         isMovingUp,
-                        isMovingDown
+                        isMovingDown,
+                        bgColor,
+                        bgColorClass
                       });
                     }
 
@@ -310,9 +477,17 @@ export function LiveLeaderboard() {
                       <motion.tr
                         key={golferId}
                         layout
-                        initial={{ opacity: 1 }}
+                        data-golfer-id={golferId}
+                        initial={{ 
+                          opacity: 1, 
+                          backgroundColor: 'rgba(0, 0, 0, 0)' // Use rgba(0,0,0,0) instead of 'transparent'
+                        }}
                         animate={{
                           opacity: 1,
+                          backgroundColor: bgColor || 'rgba(0, 0, 0, 0)' // Use rgba(0,0,0,0) instead of 'transparent'
+                        }}
+                        style={{ 
+                          backgroundColor: isMoving ? bgColor : 'rgba(0, 0, 0, 0)' // Only apply background color if actually moving
                         }}
                         exit={{ opacity: 0 }}
                         transition={{
@@ -321,7 +496,23 @@ export function LiveLeaderboard() {
                           damping: 12,
                           duration: 1.5
                         }}
-                        className={`relative ${rowBgClass} ${cutClass} ${highlightedRows[golferId] ? 'moving-border' : ''}`}
+                        className={`relative ${rowBgClass} ${cutClass} ${highlightedRows[golferId] ? 'moving-border' : ''} ${isMoving ? bgColorClass : ''}`}
+                        onAnimationComplete={() => {
+                          // Log when animation completes
+                          if (isMoving) {
+                            console.log(`🏁 Animation completed for ${score.first_name} ${score.last_name}`);
+                            
+                            // Directly reset the style after animation completes
+                            const element = document.querySelector(`tr[data-golfer-id="${golferId}"]`) as HTMLElement | null;
+                            if (element) {
+                              // Use a small timeout to ensure the animation has fully completed
+                              setTimeout(() => {
+                                element.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+                                console.log(`🎨 Directly reset background color for ${score.first_name} ${score.last_name}`);
+                              }, 100);
+                            }
+                          }
+                        }}
                       >
 
                         <TableCell className="text-center md:text-left py-2 px-1 md:px-4">

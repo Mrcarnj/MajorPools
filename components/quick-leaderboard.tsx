@@ -20,7 +20,7 @@ const archivo = Archivo({
 // Debug function
 const debug = (message: string, data?: any) => {
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`[QuickLeaderboard Debug] ${message}`, data || '');
+    // console.log(`[QuickLeaderboard Debug] ${message}`, data || '');
   }
 };
 
@@ -443,17 +443,17 @@ export function QuickLeaderboard() {
 
                     // For debugging - log when a row should be animated
                     if ((isMoving || isHighlighted) && process.env.NODE_ENV !== 'production') {
-                      console.log(`Rendering row for ${entry.entry_name}:`, {
-                        direction: movingEntries[entry.entry_name],
-                        isMovingUp,
-                        isMovingDown,
-                        isHighlighted,
-                        bgColor,
-                        borderColor,
-                        borderWidth,
-                        borderStyle,
-                        animationClass: (isHighlighted || isMoving) ? 'moving-border' : ''
-                      });
+                      // console.log(`Rendering row for ${entry.entry_name}:`, {
+                      //   direction: movingEntries[entry.entry_name],
+                      //   isMovingUp,
+                      //   isMovingDown,
+                      //   isHighlighted,
+                      //   bgColor,
+                      //   borderColor,
+                      //   borderWidth,
+                      //   borderStyle,
+                      //   animationClass: (isHighlighted || isMoving) ? 'moving-border' : ''
+                      // });
                     }
 
                     return (
