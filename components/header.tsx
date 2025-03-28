@@ -41,11 +41,13 @@ export function Header() {
     checkTournamentStatus();
   }, []);
 
-  const handleAdminClick = () => {
+  const handleAdminClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     console.log('Admin link clicked:', {
       hasSession: !!authSession,
       role: authSession?.user?.user_metadata?.role,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      path: window.location.pathname
     });
     router.push('/admin');
   };
@@ -74,10 +76,10 @@ export function Header() {
                 <RxDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
-              {authSession && authSession.user.user_metadata?.role === 'admin' && (
+              {authSession.user.user_metadata?.role === 'admin' && (
                 <button 
                   onClick={handleAdminClick}
-                  className="hover:text-primary flex items-center"
+                  className="hover:text-primary flex items-center text-red-500 hover:text-red-600"
                 >
                   <RiAdminLine className="mr-2 h-4 w-4" />
                   Admin

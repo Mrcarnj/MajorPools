@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [withdrawnGolferEntries, setWithdrawnGolferEntries] = useState<WithdrawnGolferEntry[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     console.log('Admin page mounted:', {
@@ -40,15 +41,19 @@ export default function AdminDashboard() {
       role: session?.user?.user_metadata?.role,
       timestamp: new Date().toISOString(),
       path: window.location.pathname,
-      isInitialLoad
+      isInitialLoad,
+      mounted,
+      isClient: typeof window !== 'undefined'
     });
+
+    setMounted(true);
 
     const checkAuth = async () => {
       if (!loading) {
         if (!session) {
           console.log('No session, redirecting to home');
           setIsRedirecting(true);
-          window.location.href = '/';
+          router.push('/');
           return;
         }
 
@@ -57,7 +62,7 @@ export default function AdminDashboard() {
             role: session.user.user_metadata?.role
           });
           setIsRedirecting(true);
-          window.location.href = '/';
+          router.push('/');
           return;
         }
 
@@ -113,9 +118,11 @@ export default function AdminDashboard() {
       .subscribe();
 
     return () => {
+      console.log('Admin page unmounting');
+      setMounted(false);
       channel.unsubscribe();
     };
-  }, [session, loading, router, isInitialLoad]);
+  }, [session, loading, router, isInitialLoad, mounted]);
 
   const checkForWithdrawnGolfers = async () => {
     try {
@@ -468,7 +475,7 @@ Major Pools Team`;
   }
 
   // Show loading state
-  if (loading || isInitialLoad) {
+  if (loading || isInitialLoad || !mounted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div>Loading...</div>
