@@ -301,7 +301,15 @@ Major Pools Team`;
         .eq('tournament_id', tournamentId)
         .order('calculated_score', { ascending: true });
 
-      if (entriesError) throw entriesError;
+      if (entriesError) {
+        console.error('Error fetching entries:', entriesError);
+        throw entriesError;
+      }
+
+      if (!entries || entries.length === 0) {
+        console.error('No entries found for tournament:', tournamentId);
+        return;
+      }
 
       // 2. Calculate final rankings and positions
       const entriesForRankings: Entry[] = entries.map(entry => ({
