@@ -2,19 +2,68 @@ import { getTournamentLeaderboard, getTournament } from '../services/pga-tour/to
 import { supabaseAdmin } from '../lib/supabase-admin';
 import { calculateEntryScore } from '../utils/scoring';
 import type { GolferScore } from '../utils/scoring';
+import nodemailer from 'nodemailer';
+
+// Create a transporter using SMTP
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+
+async function sendWithdrawnGolferEmail(
+  entryName: string,
+  email: string,
+  tournamentName: string,
+  tournamentYear: number,
+  withdrawnGolfers: { firstName: string; lastName: string; tier: string }[]
+) {
+  const golferList = withdrawnGolfers
+    .map(g => `${g.firstName} ${g.lastName} (${g.tier})`)
+    .join(', ');
+
+  const emailBody = `Hello,
+
+We noticed that your entry "${entryName}" for ${tournamentName} ${tournamentYear} has the following golfers who are no longer in the tournament:
+
+${golferList}
+
+Please visit ${process.env.NEXT_PUBLIC_SITE_URL}/create-team to update your entry with replacement golfers.
+
+Best regards,
+Major Pools Team`;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: `Action Required: Update Your ${tournamentName} ${tournamentYear} Entry`,
+      text: emailBody,
+    });
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
+}
 
 async function updateTournament() {
   try {
     // Get the active tournament first
     const { data: activeTournament, error: tournamentError } = await supabaseAdmin
       .from('tournaments')
-      .select('id, name, pga_tournament_id')
+      .select('id, name, pga_tournament_id, status, year')
       .eq('is_active', true)
       .single();
 
     if (tournamentError || !activeTournament) {
       throw new Error('No active tournament found');
     }
+
+    // Only proceed with email notifications if tournament hasn't started
+    const shouldSendEmails = activeTournament.status !== 'In Progress';
 
     // 1. Update tournament status and current round
     const tournamentData = await getTournament(activeTournament.pga_tournament_id);
@@ -66,6 +115,119 @@ async function updateTournament() {
 
       if (removeError) {
         throw removeError;
+      }
+
+      // If tournament hasn't started, send emails for affected entries
+      if (shouldSendEmails) {
+        // Get all entries for this tournament
+        const { data: entries } = await supabaseAdmin
+          .from('entries')
+          .select(`
+            id,
+            entry_name,
+            email,
+            tier1_golfer1, tier1_golfer2,
+            tier2_golfer1, tier2_golfer2,
+            tier3_golfer1, tier3_golfer2,
+            tier4_golfer1,
+            tier5_golfer1
+          `)
+          .eq('tournament_id', activeTournament.id);
+
+        if (entries) {
+          // Get all withdrawn golfers with their details
+          const { data: withdrawnGolfers } = await supabaseAdmin
+            .from('golfer_scores')
+            .select('player_id, first_name, last_name')
+            .is('tournament_id', null);
+
+          if (withdrawnGolfers) {
+            const withdrawnGolferMap = new Map(withdrawnGolfers.map(g => [g.player_id, g]));
+
+            // Check each entry for withdrawn golfers
+            for (const entry of entries) {
+              const withdrawnGolfersInEntry = [];
+              
+              // Check each tier
+              if (withdrawnGolferMap.has(entry.tier1_golfer1)) {
+                const golfer = withdrawnGolferMap.get(entry.tier1_golfer1);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 1'
+                });
+              }
+              // ... repeat for other tiers
+              if (withdrawnGolferMap.has(entry.tier1_golfer2)) {
+                const golfer = withdrawnGolferMap.get(entry.tier1_golfer2);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 1'
+                });
+              }
+              if (withdrawnGolferMap.has(entry.tier2_golfer1)) {
+                const golfer = withdrawnGolferMap.get(entry.tier2_golfer1);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 2'
+                });
+              }
+              if (withdrawnGolferMap.has(entry.tier2_golfer2)) {
+                const golfer = withdrawnGolferMap.get(entry.tier2_golfer2);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 2'
+                });
+              }
+              if (withdrawnGolferMap.has(entry.tier3_golfer1)) {
+                const golfer = withdrawnGolferMap.get(entry.tier3_golfer1);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 3'
+                });
+              }
+              if (withdrawnGolferMap.has(entry.tier3_golfer2)) {
+                const golfer = withdrawnGolferMap.get(entry.tier3_golfer2);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 3'
+                });
+              }
+              if (withdrawnGolferMap.has(entry.tier4_golfer1)) {
+                const golfer = withdrawnGolferMap.get(entry.tier4_golfer1);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 4'
+                });
+              }
+              if (withdrawnGolferMap.has(entry.tier5_golfer1)) {
+                const golfer = withdrawnGolferMap.get(entry.tier5_golfer1);
+                withdrawnGolfersInEntry.push({
+                  firstName: golfer?.first_name || '',
+                  lastName: golfer?.last_name || '',
+                  tier: 'Tier 5'
+                });
+              }
+
+              if (withdrawnGolfersInEntry.length > 0) {
+                // Send email for this entry
+                await sendWithdrawnGolferEmail(
+                  entry.entry_name,
+                  entry.email,
+                  activeTournament.name,
+                  activeTournament.year,
+                  withdrawnGolfersInEntry
+                );
+              }
+            }
+          }
+        }
       }
     }
 

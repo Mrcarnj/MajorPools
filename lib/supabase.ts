@@ -19,16 +19,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create a regular Supabase client for scripts
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Listen for auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event, !!session);
-  if (event === 'SIGNED_IN') {
-    // Update localStorage
-    localStorage.setItem('supabase.auth.token', JSON.stringify(session));
-  }
-  if (event === 'SIGNED_OUT') {
-    localStorage.removeItem('supabase.auth.token');
-  }
+  console.log('Auth state changed:', {
+    event,
+    hasSession: !!session,
+    user: session?.user?.email,
+    role: session?.user?.user_metadata?.role,
+    timestamp: new Date().toISOString()
+  });
 }); 

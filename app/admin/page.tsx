@@ -32,9 +32,21 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('Admin page auth check:', {
+        loading,
+        hasSession: !!session,
+        user: session?.user?.email,
+        role: session?.user?.user_metadata?.role,
+        timestamp: new Date().toISOString()
+      });
+
       if (!loading) {
         if (!session || session.user.user_metadata?.role !== 'admin') {
-          console.log('Not admin, redirecting');
+          console.log('Not admin, redirecting to home:', {
+            hasSession: !!session,
+            role: session?.user?.user_metadata?.role,
+            path: window.location.pathname
+          });
           router.replace('/');
         } else {
           console.log('Admin session found, fetching tournaments');

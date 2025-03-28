@@ -21,7 +21,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      console.log('Initial session:', !!initialSession); // Debug log
+      console.log('Initial session check:', {
+        hasSession: !!initialSession,
+        user: initialSession?.user?.email,
+        role: initialSession?.user?.user_metadata?.role,
+        timestamp: new Date().toISOString()
+      });
       setSession(initialSession);
       setLoading(false);
     });
@@ -29,8 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state change:', !!session); // Debug log
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', {
+        event,
+        hasSession: !!session,
+        user: session?.user?.email,
+        role: session?.user?.user_metadata?.role,
+        timestamp: new Date().toISOString()
+      });
       setSession(session);
       setLoading(false);
     });
