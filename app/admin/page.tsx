@@ -9,11 +9,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
 import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry } from '@/utils/scoring';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+
+type WithdrawnGolferEntry = {
+  entryId: string;
+  entryName: string;
+  email: string;
+  withdrawnGolfers: {
+    playerId: string;
+    firstName: string;
+    lastName: string;
+    tier: string;
+  }[];
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { session, loading } = useAuth();
   const [tournaments, setTournaments] = useState<any[]>([]);
+  const [withdrawnGolferEntries, setWithdrawnGolferEntries] = useState<WithdrawnGolferEntry[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -28,6 +43,9 @@ export default function AdminDashboard() {
             .select('*')
             .order('start_date', { ascending: true });
           setTournaments(data || []);
+          
+          // Check for withdrawn golfers in active tournament
+          await checkForWithdrawnGolfers();
         }
       }
     };
@@ -54,6 +72,158 @@ export default function AdminDashboard() {
       channel.unsubscribe();
     };
   }, [session, loading, router]);
+
+  const checkForWithdrawnGolfers = async () => {
+    try {
+      // Get active tournament
+      const { data: activeTournament } = await supabase
+        .from('tournaments')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (!activeTournament) return;
+
+      // Get all entries for active tournament
+      const { data: entries } = await supabase
+        .from('entries')
+        .select(`
+          id,
+          entry_name,
+          email,
+          tier1_golfer1, tier1_golfer2,
+          tier2_golfer1, tier2_golfer2,
+          tier3_golfer1, tier3_golfer2,
+          tier4_golfer1,
+          tier5_golfer1
+        `)
+        .eq('tournament_id', activeTournament.id);
+
+      if (!entries) return;
+
+      // Get all golfers with tournament_id NULL (withdrawn)
+      const { data: withdrawnGolfers } = await supabase
+        .from('golfer_scores')
+        .select('player_id, first_name, last_name')
+        .is('tournament_id', null);
+
+      if (!withdrawnGolfers) return;
+
+      const withdrawnGolferIds = new Set(withdrawnGolfers.map(g => g.player_id));
+      const withdrawnGolferMap = new Map(withdrawnGolfers.map(g => [g.player_id, g]));
+
+      // Check each entry for withdrawn golfers
+      const affectedEntries: WithdrawnGolferEntry[] = entries
+        .map(entry => {
+          const withdrawnGolfersInEntry = [];
+          
+          // Check each tier
+          if (withdrawnGolferIds.has(entry.tier1_golfer1)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier1_golfer1,
+              firstName: withdrawnGolferMap.get(entry.tier1_golfer1)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier1_golfer1)?.last_name || '',
+              tier: 'Tier 1'
+            });
+          }
+          if (withdrawnGolferIds.has(entry.tier1_golfer2)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier1_golfer2,
+              firstName: withdrawnGolferMap.get(entry.tier1_golfer2)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier1_golfer2)?.last_name || '',
+              tier: 'Tier 1'
+            });
+          }
+          // ... repeat for other tiers
+          if (withdrawnGolferIds.has(entry.tier2_golfer1)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier2_golfer1,
+              firstName: withdrawnGolferMap.get(entry.tier2_golfer1)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier2_golfer1)?.last_name || '',
+              tier: 'Tier 2'
+            });
+          }
+          if (withdrawnGolferIds.has(entry.tier2_golfer2)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier2_golfer2,
+              firstName: withdrawnGolferMap.get(entry.tier2_golfer2)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier2_golfer2)?.last_name || '',
+              tier: 'Tier 2'
+            });
+          }
+          if (withdrawnGolferIds.has(entry.tier3_golfer1)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier3_golfer1,
+              firstName: withdrawnGolferMap.get(entry.tier3_golfer1)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier3_golfer1)?.last_name || '',
+              tier: 'Tier 3'
+            });
+          }
+          if (withdrawnGolferIds.has(entry.tier3_golfer2)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier3_golfer2,
+              firstName: withdrawnGolferMap.get(entry.tier3_golfer2)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier3_golfer2)?.last_name || '',
+              tier: 'Tier 3'
+            });
+          }
+          if (withdrawnGolferIds.has(entry.tier4_golfer1)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier4_golfer1,
+              firstName: withdrawnGolferMap.get(entry.tier4_golfer1)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier4_golfer1)?.last_name || '',
+              tier: 'Tier 4'
+            });
+          }
+          if (withdrawnGolferIds.has(entry.tier5_golfer1)) {
+            withdrawnGolfersInEntry.push({
+              playerId: entry.tier5_golfer1,
+              firstName: withdrawnGolferMap.get(entry.tier5_golfer1)?.first_name || '',
+              lastName: withdrawnGolferMap.get(entry.tier5_golfer1)?.last_name || '',
+              tier: 'Tier 5'
+            });
+          }
+
+          if (withdrawnGolfersInEntry.length > 0) {
+            return {
+              entryId: entry.id,
+              entryName: entry.entry_name,
+              email: entry.email,
+              withdrawnGolfers: withdrawnGolfersInEntry
+            };
+          }
+          return null;
+        })
+        .filter((entry): entry is WithdrawnGolferEntry => entry !== null);
+
+      setWithdrawnGolferEntries(affectedEntries);
+    } catch (error) {
+      console.error('Error checking for withdrawn golfers:', error);
+    }
+  };
+
+  const handleSendWithdrawnGolferEmail = async (entry: WithdrawnGolferEntry) => {
+    const tournament = tournaments.find(t => t.is_active);
+    if (!tournament) return;
+
+    const golferList = entry.withdrawnGolfers
+      .map(g => `${g.firstName} ${g.lastName} (${g.tier})`)
+      .join(', ');
+
+    const emailBody = `Hello,
+
+We noticed that your entry "${entry.entryName}" for ${tournament.name} ${tournament.year} has the following golfers who are no longer in the tournament:
+
+${golferList}
+
+Please visit ${window.location.origin}/create-team to update your entry with replacement golfers.
+
+Best regards,
+Major Pools Team`;
+
+    const mailtoLink = `mailto:${encodeURIComponent(entry.email)}?subject=${encodeURIComponent(`Action Required: Update Your ${tournament.name} ${tournament.year} Entry`)}&body=${encodeURIComponent(emailBody)}`;
+    window.location.href = mailtoLink;
+  };
 
   const handleActivateTournament = async (id: string, currentStatus: boolean) => {
     await supabase
@@ -241,6 +411,45 @@ export default function AdminDashboard() {
   return (
     <div className="px-1 md:container md:mx-auto py-4 md:py-8 space-y-4 md:space-y-8">
       <h1 className="text-xl md:text-2xl font-bold px-1 md:px-0">Admin Dashboard</h1>
+      
+      {withdrawnGolferEntries.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Entries with Withdrawn Golfers</AlertTitle>
+          <AlertDescription>
+            The following entries have golfers who are no longer in the tournament:
+          </AlertDescription>
+          <div className="mt-4 space-y-4">
+            {withdrawnGolferEntries.map(entry => (
+              <Card key={entry.entryId} className="bg-destructive/10">
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold">{entry.entryName}</h3>
+                      <p className="text-sm text-muted-foreground">{entry.email}</p>
+                      <ul className="mt-2 space-y-1">
+                        {entry.withdrawnGolfers.map(golfer => (
+                          <li key={golfer.playerId} className="text-sm">
+                            {golfer.firstName} {golfer.lastName} ({golfer.tier})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSendWithdrawnGolferEmail(entry)}
+                    >
+                      <MdOutlineEmail className="mr-2 h-4 w-4" />
+                      Send Email
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </Alert>
+      )}
       
       <Card className="md:rounded-lg rounded-none">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 pb-2 md:pb-6">

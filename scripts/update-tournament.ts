@@ -43,6 +43,32 @@ async function updateTournament() {
       throw new Error('No players found in leaderboard');
     }
 
+    // Get all current golfers in the database for this tournament
+    const { data: existingGolfers, error: existingGolfersError } = await supabaseAdmin
+      .from('golfer_scores')
+      .select('player_id')
+      .eq('tournament_id', activeTournament.id);
+
+    if (existingGolfersError) {
+      throw existingGolfersError;
+    }
+
+    // Create a set of player IDs from the API response for quick lookup
+    const activePlayerIds = new Set(leaderboard.leaderboardRows.map((player: { playerId: string }) => player.playerId));
+
+    // Set tournament_id to NULL for any golfers who are no longer in the tournament
+    const golfersToRemove = existingGolfers.filter(golfer => !activePlayerIds.has(golfer.player_id));
+    if (golfersToRemove.length > 0) {
+      const { error: removeError } = await supabaseAdmin
+        .from('golfer_scores')
+        .update({ tournament_id: null })
+        .in('player_id', golfersToRemove.map(g => g.player_id));
+
+      if (removeError) {
+        throw removeError;
+      }
+    }
+
     // Process each player in the leaderboard
     for (const player of leaderboard.leaderboardRows) {
       // First check if player exists
