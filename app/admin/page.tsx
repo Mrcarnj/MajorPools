@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const { session, loading } = useAuth();
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [withdrawnGolferEntries, setWithdrawnGolferEntries] = useState<WithdrawnGolferEntry[]>([]);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -37,27 +38,43 @@ export default function AdminDashboard() {
         hasSession: !!session,
         user: session?.user?.email,
         role: session?.user?.user_metadata?.role,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        path: window.location.pathname
       });
 
       if (!loading) {
-        if (!session || session.user.user_metadata?.role !== 'admin') {
-          console.log('Not admin, redirecting to home:', {
-            hasSession: !!session,
-            role: session?.user?.user_metadata?.role,
-            path: window.location.pathname
-          });
+        if (!session) {
+          console.log('No session, redirecting to home');
+          setIsRedirecting(true);
           router.replace('/');
-        } else {
-          console.log('Admin session found, fetching tournaments');
-          const { data } = await supabase
+          return;
+        }
+
+        if (session.user.user_metadata?.role !== 'admin') {
+          console.log('User is not admin, redirecting to home:', {
+            role: session.user.user_metadata?.role
+          });
+          setIsRedirecting(true);
+          router.replace('/');
+          return;
+        }
+
+        console.log('Admin session confirmed, fetching tournaments');
+        try {
+          const { data, error } = await supabase
             .from('tournaments')
             .select('*')
             .order('start_date', { ascending: true });
-          setTournaments(data || []);
           
-          // Check for withdrawn golfers in active tournament
+          if (error) {
+            console.error('Error fetching tournaments:', error);
+            return;
+          }
+          
+          setTournaments(data || []);
           await checkForWithdrawnGolfers();
+        } catch (error) {
+          console.error('Error in admin page:', error);
         }
       }
     };
@@ -412,10 +429,21 @@ Major Pools Team`;
     }
   }
 
+  // Show loading state
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
+  // Show nothing while redirecting
+  if (isRedirecting) {
+    return null;
+  }
+
+  // Show nothing if no session
   if (!session) {
     return null;
   }

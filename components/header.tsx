@@ -18,12 +18,14 @@ import { supabase } from '@/lib/supabase';
 import { LoginModal } from '@/components/auth/login-modal';
 import { useAuth } from '@/lib/auth/auth-context';
 import { MdOutlineLeaderboard } from 'react-icons/md';
+import { useRouter } from 'next/navigation';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
   const [showCreateTeam, setShowCreateTeam] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { session: authSession } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     async function checkTournamentStatus() {
@@ -38,6 +40,15 @@ export function Header() {
 
     checkTournamentStatus();
   }, []);
+
+  const handleAdminClick = () => {
+    console.log('Admin link clicked:', {
+      hasSession: !!authSession,
+      role: authSession?.user?.user_metadata?.role,
+      timestamp: new Date().toISOString()
+    });
+    router.push('/admin');
+  };
 
   return (
     <header className="border-b">
@@ -64,10 +75,13 @@ export function Header() {
                 Dashboard
               </Link>
               {authSession && authSession.user.user_metadata?.role === 'admin' && (
-                <Link href="/admin" className="hover:text-primary flex items-center">
+                <button 
+                  onClick={handleAdminClick}
+                  className="hover:text-primary flex items-center"
+                >
                   <RiAdminLine className="mr-2 h-4 w-4" />
                   Admin
-                </Link>
+                </button>
               )}
             </>
           )}
@@ -102,11 +116,9 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 {authSession && authSession.user.user_metadata?.role === 'admin' && (
-                  <DropdownMenuItem asChild className="md:hidden">
-                    <Link href="/admin">
-                      <RiAdminLine className="mr-2 h-4 w-4" />
-                      Admin
-                    </Link>
+                  <DropdownMenuItem onClick={handleAdminClick} className="md:hidden">
+                    <RiAdminLine className="mr-2 h-4 w-4" />
+                    Admin
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
