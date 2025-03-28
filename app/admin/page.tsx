@@ -30,23 +30,25 @@ export default function AdminDashboard() {
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [withdrawnGolferEntries, setWithdrawnGolferEntries] = useState<WithdrawnGolferEntry[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      console.log('Admin page auth check:', {
-        loading,
-        hasSession: !!session,
-        user: session?.user?.email,
-        role: session?.user?.user_metadata?.role,
-        timestamp: new Date().toISOString(),
-        path: window.location.pathname
-      });
+    console.log('Admin page mounted:', {
+      loading,
+      hasSession: !!session,
+      user: session?.user?.email,
+      role: session?.user?.user_metadata?.role,
+      timestamp: new Date().toISOString(),
+      path: window.location.pathname,
+      isInitialLoad
+    });
 
+    const checkAuth = async () => {
       if (!loading) {
         if (!session) {
           console.log('No session, redirecting to home');
           setIsRedirecting(true);
-          router.replace('/');
+          window.location.href = '/';
           return;
         }
 
@@ -55,31 +57,44 @@ export default function AdminDashboard() {
             role: session.user.user_metadata?.role
           });
           setIsRedirecting(true);
-          router.replace('/');
+          window.location.href = '/';
           return;
         }
 
         console.log('Admin session confirmed, fetching tournaments');
         try {
+          console.log('Fetching tournaments from Supabase...');
           const { data, error } = await supabase
             .from('tournaments')
             .select('*')
             .order('start_date', { ascending: true });
           
           if (error) {
-            console.error('Error fetching tournaments:', error);
+            console.error('Error fetching tournaments:', {
+              error,
+              timestamp: new Date().toISOString()
+            });
             return;
           }
+          
+          console.log('Successfully fetched tournaments:', {
+            count: data?.length || 0,
+            timestamp: new Date().toISOString()
+          });
           
           setTournaments(data || []);
           await checkForWithdrawnGolfers();
         } catch (error) {
-          console.error('Error in admin page:', error);
+          console.error('Error in admin page:', {
+            error,
+            timestamp: new Date().toISOString()
+          });
         }
       }
     };
 
     checkAuth();
+    setIsInitialLoad(false);
 
     // Subscribe to tournament changes
     const channel = supabase
@@ -100,7 +115,7 @@ export default function AdminDashboard() {
     return () => {
       channel.unsubscribe();
     };
-  }, [session, loading, router]);
+  }, [session, loading, router, isInitialLoad]);
 
   const checkForWithdrawnGolfers = async () => {
     try {
@@ -285,6 +300,8 @@ Major Pools Team`;
 
   async function handleCompleteTournament(tournamentId: string) {
     try {
+      console.log('Starting tournament completion for ID:', tournamentId);
+      
       // 1. Get all entries for this tournament with calculated_score and display_score
       const { data: entries, error: entriesError } = await supabase
         .from('entries')
@@ -302,14 +319,27 @@ Major Pools Team`;
         .order('calculated_score', { ascending: true });
 
       if (entriesError) {
-        console.error('Error fetching entries:', entriesError);
+        console.error('Error fetching entries:', {
+          error: entriesError,
+          tournamentId,
+          timestamp: new Date().toISOString()
+        });
         throw entriesError;
       }
 
       if (!entries || entries.length === 0) {
-        console.error('No entries found for tournament:', tournamentId);
+        console.error('No entries found for tournament:', {
+          tournamentId,
+          timestamp: new Date().toISOString()
+        });
         return;
       }
+
+      console.log('Successfully fetched entries:', {
+        count: entries.length,
+        tournamentId,
+        timestamp: new Date().toISOString()
+      });
 
       // 2. Calculate final rankings and positions
       const entriesForRankings: Entry[] = entries.map(entry => ({
@@ -438,7 +468,7 @@ Major Pools Team`;
   }
 
   // Show loading state
-  if (loading) {
+  if (loading || isInitialLoad) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div>Loading...</div>
