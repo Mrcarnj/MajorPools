@@ -519,7 +519,7 @@ export function QuickLeaderboard() {
                               times: [0, 0.5, 1]
                             }}
                           >
-                            {entry.display_score}
+                            {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 ? 'E' : entry.display_score}
                           </motion.span>
                         </div>
                       </div>
