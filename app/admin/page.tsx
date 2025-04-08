@@ -33,111 +33,10 @@ export default function AdminDashboard() {
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [withdrawnGolferEntries, setWithdrawnGolferEntries] = useState<WithdrawnGolferEntry[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
-<<<<<<< HEAD
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [mounted, setMounted] = useState(false);
-=======
   const [initialAuthChecked, setInitialAuthChecked] = useState(false);
->>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
 
   // One-time auth check on component mount
   useEffect(() => {
-<<<<<<< HEAD
-    console.log('Admin page mounted:', {
-      loading,
-      hasSession: !!session,
-      user: session?.user?.email,
-      role: session?.user?.user_metadata?.role,
-      timestamp: new Date().toISOString(),
-      path: window.location.pathname,
-      isInitialLoad,
-      mounted,
-      isClient: typeof window !== 'undefined'
-    });
-
-    setMounted(true);
-
-    const checkAuth = async () => {
-      if (!loading) {
-        if (!session) {
-          console.log('No session, redirecting to home');
-          setIsRedirecting(true);
-          router.push('/');
-          return;
-        }
-
-        // Check if user's email is in authorized_emails table with admin=true
-        const { data: authorizedEmail } = await supabase
-          .from('authorized_emails')
-          .select('admin')
-          .eq('email', session.user.email!)
-          .single();
-
-        if (!authorizedEmail?.admin) {
-          console.log('User is not admin, redirecting to home');
-          setIsRedirecting(true);
-          router.push('/');
-          return;
-        }
-
-        console.log('Admin session confirmed, fetching tournaments');
-        try {
-          console.log('Fetching tournaments from Supabase...');
-          const { data, error } = await supabase
-            .from('tournaments')
-            .select('*')
-            .order('start_date', { ascending: true });
-          
-          if (error) {
-            console.error('Error fetching tournaments:', {
-              error,
-              timestamp: new Date().toISOString()
-            });
-            return;
-          }
-          
-          console.log('Successfully fetched tournaments:', {
-            count: data?.length || 0,
-            timestamp: new Date().toISOString()
-          });
-          
-          setTournaments(data || []);
-          await checkForWithdrawnGolfers();
-        } catch (error) {
-          console.error('Error in admin page:', {
-            error,
-            timestamp: new Date().toISOString()
-          });
-        }
-      }
-    };
-
-    checkAuth();
-    setIsInitialLoad(false);
-
-    // Subscribe to tournament changes
-    const channel = supabase
-      .channel('tournament_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tournaments'
-        },
-        () => {
-          checkAuth(); // Refetch tournaments when changes occur
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Admin page unmounting');
-      setMounted(false);
-      channel.unsubscribe();
-    };
-  }, [session, loading, router, isInitialLoad, mounted]);
-=======
     // Only run this effect once
     if (initialAuthChecked || loading) return;
 
@@ -182,7 +81,6 @@ export default function AdminDashboard() {
       console.error('Error fetching data:', error);
     }
   };
->>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
 
   const checkForWithdrawnGolfers = async () => {
     try {
@@ -208,7 +106,7 @@ export default function AdminDashboard() {
           tier4_golfer1,
           tier5_golfer1
         `)
-        .eq('tournament_id', activeTournament.id as any);
+        .eq('tournament_id', activeTournament.id);
 
       if (!entries) return;
 
@@ -363,8 +261,6 @@ Major Pools Team`;
 
   async function handleCompleteTournament(tournamentId: string) {
     try {
-      console.log('Starting tournament completion for ID:', tournamentId);
-      
       // 1. Get all entries for this tournament with calculated_score and display_score
       const { data: entries, error: entriesError } = await supabase
         .from('entries')
@@ -382,32 +278,19 @@ Major Pools Team`;
         .order('calculated_score', { ascending: true });
 
       if (entriesError) {
-        console.error('Error fetching entries:', {
-          error: entriesError,
-          tournamentId,
-          timestamp: new Date().toISOString()
-        });
+        console.error('Error fetching entries:', entriesError);
         throw entriesError;
       }
 
       if (!entries || entries.length === 0) {
-        console.error('No entries found for tournament:', {
-          tournamentId,
-          timestamp: new Date().toISOString()
-        });
+        console.error('No entries found for tournament:', tournamentId);
         return;
       }
 
-      console.log('Successfully fetched entries:', {
-        count: entries.length,
-        tournamentId,
-        timestamp: new Date().toISOString()
-      });
-
       // 2. Calculate final rankings and positions
       const entriesForRankings: Entry[] = entries.map(entry => ({
-        entry_name: entry.entry_name as string,
-        calculated_score: entry.calculated_score as number,
+        entry_name: entry.entry_name,
+        calculated_score: entry.calculated_score,
         display_score: 0,
         topFiveGolfers: []
       }));
@@ -484,7 +367,7 @@ Major Pools Team`;
             last_name: score?.last_name || 'Golfer',
             total: score?.total || 'N/A',
             current_round_score: score?.current_round_score || '-',
-            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes((score?.position || '') as string) 
+            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes(score?.position || '') 
               ? score?.position 
               : score?.thru || '-',
             position: score?.position || '-',
@@ -493,7 +376,7 @@ Major Pools Team`;
           };
         });
 
-        const displayScore = calculateDisplayScore(golfers as unknown as GolferScore[]);
+        const displayScore = calculateDisplayScore(golfers);
 
         const updateData = {
           t1g1_score: scoreMap.get(entry.tier1_golfer1)?.total,
@@ -508,7 +391,7 @@ Major Pools Team`;
           entry_position: rankingMap.get(entry.id)
         };
 
-        await supabase.from('entries').update(updateData).eq('id', entry.id as any);
+        await supabase.from('entries').update(updateData).eq('id', entry.id);
       }
 
       // 5. Set tournament status to Official (but don't change is_active)
@@ -526,13 +409,8 @@ Major Pools Team`;
     }
   }
 
-<<<<<<< HEAD
-  // Show loading state
-  if (loading || isInitialLoad || !mounted) {
-=======
   // If still loading or redirecting, show minimal UI
   if (loading || isRedirecting) {
->>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
     return (
       <div className="container mx-auto p-6">
         <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
