@@ -58,17 +58,16 @@ export function DonationDisplay() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <HeartIcon className="h-5 w-5 text-red-500" />
-          Charity Partner
-        </CardTitle>
+          </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <p className="text-muted-foreground text-sm">Loading donation information...</p>
         ) : (
           <div className="space-y-2">
-            <h3 className="text-lg font-medium">John & Matt Gaudreau Foundation</h3>
+            <h3 className="text-lg font-medium">John & Matt Gaudreau Foundations</h3>
             <p className="text-sm text-muted-foreground">
-              10% of all entry fees goes directly to support the John & Matt Gaudreau Foundation.
+              10% of all entry fees goes directly to support the John & Matt Gaudreau Foundations.
             </p>
             <p className="text-xl font-bold text-red-500">
               Current Donation: ${donation}
