@@ -10,7 +10,7 @@ import { Goal as GolfBall, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { LiveLeaderboard } from '@/components/live-leaderboard';
 import { TbGolf } from "react-icons/tb";
-import { AuthRequestDisplay } from '@/components/auth-request-display';
+import { DonationDisplay } from '@/components/donation-display';
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -80,9 +80,9 @@ export default function Home() {
         <LiveLeaderboard />
       </div>
 
-      {/* Auth Request Counter */}
-      <div className="mt-8">
-        <AuthRequestDisplay />
+      {/* Donation Display */}
+      <div className="mt-8 max-w-lg mx-auto">
+        <DonationDisplay />
       </div>
     </div>
   );

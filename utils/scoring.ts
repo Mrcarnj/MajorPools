@@ -111,11 +111,19 @@ function roundUpToNearest5(num: number): number {
 
 export function calculatePrizePool(entries: Entry[]): { 
   totalPot: number;
+  displayPot: number;
+  donation: number;
   payouts: Map<string, number>;
 } {
   // Use full pot (entries * $25)
-  const rawPot = entries.length * 25;
+  const entryFee = 25;
+  const rawPot = entries.length * entryFee;
   const totalPot = roundUpToNearest5(rawPot);
+  
+  // Calculate displayed pot (85% of total) and donation (10% of total)
+  const displayPot = Math.floor(totalPot * 0.85);
+  const donation = Math.floor(totalPot * 0.1);
+  
   const payouts = new Map<string, number>();
   
   // Get rankings with ties
@@ -155,7 +163,7 @@ export function calculatePrizePool(entries: Entry[]): {
       // Get the 10th position percentage and split it among ties
       const tenthPlacePercentage = PAYOUT_PERCENTAGES[10];
       const splitPercentage = tenthPlacePercentage / numTied;
-      totalPayout = totalPot * splitPercentage;
+      totalPayout = displayPot * splitPercentage;
       
       const splitPayout = Math.ceil(totalPayout);
       entryNames.forEach(entryName => {
@@ -166,7 +174,7 @@ export function calculatePrizePool(entries: Entry[]): {
       for (let i = 0; i < numTied; i++) {
         const payoutPosition = currentPosition + i;
         if (payoutPosition <= 9) { // Only include payouts through position 9
-          totalPayout += totalPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
+          totalPayout += displayPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
         }
       }
       
@@ -180,5 +188,5 @@ export function calculatePrizePool(entries: Entry[]): {
     currentPosition += numTied;
   });
 
-  return { totalPot, payouts };
+  return { totalPot, displayPot, donation, payouts };
 } 

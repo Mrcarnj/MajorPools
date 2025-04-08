@@ -349,7 +349,7 @@ export function QuickLeaderboard() {
   }, [entries]);
 
   const rankings = calculateRankings(entries);
-  const { totalPot, payouts } = calculatePrizePool(entries);
+  const { displayPot, donation, payouts } = calculatePrizePool(entries);
 
   const limitedEntries = entries.reduce((acc, entry, index) => {
     if (index < 13) {
@@ -389,7 +389,7 @@ export function QuickLeaderboard() {
           <TrophyIcon className="h-5 w-5" />
           Top Teams 
           {tournamentStarted && (
-            <span className="text-sm font-normal ml-2">(Pot: ${totalPot})</span>
+            <span className="text-sm font-normal ml-2">(Pot: ${displayPot})</span>
           )}
         </CardTitle>
       </CardHeader>
