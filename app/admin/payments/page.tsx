@@ -24,6 +24,7 @@ type Entry = {
   entry_name: string;
   email: string;
   has_paid: boolean;
+  created_at: string;
 };
 
 type GroupedEntries = {
@@ -60,9 +61,9 @@ export default function PaymentsPage() {
 
     const { data: entriesData } = await supabase
       .from('entries')
-      .select(`id, entry_name, email, has_paid`)
+      .select(`id, entry_name, email, has_paid, created_at`)
       .eq('tournament_id', tournament.id as any)
-      .order('email');
+      .order('created_at', { ascending: false });
 
     // Group entries by email
     const grouped = (entriesData || []).reduce<GroupedEntries>((acc, entry: any) => {
