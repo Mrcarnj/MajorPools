@@ -20,12 +20,11 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { MdOutlineLeaderboard } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 
-export default function Header() {
+export function Header() {
   const { theme, setTheme } = useTheme();
   const [showCreateTeam, setShowCreateTeam] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { session: authSession, loading, refreshSession, logout } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { session: authSession } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -42,28 +41,6 @@ export default function Header() {
     checkTournamentStatus();
   }, []);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (authSession?.user?.email) {
-        const { data: authorizedEmail } = await supabase
-          .from('authorized_emails')
-          .select('admin')
-          .eq('email', authSession.user.email)
-          .single();
-        
-        setIsAdmin(!!authorizedEmail?.admin);
-      } else {
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [authSession]);
-
-  const handleAdminClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-=======
   const handleAdminClick = () => {
     const role = authSession?.user?.user_metadata?.role;
     const isAdmin = role === 'admin';
@@ -82,28 +59,7 @@ export default function Header() {
       return;
     }
     
->>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
     router.push('/admin');
-  };
-
-  const handleSignOut = async () => {
-    await logout();
-    router.push('/');
-  };
-  
-  const resetAuthCounter = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('supabase.auth.callCounter', '0');
-      console.log('AUTH CALL COUNTER RESET TO 0');
-    }
-  };
-
-  const showAuthCounter = () => {
-    if (typeof window !== 'undefined') {
-      const count = localStorage.getItem('supabase.auth.callCounter') || '0';
-      console.log(`CURRENT AUTH CALL COUNT: ${count}`);
-      alert(`Current auth call count: ${count}`);
-    }
   };
 
   return (
@@ -130,12 +86,14 @@ export default function Header() {
                 <RxDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
-
-              {isAdmin && (
-                <Link href="/new-admin" className="hover:text-primary flex items-center text-red-500 hover:text-red-600">
+              {authSession && authSession.user.user_metadata?.role === 'admin' && (
+                <button 
+                  onClick={handleAdminClick}
+                  className="hover:text-primary flex items-center"
+                >
                   <RiAdminLine className="mr-2 h-4 w-4" />
-                  NEW ADMIN
-                </Link>
+                  Admin
+                </button>
               )}
             </>
           )}
@@ -169,31 +127,13 @@ export default function Header() {
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {authSession && authSession.user.user_metadata?.role === 'admin' && (
                   <DropdownMenuItem onClick={handleAdminClick} className="md:hidden">
                     <RiAdminLine className="mr-2 h-4 w-4" />
                     Admin
                   </DropdownMenuItem>
                 )}
-                {isAdmin && (
-                  <DropdownMenuItem asChild className="md:hidden">
-                    <Link href="/new-admin">
-                      <RiAdminLine className="mr-2 h-4 w-4" />
-                      NEW ADMIN
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <>
-                    <DropdownMenuItem onClick={resetAuthCounter}>
-                      Reset Auth Counter
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={showAuthCounter}>
-                      Show Auth Counter
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuItem onClick={handleSignOut}>
+                <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
                   <PiSignOut className="mr-2 h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>
