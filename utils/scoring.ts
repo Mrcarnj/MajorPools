@@ -122,7 +122,7 @@ export function calculatePrizePool(entries: Entry[]): {
   
   // Calculate displayed pot (85% of total) and donation (10% of total)
   const displayPot = Math.floor(totalPot * 0.85);
-  const donation = Math.floor(totalPot * 0.1);
+  const donation = rawPot * 0.1; // Don't round down - keep decimal precision
   
   const payouts = new Map<string, number>();
   
