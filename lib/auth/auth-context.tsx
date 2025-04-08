@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -41,6 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  // Use a ref to track the current session ID to prevent unnecessary updates
+  const sessionIdRef = useRef<string | null>(null);
 
   // Optimized refresh session function with throttling
   const refreshSession = useCallback(async (force = false) => {
@@ -64,7 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error refreshing session:', error);
       } else {
-        setSession(data.session);
+        const newSessionId = data.session?.user?.id || null;
+        if (newSessionId !== sessionIdRef.current) {
+          sessionIdRef.current = newSessionId;
+          setSession(data.session);
+        }
         // Update the refresh timestamp
         localStorage.setItem(SESSION_REFRESH_KEY, Date.now().toString());
       }
@@ -81,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error signing out:', error);
       } else {
+        sessionIdRef.current = null;
         setSession(null);
         localStorage.removeItem(SESSION_REFRESH_KEY);
       }
@@ -106,6 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.error('Error getting initial session:', error);
         } else {
+          const newSessionId = data.session?.user?.id || null;
+          sessionIdRef.current = newSessionId;
           setSession(data.session);
           // Set initial refresh timestamp
           localStorage.setItem(SESSION_REFRESH_KEY, Date.now().toString());
@@ -127,12 +136,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state changed:', { 
         event, 
         hasSession: !!newSession,
+        userId: newSession?.user?.id,
         count: incrementAuthCallCount() // Count this auth event
       });
       
-      // Only update session if it actually changed
-      if ((!!session) !== (!!newSession) || 
-          (session?.user?.id !== newSession?.user?.id)) {
+      // Only update session if it actually changed - compare by user ID
+      const newSessionId = newSession?.user?.id || null;
+      if (newSessionId !== sessionIdRef.current) {
+        sessionIdRef.current = newSessionId;
         setSession(newSession);
         
         // Update refresh timestamp on login/logout events
@@ -147,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [session]);
+  }, []); // Remove session from dependencies to prevent infinite loop
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
