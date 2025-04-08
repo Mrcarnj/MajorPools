@@ -73,11 +73,11 @@ export default function Leaderboard() {
         .eq('is_active', true)
         .single();
 
-      setTournament(tournament);
+      setTournament(tournament as { current_round: number });
 
-      setHasActiveTournament(!!tournament && ['In Progress', 'Official'].includes(tournament.status));
+      setHasActiveTournament(!!tournament && ['In Progress', 'Official'].includes(tournament.status as string));
 
-      if (!tournament || !['In Progress', 'Official'].includes(tournament.status)) {
+      if (!tournament || !['In Progress', 'Official'].includes(tournament.status as string)) {
         setEntries([]);
         setLoading(false);
         return;
@@ -95,7 +95,7 @@ export default function Leaderboard() {
           tier4_golfer1,
           tier5_golfer1
         `)
-        .eq('tournament_id', tournament.id)
+        .eq('tournament_id', tournament.id as any)
         .order('calculated_score', { ascending: true });
 
       // Get current scores for all golfers
@@ -113,7 +113,7 @@ export default function Leaderboard() {
         scoresData.map(score => [score.player_id, score])
       );
       // Transform entries data to include golfer details
-      const entriesWithGolfers = entriesData?.map(entry => {
+      const entriesWithGolfers = entriesData?.map((entry: any) => {
         const golferIds = [
           entry.tier1_golfer1, entry.tier1_golfer2,
           entry.tier2_golfer1, entry.tier2_golfer2,
@@ -126,25 +126,25 @@ export default function Leaderboard() {
           const score = scoreMap.get(id);
           
           return {
-            player_id: id,
-            first_name: score?.first_name || 'Unknown',
-            last_name: score?.last_name || 'Golfer',
-            total: score?.total || 'N/A',
-            current_round_score: score?.current_round_score || '-',
-            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes(score?.position || '') 
-              ? score?.position 
-              : score?.thru || '-',
-            position: score?.position || '-',
-            status: score?.status || '-',
-            tee_time: score?.tee_time || '-'
+            player_id: id as string,
+            first_name: score?.first_name as string || 'Unknown',
+            last_name: score?.last_name as string || 'Golfer',
+            total: score?.total as string || 'N/A',
+            current_round_score: score?.current_round_score as string || '-',
+            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes(score?.position as string || '') 
+              ? score?.position as string
+              : score?.thru as string || '-',
+            position: score?.position as string || '-',
+            status: score?.status as string || '-',
+            tee_time: score?.tee_time as string || '-'
           };
         });
 
         return {
-          entry_name: entry.entry_name,
-          calculated_score: entry.calculated_score,
-          golfers: sortGolfers(golfers),
-          display_score: calculateDisplayScore(golfers)
+          entry_name: entry.entry_name as string,
+          calculated_score: entry.calculated_score as number,
+          golfers: sortGolfers(golfers as EntryGolfer[]),
+          display_score: calculateDisplayScore(golfers as any)
         };
       }) || [];
 
@@ -154,14 +154,14 @@ export default function Leaderboard() {
       } else if (initialLoadRef.current) {
         // This is the first load - just store the data without animations
         initialLoadRef.current = false;
-        setEntries(entriesWithGolfers);
+        setEntries(entriesWithGolfers as Entry[]);
         setLoading(false);
         return;
       }
 
       // Use a short timeout to ensure prevEntries is set before entries state updates
       setTimeout(() => {
-        setEntries(entriesWithGolfers);
+        setEntries(entriesWithGolfers as Entry[]);
         setLoading(false);
       }, 10);
     }

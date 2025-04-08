@@ -55,7 +55,7 @@ export default function PaymentsPage() {
         const { data: authorizedEmail } = await supabase
           .from('authorized_emails')
           .select('admin')
-          .eq('email', session.user.email)
+          .eq('email', session.user.email!)
           .single();
 
         if (!authorizedEmail?.admin) {
@@ -84,20 +84,21 @@ export default function PaymentsPage() {
       return;
     }
 
-    setActiveTournament(tournament.name);
+    setActiveTournament(tournament.name as string);
 
     const { data: entriesData } = await supabase
       .from('entries')
       .select(`id, entry_name, email, has_paid`)
-      .eq('tournament_id', tournament.id)
+      .eq('tournament_id', tournament.id as any)
       .order('email');
 
     // Group entries by email
-    const grouped = (entriesData || []).reduce<GroupedEntries>((acc, entry) => {
-      if (!acc[entry.email]) {
-        acc[entry.email] = { entries: [], expanded: false };
+    const grouped = (entriesData || []).reduce<GroupedEntries>((acc, entry: any) => {
+      const email = String(entry.email);
+      if (!acc[email]) {
+        acc[email] = { entries: [], expanded: false };
       }
-      acc[entry.email].entries.push(entry);
+      acc[email].entries.push(entry);
       return acc;
     }, {});
 

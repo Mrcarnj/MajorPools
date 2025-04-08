@@ -23,7 +23,9 @@ export default function Home() {
         .order('calculated_score', { ascending: true });
 
       setEntries((data || []).map(entry => ({
-        ...entry,
+        entry_name: entry.entry_name as string,
+        calculated_score: entry.calculated_score as number,
+        display_score: entry.display_score as number,
         topFiveGolfers: []  // Add empty array for home page since we don't need golfer details here
       })));
     }
