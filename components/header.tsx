@@ -62,6 +62,15 @@ export function Header() {
     router.push('/admin');
   };
 
+  const handleSignOut = async () => {
+    try {
+      // Call supabase signOut
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -133,7 +142,7 @@ export function Header() {
                     Admin
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
+                <DropdownMenuItem onClick={handleSignOut}>
                   <PiSignOut className="mr-2 h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>

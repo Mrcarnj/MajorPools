@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +44,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     try {
       // Log this once - the onAuthStateChange in the context will handle the rest
       incrementAuthCallCount(); // Count this login attempt
-      const { error } = await supabaseBrowser.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -52,8 +52,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (error) {
         setError(error.message);
       } else {
-        // Do not call refreshSession - the auth state change listener will handle this
-        // This prevents duplicate calls and infinite loops
+        // Manually refresh the session to ensure the UI updates
+        await refreshSession();
         onClose();
       }
     } catch (err) {
