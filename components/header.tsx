@@ -42,11 +42,23 @@ export function Header() {
   }, []);
 
   const handleAdminClick = () => {
+    const role = authSession?.user?.user_metadata?.role;
+    const isAdmin = role === 'admin';
+    
     console.log('Admin link clicked:', {
       hasSession: !!authSession,
-      role: authSession?.user?.user_metadata?.role,
+      user: authSession?.user?.email,
+      role: role,
+      metadata: JSON.stringify(authSession?.user?.user_metadata || {}),
+      isAdmin: isAdmin,
       timestamp: new Date().toISOString()
     });
+    
+    if (!isAdmin) {
+      console.warn('User is not admin, preventing navigation');
+      return;
+    }
+    
     router.push('/admin');
   };
 

@@ -12,6 +12,9 @@ import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
+// Set to false to disable logging
+const DEBUG = false;
+
 type WithdrawnGolferEntry = {
   entryId: string;
   entryName: string;
@@ -30,77 +33,54 @@ export default function AdminDashboard() {
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [withdrawnGolferEntries, setWithdrawnGolferEntries] = useState<WithdrawnGolferEntry[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
 
+  // One-time auth check on component mount
   useEffect(() => {
-    const checkAuth = async () => {
-      console.log('Admin page auth check:', {
-        loading,
-        hasSession: !!session,
-        user: session?.user?.email,
-        role: session?.user?.user_metadata?.role,
-        timestamp: new Date().toISOString(),
-        path: window.location.pathname
-      });
+    // Only run this effect once
+    if (initialAuthChecked || loading) return;
 
-      if (!loading) {
-        if (!session) {
-          console.log('No session, redirecting to home');
-          setIsRedirecting(true);
-          router.replace('/');
-          return;
-        }
+    // Check auth on first load
+    if (!session) {
+      if (DEBUG) console.log('No session, redirecting to home');
+      setIsRedirecting(true);
+      router.replace('/');
+      return;
+    }
 
-        if (session.user.user_metadata?.role !== 'admin') {
-          console.log('User is not admin, redirecting to home:', {
-            role: session.user.user_metadata?.role
-          });
-          setIsRedirecting(true);
-          router.replace('/');
-          return;
-        }
+    if (session.user.user_metadata?.role !== 'admin') {
+      if (DEBUG) console.log('User is not admin, redirecting to home');
+      setIsRedirecting(true);
+      router.replace('/');
+      return;
+    }
 
-        console.log('Admin session confirmed, fetching tournaments');
-        try {
-          const { data, error } = await supabase
-            .from('tournaments')
-            .select('*')
-            .order('start_date', { ascending: true });
-          
-          if (error) {
-            console.error('Error fetching tournaments:', error);
-            return;
-          }
-          
-          setTournaments(data || []);
-          await checkForWithdrawnGolfers();
-        } catch (error) {
-          console.error('Error in admin page:', error);
-        }
+    // Mark auth as checked so we don't repeat
+    setInitialAuthChecked(true);
+    
+    // Initial data fetch
+    fetchTournaments();
+  }, [loading, session]);
+
+  // Function to fetch tournaments without triggering additional auth checks
+  const fetchTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('start_date', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching tournaments:', error);
+        return;
       }
-    };
-
-    checkAuth();
-
-    // Subscribe to tournament changes
-    const channel = supabase
-      .channel('tournament_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tournaments'
-        },
-        () => {
-          checkAuth(); // Refetch tournaments when changes occur
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [session, loading, router]);
+      
+      setTournaments(data || []);
+      await checkForWithdrawnGolfers();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const checkForWithdrawnGolfers = async () => {
     try {
@@ -259,13 +239,9 @@ Major Pools Team`;
       .from('tournaments')
       .update({ is_active: !currentStatus })
       .eq('id', id);
-
-    // Refresh tournaments
-    const { data } = await supabase
-      .from('tournaments')
-      .select('*')
-      .order('start_date', { ascending: true });
-    setTournaments(data || []);
+    
+    // Fetch tournaments without triggering auth checks
+    fetchTournaments();
   };
 
   const handleSendInvite = async (tournamentName: string, tournamentYear: number) => {
@@ -425,11 +401,7 @@ Major Pools Team`;
         .eq('id', tournamentId);
 
       // 6. Refresh tournaments list
-      const { data } = await supabase
-        .from('tournaments')
-        .select('*')
-        .order('start_date', { ascending: true });
-      setTournaments(data || []);
+      fetchTournaments();
 
     } catch (error) {
       console.error('Error completing tournament:', error);
@@ -437,28 +409,28 @@ Major Pools Team`;
     }
   }
 
-  // Show loading state
-  if (loading) {
+  // If still loading or redirecting, show minimal UI
+  if (loading || isRedirecting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Loading...</div>
+      <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+        <p>Loading...</p>
       </div>
     );
   }
 
-  // Show nothing while redirecting
-  if (isRedirecting) {
-    return null;
-  }
-
-  // Show nothing if no session
-  if (!session) {
-    return null;
-  }
-
   return (
-    <div className="px-1 md:container md:mx-auto py-4 md:py-8 space-y-4 md:space-y-8">
-      <h1 className="text-xl md:text-2xl font-bold px-1 md:px-0">Admin Dashboard</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={fetchTournaments} 
+        className="mb-4"
+      >
+        Refresh Data
+      </Button>
       
       {withdrawnGolferEntries.length > 0 && (
         <Alert variant="destructive">

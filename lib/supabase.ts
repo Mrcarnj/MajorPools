@@ -7,12 +7,8 @@ config({ path: path.resolve(__dirname, '../.env.local') });
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Add debug logs
-console.log('Supabase initialization:', {
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseAnonKey,
-  url: supabaseUrl
-});
+// Disable verbose logging
+const DEBUG = false; 
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
@@ -27,13 +23,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Listen for auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', {
-    event,
-    hasSession: !!session,
-    user: session?.user?.email,
-    role: session?.user?.user_metadata?.role,
-    timestamp: new Date().toISOString()
+// Only add auth state change listener if debugging is enabled
+if (DEBUG) {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', {
+      event,
+      hasSession: !!session,
+      user: session?.user?.email,
+      role: session?.user?.user_metadata?.role,
+      timestamp: new Date().toISOString()
+    });
   });
-}); 
+} 
