@@ -24,7 +24,7 @@ export default function Header() {
   const { theme, setTheme } = useTheme();
   const [showCreateTeam, setShowCreateTeam] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { session: authSession, loading, refreshSession } = useAuth();
+  const { session: authSession, loading, refreshSession, logout } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
@@ -63,6 +63,11 @@ export default function Header() {
   const handleAdminClick = (e: React.MouseEvent) => {
     e.preventDefault();
     router.push('/admin');
+  };
+
+  const handleSignOut = async () => {
+    await logout();
+    router.push('/');
   };
 
   return (
@@ -142,7 +147,7 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => supabase.auth.signOut()}>
+                <DropdownMenuItem onClick={handleSignOut}>
                   <PiSignOut className="mr-2 h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>

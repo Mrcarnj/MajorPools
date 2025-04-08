@@ -59,13 +59,4 @@ export const supabaseBrowser = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 });
-
-// Set up auth state change listener
-supabaseBrowser.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', {
-    event,
-    hasSession: !!session,
-    user: session?.user?.email,
-    timestamp: new Date().toISOString()
-  });
-}); 
+// No onAuthStateChange listener here - handled in AuthContext 

@@ -26,16 +26,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false
   }
 });
-
-// Only set up auth state change listener in browser
-if (typeof window !== 'undefined') {
-  // Listen for auth state changes
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', {
-      event,
-      hasSession: !!session,
-      user: session?.user?.email,
-      timestamp: new Date().toISOString()
-    });
-  });
-} 
+// No auth listeners in the server-side client 

@@ -26,6 +26,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
 
     try {
+      // Use signInWithPassword from Supabase - this will trigger the onAuthStateChange event
       const { error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
@@ -34,7 +35,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (error) {
         setError(error.message);
       } else {
-        await refreshSession();
+        // No need to call refreshSession here as the onAuthStateChange listener will update
+        // the auth context automatically. This prevents duplicate API calls.
         onClose();
       }
     } catch (err) {

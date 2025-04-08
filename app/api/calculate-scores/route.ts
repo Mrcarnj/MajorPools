@@ -56,15 +56,23 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Only create client when needed and with minimal configuration
   const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session || session.user.user_metadata?.role !== 'admin') {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  // Rest of your calculate scores logic
   
-  // Add a return statement at the end to ensure we always return a Response
-  return new Response('Scores calculation initiated', { status: 200 });
+  try {
+    // Only check session when needed - this is a server-side call, so we don't need to worry about excessive calls
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session || session.user.user_metadata?.role !== 'admin') {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Rest of your calculate scores logic
+    
+    // Add a return statement at the end to ensure we always return a Response
+    return new Response('Scores calculation initiated', { status: 200 });
+  } catch (error) {
+    console.error('Error in POST /api/calculate-scores:', error);
+    return new Response('Internal server error', { status: 500 });
+  }
 }
