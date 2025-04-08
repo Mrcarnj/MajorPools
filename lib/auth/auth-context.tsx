@@ -2,20 +2,37 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
+<<<<<<< HEAD
 import { supabaseBrowser } from '@/lib/supabase-browser';
+=======
+import { incrementAuthRequestCount, getAuthRequestCount } from './auth-stats';
+
+// Set this to false to disable all auth-related logging
+const DEBUG_AUTH = false;
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
 
 type AuthContextType = {
   session: Session | null;
   loading: boolean;
+<<<<<<< HEAD
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
+=======
+  requestCount: number;
+  refreshSession: () => Promise<void>;
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
 };
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
+<<<<<<< HEAD
   refreshSession: async () => {},
   logout: async () => {},
+=======
+  requestCount: 0,
+  refreshSession: async () => {},
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
 });
 
 // Use local storage to store the last refresh time
@@ -40,6 +57,7 @@ const incrementAuthCallCount = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
   const [mounted, setMounted] = useState(false);
   // Use a ref to track the current session ID to prevent unnecessary updates
   const sessionIdRef = useRef<string | null>(null);
@@ -125,6 +143,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     };
+=======
+  const [requestCount, setRequestCount] = useState(0);
+
+  // Function to explicitly refresh the session
+  const refreshSession = async () => {
+    try {
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      if (error) {
+        if (DEBUG_AUTH) console.error('Error refreshing session:', error);
+        return;
+      }
+      
+      // Increment counter and update state
+      const newCount = incrementAuthRequestCount();
+      setRequestCount(newCount);
+      
+      if (DEBUG_AUTH) {
+        console.log('Manual session refresh:', {
+          hasSession: !!currentSession,
+          user: currentSession?.user?.email,
+          role: currentSession?.user?.user_metadata?.role,
+          metadata: JSON.stringify(currentSession?.user?.user_metadata || {}),
+          timestamp: new Date().toISOString(),
+          requestCount: newCount
+        });
+      }
+      
+      setSession(currentSession);
+    } catch (e) {
+      if (DEBUG_AUTH) console.error('Error during manual session refresh:', e);
+    }
+  };
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
+      // Increment auth request counter
+      const newCount = incrementAuthRequestCount();
+      setRequestCount(newCount);
+      
+      if (DEBUG_AUTH) {
+        console.log('Initial session check:', {
+          hasSession: !!initialSession,
+          user: initialSession?.user?.email,
+          role: initialSession?.user?.user_metadata?.role,
+          metadata: JSON.stringify(initialSession?.user?.user_metadata || {}),
+          error: error?.message,
+          timestamp: new Date().toISOString(),
+          requestCount: newCount
+        });
+      }
+      
+      setSession(initialSession);
+      setLoading(false);
+    });
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
 
     initializeAuth();
 
@@ -132,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     incrementAuthCallCount(); // Count setting up the listener as an auth call
     const {
       data: { subscription },
+<<<<<<< HEAD
     } = supabaseBrowser.auth.onAuthStateChange((event, newSession) => {
       console.log('Auth state changed:', { 
         event, 
@@ -154,6 +229,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
+=======
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // Increment auth request counter
+      const newCount = incrementAuthRequestCount();
+      setRequestCount(newCount);
+      
+      if (DEBUG_AUTH) {
+        console.log('Auth state change:', {
+          event,
+          hasSession: !!newSession,
+          user: newSession?.user?.email,
+          role: newSession?.user?.user_metadata?.role,
+          metadata: JSON.stringify(newSession?.user?.user_metadata || {}),
+          timestamp: new Date().toISOString(),
+          requestCount: newCount
+        });
+      }
+      
+      setSession(newSession);
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
       setLoading(false);
     });
 
@@ -168,8 +263,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     session,
     loading,
+<<<<<<< HEAD
     refreshSession,
     logout,
+=======
+    requestCount,
+    refreshSession,
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
   };
 
   return (

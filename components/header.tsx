@@ -42,6 +42,7 @@ export default function Header() {
     checkTournamentStatus();
   }, []);
 
+<<<<<<< HEAD
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (authSession?.user?.email) {
@@ -62,6 +63,26 @@ export default function Header() {
 
   const handleAdminClick = (e: React.MouseEvent) => {
     e.preventDefault();
+=======
+  const handleAdminClick = () => {
+    const role = authSession?.user?.user_metadata?.role;
+    const isAdmin = role === 'admin';
+    
+    console.log('Admin link clicked:', {
+      hasSession: !!authSession,
+      user: authSession?.user?.email,
+      role: role,
+      metadata: JSON.stringify(authSession?.user?.user_metadata || {}),
+      isAdmin: isAdmin,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (!isAdmin) {
+      console.warn('User is not admin, preventing navigation');
+      return;
+    }
+    
+>>>>>>> 1560f24088ca14c260fef5b337ec63a4e31a0578
     router.push('/admin');
   };
 
