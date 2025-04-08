@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TrpcProvider } from '@/components/providers/trpc-provider';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { Header } from '@/components/header';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function ClientLayout({
   children,
@@ -25,6 +26,7 @@ export default function ClientLayout({
             {children}
           </main>
           <Toaster />
+          <Analytics />
         </ThemeProvider>
       </TrpcProvider>
     </AuthProvider>

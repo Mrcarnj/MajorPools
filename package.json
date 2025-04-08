@@ -51,6 +51,7 @@
     "@trpc/server": "^11.0.0-next-beta.316",
     "@types/nodemailer": "^6.4.17",
     "@types/react-dom": "18.2.7",
+    "@vercel/analytics": "^1.5.0",
     "autoprefixer": "10.4.15",
     "bcrypt": "^5.1.1",
     "bufferutil": "^4.0.9",
