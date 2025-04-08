@@ -8,6 +8,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
+// For tracking auth calls
+const AUTH_CALL_COUNTER_KEY = 'supabase.auth.callCounter';
+
+const incrementAuthCallCount = () => {
+  try {
+    const currentCount = parseInt(localStorage.getItem(AUTH_CALL_COUNTER_KEY) || '0', 10);
+    const newCount = currentCount + 1;
+    localStorage.setItem(AUTH_CALL_COUNTER_KEY, newCount.toString());
+    console.log(`AUTH CALL COUNT: ${newCount} - ${new Date().toISOString()} - Login attempt`);
+    return newCount;
+  } catch (error) {
+    console.error('Error updating auth call counter:', error);
+    return 0;
+  }
+};
+
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +43,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     try {
       // Use signInWithPassword from Supabase - this will trigger the onAuthStateChange event
+      incrementAuthCallCount(); // Count this login attempt
       const { error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,

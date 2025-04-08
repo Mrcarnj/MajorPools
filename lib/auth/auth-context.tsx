@@ -21,6 +21,21 @@ const AuthContext = createContext<AuthContextType>({
 // Use local storage to store the last refresh time
 const SESSION_REFRESH_KEY = 'supabase.session.lastRefresh';
 const SESSION_MIN_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const AUTH_CALL_COUNTER_KEY = 'supabase.auth.callCounter';
+
+// Track auth calls counter
+const incrementAuthCallCount = () => {
+  try {
+    const currentCount = parseInt(localStorage.getItem(AUTH_CALL_COUNTER_KEY) || '0', 10);
+    const newCount = currentCount + 1;
+    localStorage.setItem(AUTH_CALL_COUNTER_KEY, newCount.toString());
+    console.log(`AUTH CALL COUNT: ${newCount} - ${new Date().toISOString()}`);
+    return newCount;
+  } catch (error) {
+    console.error('Error updating auth call counter:', error);
+    return 0;
+  }
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -37,12 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const lastRefresh = parseInt(lastRefreshStr, 10);
         if (now - lastRefresh < SESSION_MIN_INTERVAL) {
           // Skip this refresh as it's too soon after the last one
+          console.log('Session refresh skipped - too recent');
           return;
         }
       }
     }
 
     try {
+      incrementAuthCallCount(); // Count this auth call
       const { data, error } = await supabaseBrowser.auth.getSession();
       if (error) {
         console.error('Error refreshing session:', error);
@@ -59,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Logout function
   const logout = useCallback(async () => {
     try {
+      incrementAuthCallCount(); // Count this auth call
       const { error } = await supabaseBrowser.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
@@ -74,10 +92,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
+    // Reset counter on page load if needed
+    if (typeof window !== 'undefined' && !localStorage.getItem(AUTH_CALL_COUNTER_KEY)) {
+      localStorage.setItem(AUTH_CALL_COUNTER_KEY, '0');
+    }
+    
     // Get initial session only once when component mounts
     const initializeAuth = async () => {
       try {
         // Try to get session from localStorage first if available
+        incrementAuthCallCount(); // Count this auth call
         const { data, error } = await supabaseBrowser.auth.getSession();
         if (error) {
           console.error('Error getting initial session:', error);
@@ -96,10 +120,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Create only one auth state change listener throughout the app
+    incrementAuthCallCount(); // Count setting up the listener as an auth call
     const {
       data: { subscription },
     } = supabaseBrowser.auth.onAuthStateChange((event, newSession) => {
-      console.log('Auth state changed:', { event, hasSession: !!newSession });
+      console.log('Auth state changed:', { 
+        event, 
+        hasSession: !!newSession,
+        count: incrementAuthCallCount() // Count this auth event
+      });
       
       // Only update session if it actually changed
       if ((!!session) !== (!!newSession) || 

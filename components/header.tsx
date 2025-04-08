@@ -69,6 +69,21 @@ export default function Header() {
     await logout();
     router.push('/');
   };
+  
+  const resetAuthCounter = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('supabase.auth.callCounter', '0');
+      console.log('AUTH CALL COUNTER RESET TO 0');
+    }
+  };
+
+  const showAuthCounter = () => {
+    if (typeof window !== 'undefined') {
+      const count = localStorage.getItem('supabase.auth.callCounter') || '0';
+      console.log(`CURRENT AUTH CALL COUNT: ${count}`);
+      alert(`Current auth call count: ${count}`);
+    }
+  };
 
   return (
     <header className="border-b">
@@ -146,6 +161,16 @@ export default function Header() {
                       NEW ADMIN
                     </Link>
                   </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem onClick={resetAuthCounter}>
+                      Reset Auth Counter
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={showAuthCounter}>
+                      Show Auth Counter
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuItem onClick={handleSignOut}>
                   <PiSignOut className="mr-2 h-4 w-4" />
