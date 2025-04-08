@@ -168,7 +168,7 @@ export default function CreateTeam() {
             tier4_golfer1: formData.selections.tier4[0],
             tier5_golfer1: formData.selections.tier5[0]
           })
-          .eq('id', existingEntry.id);
+          .eq('id', existingEntry.id as any);
 
         if (updateError) throw updateError;
         
@@ -299,7 +299,7 @@ export default function CreateTeam() {
         tier5: sortedGolfers.slice(68)                       // Remaining (including all unranked golfers)
       };
 
-      setGolfers(tieredGolfers);
+      setGolfers(tieredGolfers as TieredGolfers);
     }
 
     fetchGolfers();

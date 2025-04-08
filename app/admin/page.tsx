@@ -61,7 +61,7 @@ export default function AdminDashboard() {
         const { data: authorizedEmail } = await supabase
           .from('authorized_emails')
           .select('admin')
-          .eq('email', session.user.email)
+          .eq('email', session.user.email!)
           .single();
 
         if (!authorizedEmail?.admin) {
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
           tier4_golfer1,
           tier5_golfer1
         `)
-        .eq('tournament_id', activeTournament.id);
+        .eq('tournament_id', activeTournament.id as any);
 
       if (!entries) return;
 
@@ -355,8 +355,8 @@ Major Pools Team`;
 
       // 2. Calculate final rankings and positions
       const entriesForRankings: Entry[] = entries.map(entry => ({
-        entry_name: entry.entry_name,
-        calculated_score: entry.calculated_score,
+        entry_name: entry.entry_name as string,
+        calculated_score: entry.calculated_score as number,
         display_score: 0,
         topFiveGolfers: []
       }));
@@ -433,7 +433,7 @@ Major Pools Team`;
             last_name: score?.last_name || 'Golfer',
             total: score?.total || 'N/A',
             current_round_score: score?.current_round_score || '-',
-            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes(score?.position || '') 
+            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes((score?.position || '') as string) 
               ? score?.position 
               : score?.thru || '-',
             position: score?.position || '-',
@@ -442,7 +442,7 @@ Major Pools Team`;
           };
         });
 
-        const displayScore = calculateDisplayScore(golfers);
+        const displayScore = calculateDisplayScore(golfers as unknown as GolferScore[]);
 
         const updateData = {
           t1g1_score: scoreMap.get(entry.tier1_golfer1)?.total,
@@ -457,7 +457,7 @@ Major Pools Team`;
           entry_position: rankingMap.get(entry.id)
         };
 
-        await supabase.from('entries').update(updateData).eq('id', entry.id);
+        await supabase.from('entries').update(updateData).eq('id', entry.id as any);
       }
 
       // 5. Set tournament status to Official (but don't change is_active)

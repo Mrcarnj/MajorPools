@@ -54,20 +54,20 @@ export default function NewAdminPage() {
           tier
         )
       `)
-      .eq('tournament_id', tournament.id);
+      .eq('tournament_id', tournament.id as any);
 
     if (!entries) return;
 
     const withdrawnEntries: WithdrawnGolferEntry[] = [];
 
-    for (const entry of entries) {
-      const withdrawnGolfers = entry.golfers.filter(golfer => !golfer.player_id);
+    for (const entry of entries as any[]) {
+      const withdrawnGolfers = (entry.golfers as any[]).filter((golfer: any) => !golfer.player_id);
       if (withdrawnGolfers.length > 0) {
         withdrawnEntries.push({
-          entryId: entry.id,
-          entryName: entry.entry_name,
-          email: entry.email,
-          withdrawnGolfers: withdrawnGolfers.map(golfer => ({
+          entryId: entry.id as string,
+          entryName: entry.entry_name as string,
+          email: entry.email as string,
+          withdrawnGolfers: withdrawnGolfers.map((golfer: any) => ({
             playerId: golfer.player_id,
             firstName: golfer.first_name,
             lastName: golfer.last_name,
@@ -107,7 +107,7 @@ export default function NewAdminPage() {
         const { data: authorizedEmail } = await supabase
           .from('authorized_emails')
           .select('admin')
-          .eq('email', session.user.email)
+          .eq('email', session.user.email!)
           .single();
 
         if (!authorizedEmail?.admin) {
@@ -345,7 +345,7 @@ Major Pools Team`;
             last_name: score?.last_name || 'Golfer',
             total: score?.total || 'N/A',
             current_round_score: score?.current_round_score || '-',
-            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes(score?.position || '') 
+            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes((score?.position || '') as string) 
               ? score?.position 
               : score?.thru || '-',
             position: score?.position || '-',
@@ -373,7 +373,7 @@ Major Pools Team`;
           entry_position: rankingMap.get(entry.id)
         };
 
-        await supabase.from('entries').update(updateData).eq('id', entry.id);
+        await supabase.from('entries').update(updateData).eq('id', entry.id as any);
       }
 
       // 5. Set tournament status to Official (but don't change is_active)
