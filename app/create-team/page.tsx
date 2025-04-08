@@ -20,6 +20,7 @@ type Golfer = {
   last_name: string;
   ranking: number;
   player_id: string;
+  is_amateur: boolean;
 };
 
 type TieredGolfers = {
@@ -263,7 +264,7 @@ export default function CreateTeam() {
       // Fetch all golfers with the tournament_id, including those with NULL rankings
       const { data, error } = await supabase
         .from('golfer_scores')
-        .select('first_name, last_name, ranking, player_id')
+        .select('first_name, last_name, ranking, player_id, is_amateur')
         .eq('tournament_id', activeTournament.id)
         .order('ranking', { ascending: true, nullsFirst: false }); // Put NULL rankings at the end
 
@@ -293,9 +294,9 @@ export default function CreateTeam() {
       const tieredGolfers = {
         tier1: sortedGolfers.slice(0, 8),                    // Top 6
         tier2: sortedGolfers.slice(8, 23),                   // Next 15
-        tier3: sortedGolfers.slice(23, 53),                  // Next 20
-        tier4: sortedGolfers.slice(53, 83),                  // Next 20
-        tier5: sortedGolfers.slice(83)                       // Remaining
+        tier3: sortedGolfers.slice(23, 38),                  // Next 20
+        tier4: sortedGolfers.slice(38, 58),                  // Next 20
+        tier5: sortedGolfers.slice(58)                       // Remaining
       };
 
       setGolfers(tieredGolfers);
@@ -555,7 +556,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier1', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}
+                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
                   </label>
                 </div>
               ))}
@@ -579,7 +580,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier2', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}
+                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
                   </label>
                 </div>
               ))}
@@ -603,7 +604,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier3', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}
+                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
                   </label>
                 </div>
               ))}
@@ -627,7 +628,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier4', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}
+                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
                   </label>
                 </div>
               ))}
@@ -651,7 +652,7 @@ export default function CreateTeam() {
                     onCheckedChange={() => handleGolferSelection('tier5', golfer.player_id)}
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}
+                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
                   </label>
                 </div>
               ))}
