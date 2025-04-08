@@ -1,82 +1,55 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAuth } from '@/lib/auth/auth-context';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { useAuth } from '@/lib/auth/auth-context';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export function LoginModal({ 
-  isOpen, 
-  onClose 
-}: { 
-  isOpen: boolean; 
+interface LoginModalProps {
+  isOpen: boolean;
   onClose: () => void;
-}) {
+}
+
+export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const { session } = useAuth();
+  const { refreshSession } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Validate email
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      setError('Please enter a valid email address');
-      setLoading(false);
-      return;
-    }
-
-    // Validate password
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-
-    // Sanitize inputs
-    const sanitizedEmail = email.trim().toLowerCase();
-
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: sanitizedEmail,
+      const { error } = await supabaseBrowser.auth.signInWithPassword({
+        email,
         password,
       });
 
-      if (signInError) {
-        setError(signInError.message);
-        toast.error(signInError.message);
+      if (error) {
+        setError(error.message);
       } else {
-        // Force a session refresh
-        await supabase.auth.getSession();
-        
-        toast.success('Logged in successfully!');
+        await refreshSession();
         onClose();
-        
-        // Force a hard refresh to ensure all components update
-        window.location.reload();
       }
-    } catch (error: any) {
-      setError('An error occurred during login');
-      toast.error('An error occurred during login');
+    } catch (err) {
+      setError('An unexpected error occurred');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Sign In</DialogTitle>
+          <DialogTitle>Login</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
@@ -86,7 +59,6 @@ export function LoginModal({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
               required
             />
           </div>
@@ -97,15 +69,14 @@ export function LoginModal({
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
               required
             />
           </div>
           {error && (
-            <div className="text-sm text-red-500">{error}</div>
+            <div className="text-red-500 text-sm">{error}</div>
           )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </Button>
         </form>
       </DialogContent>
