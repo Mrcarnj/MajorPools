@@ -295,7 +295,7 @@ export default function CreateTeam() {
         tier1: sortedGolfers.slice(0, 8),                    // Top 8
         tier2: sortedGolfers.slice(8, 23),                   // Next 15
         tier3: sortedGolfers.slice(23, 43),                  // Next 30
-        tier4: sortedGolfers.slice(43, 83),                  // Next 30
+        tier4: sortedGolfers.slice(43, 63),                  // Next 30
         tier5: sortedGolfers.slice(83)                       // Remaining (including all unranked golfers)
       };
 
