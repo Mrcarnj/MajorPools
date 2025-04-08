@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { TrpcProvider } from '@/components/providers/trpc-provider';
 import { AuthProvider } from '@/lib/auth/auth-context';
-import Header from '@/components/header';
+import { Header } from '@/components/header';
 
 const inter = Inter({ subsets: ['latin'] });
 
