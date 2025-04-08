@@ -382,6 +382,32 @@ export function QuickLeaderboard() {
 
   debug(`Rendering ${limitedEntries.length} entries, with ${Object.keys(highlightedEntries).length} highlighted`);
 
+  // If tournament hasn't started yet, just show a list of entry names
+  if (!tournamentStarted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrophyIcon className="h-5 w-5" />
+            Registered Teams
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-1 md:p-6">
+          <div className="space-y-1 max-h-[420px] overflow-y-auto pr-2">
+            {entries.map((entry) => (
+              <div 
+                key={entry.entry_name}
+                className="rounded-sm px-2 py-1 hover:bg-muted/50"
+              >
+                <div className="text-sm md:text-base font-medium">{entry.entry_name}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
