@@ -20,11 +20,12 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { MdOutlineLeaderboard } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 
-export function Header() {
+export default function Header() {
   const { theme, setTheme } = useTheme();
   const [showCreateTeam, setShowCreateTeam] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { session: authSession } = useAuth();
+  const { session: authSession, loading, refreshSession } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,14 +42,26 @@ export function Header() {
     checkTournamentStatus();
   }, []);
 
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (authSession?.user?.email) {
+        const { data: authorizedEmail } = await supabase
+          .from('authorized_emails')
+          .select('admin')
+          .eq('email', authSession.user.email)
+          .single();
+        
+        setIsAdmin(!!authorizedEmail?.admin);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [authSession]);
+
   const handleAdminClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('Admin link clicked:', {
-      hasSession: !!authSession,
-      role: authSession?.user?.user_metadata?.role,
-      timestamp: new Date().toISOString(),
-      path: window.location.pathname
-    });
     router.push('/admin');
   };
 
@@ -76,14 +89,12 @@ export function Header() {
                 <RxDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
-              {authSession.user.user_metadata?.role === 'admin' && (
-                <button 
-                  onClick={handleAdminClick}
-                  className="hover:text-primary flex items-center text-red-500 hover:text-red-600"
-                >
+
+              {isAdmin && (
+                <Link href="/new-admin" className="hover:text-primary flex items-center text-red-500 hover:text-red-600">
                   <RiAdminLine className="mr-2 h-4 w-4" />
-                  Admin
-                </button>
+                  NEW ADMIN
+                </Link>
               )}
             </>
           )}
@@ -117,10 +128,18 @@ export function Header() {
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                {authSession && authSession.user.user_metadata?.role === 'admin' && (
+                {isAdmin && (
                   <DropdownMenuItem onClick={handleAdminClick} className="md:hidden">
                     <RiAdminLine className="mr-2 h-4 w-4" />
                     Admin
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <DropdownMenuItem asChild className="md:hidden">
+                    <Link href="/new-admin">
+                      <RiAdminLine className="mr-2 h-4 w-4" />
+                      NEW ADMIN
+                    </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => supabase.auth.signOut()}>

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
-import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
@@ -24,7 +23,7 @@ type WithdrawnGolferEntry = {
   }[];
 };
 
-export default function AdminDashboard() {
+export default function NewAdminPage() {
   const router = useRouter();
   const { session, loading } = useAuth();
   const [tournaments, setTournaments] = useState<any[]>([]);
@@ -33,12 +32,59 @@ export default function AdminDashboard() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [mounted, setMounted] = useState(false);
 
+  const checkForWithdrawnGolfers = async () => {
+    const { data: tournament } = await supabase
+      .from('tournaments')
+      .select('id')
+      .eq('is_active', true)
+      .single();
+
+    if (!tournament) return;
+
+    const { data: entries } = await supabase
+      .from('entries')
+      .select(`
+        id,
+        entry_name,
+        email,
+        golfers (
+          player_id,
+          first_name,
+          last_name,
+          tier
+        )
+      `)
+      .eq('tournament_id', tournament.id);
+
+    if (!entries) return;
+
+    const withdrawnEntries: WithdrawnGolferEntry[] = [];
+
+    for (const entry of entries) {
+      const withdrawnGolfers = entry.golfers.filter(golfer => !golfer.player_id);
+      if (withdrawnGolfers.length > 0) {
+        withdrawnEntries.push({
+          entryId: entry.id,
+          entryName: entry.entry_name,
+          email: entry.email,
+          withdrawnGolfers: withdrawnGolfers.map(golfer => ({
+            playerId: golfer.player_id,
+            firstName: golfer.first_name,
+            lastName: golfer.last_name,
+            tier: golfer.tier
+          }))
+        });
+      }
+    }
+
+    setWithdrawnGolferEntries(withdrawnEntries);
+  };
+
   useEffect(() => {
-    console.log('Admin page mounted:', {
+    console.log('New Admin page mounted:', {
       loading,
       hasSession: !!session,
       user: session?.user?.email,
-      role: session?.user?.user_metadata?.role,
       timestamp: new Date().toISOString(),
       path: window.location.pathname,
       isInitialLoad,
@@ -123,140 +169,11 @@ export default function AdminDashboard() {
       .subscribe();
 
     return () => {
-      console.log('Admin page unmounting');
+      console.log('New Admin page unmounting');
       setMounted(false);
       channel.unsubscribe();
     };
   }, [session, loading, router, isInitialLoad, mounted]);
-
-  const checkForWithdrawnGolfers = async () => {
-    try {
-      // Get active tournament
-      const { data: activeTournament } = await supabase
-        .from('tournaments')
-        .select('id')
-        .eq('is_active', true)
-        .single();
-
-      if (!activeTournament) return;
-
-      // Get all entries for active tournament
-      const { data: entries } = await supabase
-        .from('entries')
-        .select(`
-          id,
-          entry_name,
-          email,
-          tier1_golfer1, tier1_golfer2,
-          tier2_golfer1, tier2_golfer2,
-          tier3_golfer1, tier3_golfer2,
-          tier4_golfer1,
-          tier5_golfer1
-        `)
-        .eq('tournament_id', activeTournament.id);
-
-      if (!entries) return;
-
-      // Get all golfers with tournament_id NULL (withdrawn)
-      const { data: withdrawnGolfers } = await supabase
-        .from('golfer_scores')
-        .select('player_id, first_name, last_name')
-        .is('tournament_id', null);
-
-      if (!withdrawnGolfers) return;
-
-      const withdrawnGolferIds = new Set(withdrawnGolfers.map(g => g.player_id));
-      const withdrawnGolferMap = new Map(withdrawnGolfers.map(g => [g.player_id, g]));
-
-      // Check each entry for withdrawn golfers
-      const affectedEntries: WithdrawnGolferEntry[] = entries
-        .map(entry => {
-          const withdrawnGolfersInEntry = [];
-          
-          // Check each tier
-          if (withdrawnGolferIds.has(entry.tier1_golfer1)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier1_golfer1,
-              firstName: withdrawnGolferMap.get(entry.tier1_golfer1)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier1_golfer1)?.last_name || '',
-              tier: 'Tier 1'
-            });
-          }
-          if (withdrawnGolferIds.has(entry.tier1_golfer2)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier1_golfer2,
-              firstName: withdrawnGolferMap.get(entry.tier1_golfer2)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier1_golfer2)?.last_name || '',
-              tier: 'Tier 1'
-            });
-          }
-          // ... repeat for other tiers
-          if (withdrawnGolferIds.has(entry.tier2_golfer1)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier2_golfer1,
-              firstName: withdrawnGolferMap.get(entry.tier2_golfer1)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier2_golfer1)?.last_name || '',
-              tier: 'Tier 2'
-            });
-          }
-          if (withdrawnGolferIds.has(entry.tier2_golfer2)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier2_golfer2,
-              firstName: withdrawnGolferMap.get(entry.tier2_golfer2)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier2_golfer2)?.last_name || '',
-              tier: 'Tier 2'
-            });
-          }
-          if (withdrawnGolferIds.has(entry.tier3_golfer1)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier3_golfer1,
-              firstName: withdrawnGolferMap.get(entry.tier3_golfer1)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier3_golfer1)?.last_name || '',
-              tier: 'Tier 3'
-            });
-          }
-          if (withdrawnGolferIds.has(entry.tier3_golfer2)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier3_golfer2,
-              firstName: withdrawnGolferMap.get(entry.tier3_golfer2)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier3_golfer2)?.last_name || '',
-              tier: 'Tier 3'
-            });
-          }
-          if (withdrawnGolferIds.has(entry.tier4_golfer1)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier4_golfer1,
-              firstName: withdrawnGolferMap.get(entry.tier4_golfer1)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier4_golfer1)?.last_name || '',
-              tier: 'Tier 4'
-            });
-          }
-          if (withdrawnGolferIds.has(entry.tier5_golfer1)) {
-            withdrawnGolfersInEntry.push({
-              playerId: entry.tier5_golfer1,
-              firstName: withdrawnGolferMap.get(entry.tier5_golfer1)?.first_name || '',
-              lastName: withdrawnGolferMap.get(entry.tier5_golfer1)?.last_name || '',
-              tier: 'Tier 5'
-            });
-          }
-
-          if (withdrawnGolfersInEntry.length > 0) {
-            return {
-              entryId: entry.id,
-              entryName: entry.entry_name,
-              email: entry.email,
-              withdrawnGolfers: withdrawnGolfersInEntry
-            };
-          }
-          return null;
-        })
-        .filter((entry): entry is WithdrawnGolferEntry => entry !== null);
-
-      setWithdrawnGolferEntries(affectedEntries);
-    } catch (error) {
-      console.error('Error checking for withdrawn golfers:', error);
-    }
-  };
 
   const handleSendWithdrawnGolferEmail = async (entry: WithdrawnGolferEntry) => {
     const tournament = tournaments.find(t => t.is_active);
@@ -354,14 +271,12 @@ Major Pools Team`;
       });
 
       // 2. Calculate final rankings and positions
-      const entriesForRankings: Entry[] = entries.map(entry => ({
+      const entriesForRankings = entries.map(entry => ({
         entry_name: entry.entry_name,
         calculated_score: entry.calculated_score,
         display_score: 0,
         topFiveGolfers: []
       }));
-
-      const rankings = calculateRankings(entriesForRankings);
 
       // Create a map of entry name to ranking, but keep T for all tied positions
       const rankingMap = new Map();
@@ -413,9 +328,6 @@ Major Pools Team`;
       // Create scores map for quick lookup - same as leaderboard
       const scoreMap = new Map(scores.map(score => [score.player_id, score]));
 
-      // Helper function to check if position indicates player is out
-      const isPlayerOut = (position?: string) => ['CUT', 'WD', 'DQ'].includes(position || '');
-
       // 4. Update each entry with scores AND ranking
       for (const entry of entries) {
         // Transform entry data exactly like leaderboard does
@@ -442,7 +354,11 @@ Major Pools Team`;
           };
         });
 
-        const displayScore = calculateDisplayScore(golfers);
+        const displayScore = golfers
+          .map(g => g.total === 'N/A' ? 0 : Number(g.total))
+          .sort((a, b) => a - b)
+          .slice(0, 5)
+          .reduce((sum, score) => sum + score, 0);
 
         const updateData = {
           t1g1_score: scoreMap.get(entry.tier1_golfer1)?.total,
@@ -499,8 +415,8 @@ Major Pools Team`;
   }
 
   return (
-    <div className="px-1 md:container md:mx-auto py-4 md:py-8 space-y-4 md:space-y-8">
-      <h1 className="text-xl md:text-2xl font-bold px-1 md:px-0">Admin Dashboard</h1>
+    <div className="space-y-4 md:space-y-8">
+      <h1 className="text-xl md:text-2xl font-bold">Tournament Management</h1>
       
       {withdrawnGolferEntries.length > 0 && (
         <Alert variant="destructive">
