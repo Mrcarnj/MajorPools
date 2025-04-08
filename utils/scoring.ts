@@ -92,11 +92,11 @@ export function calculateRankings(entries: Entry[]): (string | null)[] {
 }
 
 const PAYOUT_PERCENTAGES = {
-  1: 0.212765957446809,
-  2: 0.159574468085106,
-  3: 0.13298,
-  4: 0.10638,
-  5: 0.07979,
+  1: 0.202765957446809,
+  2: 0.149574468085106,
+  3: 0.12298,
+  4: 0.09638,
+  5: 0.06979, //i took away 1% from here to first to bring down to 85%
   6: 0.06383,
   7: 0.05319,
   8: 0.04255,
@@ -111,6 +111,7 @@ function roundUpToNearest5(num: number): number {
 
 export function calculatePrizePool(entries: Entry[]): { 
   totalPot: number;
+  rawPot: number;
   displayPot: number;
   donation: number;
   payouts: Map<string, number>;
@@ -120,9 +121,9 @@ export function calculatePrizePool(entries: Entry[]): {
   const rawPot = entries.length * entryFee;
   const totalPot = roundUpToNearest5(rawPot);
   
-  // Calculate displayed pot (85% of total) and donation (10% of total)
-  const displayPot = Math.floor(totalPot * 0.85);
+  // Calculate donation (10% of raw pot) and display pot (85% of raw pot)
   const donation = rawPot * 0.1; // Don't round down - keep decimal precision
+  const displayPot = Math.floor(rawPot * 0.85); // Display pot for leaderboard
   
   const payouts = new Map<string, number>();
   
@@ -163,7 +164,7 @@ export function calculatePrizePool(entries: Entry[]): {
       // Get the 10th position percentage and split it among ties
       const tenthPlacePercentage = PAYOUT_PERCENTAGES[10];
       const splitPercentage = tenthPlacePercentage / numTied;
-      totalPayout = displayPot * splitPercentage;
+      totalPayout = rawPot * splitPercentage;
       
       const splitPayout = Math.ceil(totalPayout);
       entryNames.forEach(entryName => {
@@ -174,7 +175,7 @@ export function calculatePrizePool(entries: Entry[]): {
       for (let i = 0; i < numTied; i++) {
         const payoutPosition = currentPosition + i;
         if (payoutPosition <= 9) { // Only include payouts through position 9
-          totalPayout += displayPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
+          totalPayout += rawPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
         }
       }
       
@@ -188,5 +189,5 @@ export function calculatePrizePool(entries: Entry[]): {
     currentPosition += numTied;
   });
 
-  return { totalPot, displayPot, donation, payouts };
+  return { totalPot, rawPot, displayPot, donation, payouts };
 } 
