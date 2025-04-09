@@ -384,6 +384,10 @@ export function QuickLeaderboard() {
 
   // If tournament hasn't started yet, just show a list of entry names
   if (!tournamentStarted) {
+    const sortedEntries = [...entries].sort((a, b) => 
+      a.entry_name.localeCompare(b.entry_name)
+    );
+    
     return (
       <Card>
         <CardHeader>
@@ -394,7 +398,7 @@ export function QuickLeaderboard() {
         </CardHeader>
         <CardContent className="p-1 md:p-6">
           <div className="space-y-1 max-h-[420px] overflow-y-auto pr-2">
-            {entries.map((entry) => (
+            {sortedEntries.map((entry) => (
               <div 
                 key={entry.entry_name}
                 className="rounded-sm px-2 py-1 hover:bg-muted/50"
