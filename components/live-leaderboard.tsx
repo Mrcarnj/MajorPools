@@ -42,6 +42,22 @@ export function LiveLeaderboard() {
     return numA - numB;
   };
 
+  // Helper function to convert tee times to comparable values
+  const teeTimeToMinutes = (teeTime: string): number => {
+    if (!teeTime) return Number.MAX_SAFE_INTEGER;
+    
+    const isPM = teeTime.toLowerCase().includes('pm');
+    const timeStr = teeTime.replace(/am|pm/i, '').trim();
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    // Convert to minutes since midnight, adding 12 hours for PM times (except 12 PM)
+    let totalMinutes = hours * 60 + (minutes || 0);
+    if (isPM && hours !== 12) totalMinutes += 12 * 60;
+    if (!isPM && hours === 12) totalMinutes = minutes || 0; // 12 AM is 0 hours
+    
+    return totalMinutes;
+  };
+
   const fetchData = async () => {
     const { data: tournament } = await supabase
       .from('tournaments')
@@ -76,9 +92,31 @@ export function LiveLeaderboard() {
       const special = ['CUT', 'WD', 'DQ', '-'];
       const aIsSpecial = special.includes(a.position);
       const bIsSpecial = special.includes(b.position);
+      
+      // Always put real positions above special positions
       if (aIsSpecial && !bIsSpecial) return 1;
       if (!aIsSpecial && bIsSpecial) return -1;
-      if (aIsSpecial && bIsSpecial) return a.position.localeCompare(b.position);
+      
+      // If both have special positions
+      if (aIsSpecial && bIsSpecial) {
+        // Handle cases where both have tee times shown in the "Thru" column
+        const aHasTeeTime = a.position === '-' && a.tee_time;
+        const bHasTeeTime = b.position === '-' && b.tee_time;
+        
+        // If both have dash positions and tee times, sort by tee time
+        if (aHasTeeTime && bHasTeeTime && a.position === '-' && b.position === '-') {
+          return teeTimeToMinutes(a.tee_time!) - teeTimeToMinutes(b.tee_time!);
+        }
+        
+        // Put dash with tee times above other special positions
+        if (a.position === '-' && b.position !== '-') return -1;
+        if (a.position !== '-' && b.position === '-') return 1;
+        
+        // Sort other special positions alphabetically
+        return a.position.localeCompare(b.position);
+      }
+      
+      // Both have real positions, sort by position number
       const posA = parseInt(a.position.replace(/^T/, ''));
       const posB = parseInt(b.position.replace(/^T/, ''));
       return posA - posB;
