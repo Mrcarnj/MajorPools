@@ -18,6 +18,8 @@ import { MdOutlineEmail } from "react-icons/md";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 type Entry = {
   id: string;
@@ -39,6 +41,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTournament, setActiveTournament] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('all');
 
   useEffect(() => {
     fetchEntries();
@@ -127,17 +130,27 @@ export default function PaymentsPage() {
   };
 
   const filterEntries = () => {
-    if (!searchTerm) return groupedEntries;
+    if (!searchTerm && paymentFilter === 'all') return groupedEntries;
 
     const searchLower = searchTerm.toLowerCase();
     const filtered: GroupedEntries = {};
 
     Object.entries(groupedEntries).forEach(([email, group]) => {
       // Filter entries within each group
-      const matchingEntries = group.entries.filter(entry => 
-        entry.email.toLowerCase().includes(searchLower) ||
-        entry.entry_name.toLowerCase().includes(searchLower)
-      );
+      const matchingEntries = group.entries.filter(entry => {
+        // Apply search filter
+        const matchesSearch = !searchTerm || 
+          entry.email.toLowerCase().includes(searchLower) ||
+          entry.entry_name.toLowerCase().includes(searchLower);
+        
+        // Apply payment filter
+        const matchesPayment = 
+          paymentFilter === 'all' || 
+          (paymentFilter === 'paid' && entry.has_paid) || 
+          (paymentFilter === 'unpaid' && !entry.has_paid);
+        
+        return matchesSearch && matchesPayment;
+      });
 
       if (matchingEntries.length > 0) {
         filtered[email] = {
@@ -227,7 +240,7 @@ export default function PaymentsPage() {
             )}
           </div>
           
-          <div className="flex items-center space-x-2 flex-1 max-w-xl">
+          <div className="flex items-center space-x-4 flex-1 max-w-xl">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -237,6 +250,26 @@ export default function PaymentsPage() {
                 className="pl-8"
               />
             </div>
+            
+            <RadioGroup 
+              value={paymentFilter} 
+              onValueChange={setPaymentFilter}
+              className="flex space-x-2"
+            >
+              <div className="flex items-center space-x-1">
+                <RadioGroupItem value="all" id="filter-all" />
+                <Label htmlFor="filter-all">All</Label>
+              </div>
+              <div className="flex items-center space-x-1">
+                <RadioGroupItem value="paid" id="filter-paid" />
+                <Label htmlFor="filter-paid">Paid</Label>
+              </div>
+              <div className="flex items-center space-x-1">
+                <RadioGroupItem value="unpaid" id="filter-unpaid" />
+                <Label htmlFor="filter-unpaid">Unpaid</Label>
+              </div>
+            </RadioGroup>
+            
             <div className="text-sm text-muted-foreground whitespace-nowrap">
               {Object.values(filterEntries()).reduce((acc, group) => acc + group.entries.length, 0)} entries
             </div>
