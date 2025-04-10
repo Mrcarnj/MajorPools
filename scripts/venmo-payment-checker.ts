@@ -157,7 +157,7 @@ function loadVenmoTransactions(csvPath: string): VenmoTransaction[] {
     });
     
     // Filter out rows without an ID (likely empty or header repeats)
-    return records.filter(record => record.ID);
+    return records.filter((record: VenmoTransaction) => record.ID);
   } catch (error) {
     console.error('Error loading Venmo transactions:', error);
     return [];
