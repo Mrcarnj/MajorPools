@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-04-10T16:46:45.233Z",
+  "paid": [
+    {
+      "userId": "user1",
+      "username": "Ross Adamucci",
+      "amount": 25,
+      "hasPaid": true,
+      "paymentNote": "Let him cook"
+    },
+    {
+      "userId": "user2",
+      "username": "Anthony Calabrese",
+      "amount": 50,
+      "hasPaid": true,
+      "paymentNote": "entries"
+    },
+    {
+      "userId": "user3",
+      "username": "Dylan Chappine",
+      "amount": 25,
+      "hasPaid": true,
+      "paymentNote": "dylanchappine"
+    },
+    {
+      "userId": "user4",
+      "username": "Chris Tommins",
+      "amount": 25,
+      "hasPaid": true,
+      "paymentNote": "Chris Tommins"
+    },
+    {
+      "userId": "user5",
+      "username": "Brendan Young",
+      "amount": 50,
+      "hasPaid": true,
+      "paymentNote": "Masters pool"
+    }
+  ],
+  "unpaid": [],
+  "summary": {
+    "totalEntries": 5,
+    "paidCount": 5,
+    "unpaidCount": 0,
+    "paidAmount": 175,
+    "unpaidAmount": 0
+  }
+}

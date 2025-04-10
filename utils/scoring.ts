@@ -11,6 +11,7 @@ export type Entry = {
   calculated_score: number;
   display_score: number | "CUT";
   topFiveGolfers: GolferScore[];
+  allGolfers?: GolferScore[];
 };
 
 export function calculateEntryScore(golferScores: GolferScore[]): number {

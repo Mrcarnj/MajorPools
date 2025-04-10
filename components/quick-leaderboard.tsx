@@ -1,6 +1,6 @@
 'use client';
 
-import { calculateDisplayScore, calculateRankings, type Entry } from '@/utils/scoring';
+import { calculateDisplayScore, calculateRankings, type Entry, type GolferScore } from '@/utils/scoring';
 import { Archivo } from 'next/font/google';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrophyIcon } from 'lucide-react';
@@ -151,20 +151,23 @@ export function QuickLeaderboard() {
             player_id: id
           }));
 
-          // Sort golfers by score and take top 5
-          const topFiveGolfers = golferScores
+          // Sort golfers by score
+          const sortedGolfers = golferScores
             .sort((a, b) => {
               const scoreA = a.total === 'E' ? 0 : Number(a.total.replace('+', ''));
               const scoreB = b.total === 'E' ? 0 : Number(b.total.replace('+', ''));
               return scoreA - scoreB;
-            })
-            .slice(0, 5);
+            });
+
+          // Create a separate array for top 5 (scored golfers)
+          const topFiveGolfers = sortedGolfers.slice(0, 5);
 
           return {
             entry_name: entry.entry_name,
             calculated_score: entry.calculated_score === null ? 0 : entry.calculated_score,
             display_score: calculateDisplayScore(golferScores) as number,
-            topFiveGolfers
+            topFiveGolfers,
+            allGolfers: sortedGolfers // Store all golfers for display
           };
         });
 
@@ -564,16 +567,26 @@ export function QuickLeaderboard() {
                         }}
                       >
                         <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
-                          {entry.topFiveGolfers.map(golfer => (
-                            <div key={golfer.player_id} className="flex items-center gap-1">
-                              <span>{golfer.first_name} {golfer.last_name}</span>
-                              <span className={`${archivo.className} ${
-                                golfer.total.startsWith('-') ? 'text-red-600' : ''
-                              }`}>
-                                ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
-                              </span>
-                            </div>
-                          ))}
+                          {entry.allGolfers?.map((golfer: GolferScore, golferIndex: number) => {
+                            // Is this golfer in the top 5 (counted toward score)?
+                            const isCounted = golferIndex < 5;
+                            return (
+                              <div 
+                                key={golfer.player_id} 
+                                className={`flex items-center gap-1 ${!isCounted ? 'opacity-60 italic' : ''}`}
+                              >
+                                <span>
+                                  {golfer.first_name} {golfer.last_name}
+                                  {!isCounted && <span className="text-muted-foreground ml-1"></span>}
+                                </span>
+                                <span className={`${archivo.className} ${
+                                  golfer.total.startsWith('-') ? 'text-red-600' : ''
+                                }`}>
+                                  ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}

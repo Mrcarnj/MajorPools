@@ -1,0 +1,6 @@
+ID,Type,Status,DateTime,Note,From,To,Amount,Fee,Tax,Funding,Destination,Beginning_Balance,Ending_Balance,Statement_Period_Venmo_Fees,Terminal_Location,Year_to_Date_Venmo_Fees,Disclaimer
+1234567,Payment,Complete,2023-05-15T14:23:45,pool entry,John Smith,Your Name,$25.00,$0.00,$0.00,Venmo Balance,Venmo Balance,$450.00,$475.00,$0.00,,,
+1234568,Payment,Complete,2023-05-15T16:45:12,for the pool entry,Bob Johnson,Your Name,$50.00,$0.00,$0.00,Venmo Balance,Venmo Balance,$475.00,$525.00,$0.00,,,
+1234569,Payment,Complete,2023-05-16T09:12:34,lunch,Mike Thompson,Your Name,$15.00,$0.00,$0.00,Venmo Balance,Venmo Balance,$525.00,$540.00,$0.00,,,
+1234570,Payment,Complete,2023-05-16T18:30:22,pool entry and drinks,Alice Wilson,Your Name,$25.00,$0.00,$0.00,Visa Debit *1234,Venmo Balance,$540.00,$565.00,$0.00,,,
+1234571,Payment,Pending,2023-05-17T10:05:47,pool entry,Mike Thompson,Your Name,$100.00,$0.00,$0.00,Venmo Balance,Venmo Balance,$565.00,$665.00,$0.00,,, 

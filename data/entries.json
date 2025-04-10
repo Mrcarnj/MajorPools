@@ -1,0 +1,37 @@
+[
+  {
+    "userId": "user1",
+    "username": "Ross Adamucci",
+    "amount": 25,
+    "hasPaid": false,
+    "paymentNote": "Let him cook"
+  },
+  {
+    "userId": "user2",
+    "username": "Anthony Calabrese",
+    "amount": 50,
+    "hasPaid": false,
+    "paymentNote": "entries"
+  },
+  {
+    "userId": "user3",
+    "username": "Dylan Chappine",
+    "amount": 25,
+    "hasPaid": false,
+    "paymentNote": "dylanchappine"
+  },
+  {
+    "userId": "user4",
+    "username": "Chris Tommins",
+    "amount": 25,
+    "hasPaid": false,
+    "paymentNote": "Chris Tommins"
+  },
+  {
+    "userId": "user5",
+    "username": "Brendan Young",
+    "amount": 50,
+    "hasPaid": false,
+    "paymentNote": "Masters pool"
+  }
+] 

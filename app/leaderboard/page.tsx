@@ -446,7 +446,13 @@ export default function Leaderboard() {
                             times: [0, 0.5, 1]
                           }}
                         >
-                          {entry.display_score}
+                          {typeof entry.display_score === 'number' 
+                            ? entry.display_score === 0 
+                              ? 'E' 
+                              : entry.display_score > 0 
+                                ? `+${entry.display_score}` 
+                                : entry.display_score
+                            : entry.display_score}
                         </motion.span>
                       </div>
                       
