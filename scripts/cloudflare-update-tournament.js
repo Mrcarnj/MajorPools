@@ -605,6 +605,41 @@ async function updateTournament(env) {
       }
     }
 
+    // Verify all entries have calculated_score updated
+    console.log(`\n=== VERIFICATION SUMMARY ===`);
+    console.log(`Verifying all entries for tournament ${activeTournament.id} have calculated scores`);
+    
+    const { data: verifyEntries, error: verifyError } = await supabaseAdmin
+      .from('entries')
+      .select('id, entry_name, calculated_score')
+      .eq('tournament_id', activeTournament.id)
+      .execute();
+      
+    if (verifyError) {
+      console.error('Error verifying entries:', verifyError);
+      throw new Error(`Failed to verify entries: ${JSON.stringify(verifyError)}`);
+    }
+    
+    if (!verifyEntries || !Array.isArray(verifyEntries)) {
+      console.log('Could not verify entries - verify data is not an array:', verifyEntries);
+      return { success: true, message: 'Tournament updated successfully but could not verify entries' };
+    }
+    
+    console.log(`Total entries: ${verifyEntries.length}`);
+    
+    const entriesWithScore = verifyEntries.filter(e => e.calculated_score !== null);
+    console.log(`Entries with calculated score: ${entriesWithScore.length}`);
+    
+    if (entriesWithScore.length < verifyEntries.length) {
+      console.log('WARNING: Some entries do not have calculated scores:');
+      verifyEntries
+        .filter(e => e.calculated_score === null)
+        .forEach(e => console.log(`  - Entry ${e.id}: ${e.entry_name || 'unnamed'}`));
+      return { success: true, message: `Tournament updated but ${verifyEntries.length - entriesWithScore.length} entries missing scores` };
+    } else {
+      console.log('SUCCESS: All entries have calculated scores updated.');
+    }
+
     return { success: true, message: 'Tournament updated successfully' };
   } catch (error) {
     // Improve error handling to provide more detailed error messages

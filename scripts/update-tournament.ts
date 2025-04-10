@@ -328,6 +328,33 @@ async function updateTournament() {
       if (updateError) {
         throw updateError;
       }
+      
+      console.log(`Entry ${entry.id} (${entry.entry_name}) score updated: ${entryScore}`);
+    }
+    
+    // Verify all entries have calculated_score updated
+    const { data: verifyEntries, error: verifyError } = await supabaseAdmin
+      .from('entries')
+      .select('id, entry_name, calculated_score')
+      .eq('tournament_id', activeTournament.id);
+      
+    if (verifyError) {
+      throw verifyError;
+    }
+    
+    console.log('\n=== VERIFICATION SUMMARY ===');
+    console.log(`Total entries: ${verifyEntries.length}`);
+    
+    const entriesWithScore = verifyEntries.filter(e => e.calculated_score !== null);
+    console.log(`Entries with calculated score: ${entriesWithScore.length}`);
+    
+    if (entriesWithScore.length < verifyEntries.length) {
+      console.log('WARNING: Some entries do not have calculated scores:');
+      verifyEntries
+        .filter(e => e.calculated_score === null)
+        .forEach(e => console.log(`  - Entry ${e.id}: ${e.entry_name}`));
+    } else {
+      console.log('SUCCESS: All entries have calculated scores updated.');
     }
 
     return { success: true, message: 'Tournament updated successfully' };

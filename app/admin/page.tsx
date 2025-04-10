@@ -259,6 +259,50 @@ Major Pools Team`;
     window.location.href = mailtoLink;
   };
 
+  const handleEmailAllEntries = async () => {
+    try {
+      // Get active tournament
+      const activeTournament = tournaments.find(t => t.is_active);
+      if (!activeTournament) return;
+
+      // Get all entries for active tournament
+      const { data: entries, error } = await supabase
+        .from('entries')
+        .select('email')
+        .eq('tournament_id', activeTournament.id);
+
+      if (error) {
+        console.error('Error fetching entries:', error);
+        return;
+      }
+
+      if (!entries || entries.length === 0) {
+        console.error('No entries found for active tournament');
+        return;
+      }
+
+      // Get unique emails
+      const uniqueEmails = Array.from(new Set(entries.map(entry => entry.email)));
+
+      // Create email content
+      const emailSubject = `${activeTournament.name} ${activeTournament.year} - Tournament Update`;
+      const emailBody = `Hello Major Pools Players,
+
+Thank you for participating in the ${activeTournament.name} ${activeTournament.year} pool.
+
+You can view the current leaderboard at ${window.location.origin}/leaderboard
+
+Best regards,
+Major Pools Team`;
+
+      // Create mailto link with BCC to all entries
+      const mailtoLink = `mailto:?bcc=${encodeURIComponent(uniqueEmails.join(','))}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      window.location.href = mailtoLink;
+    } catch (error) {
+      console.error('Error emailing entries:', error);
+    }
+  };
+
   async function handleCompleteTournament(tournamentId: string) {
     try {
       // 1. Get all entries for this tournament with calculated_score and display_score
@@ -474,20 +518,31 @@ Major Pools Team`;
       <Card className="md:rounded-lg rounded-none">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 pb-2 md:pb-6">
           <CardTitle className="text-lg md:text-xl">Tournament Management</CardTitle>
-          <Button 
-            variant="outline"
-            onClick={() => {
-              const activeTournament = tournaments.find(t => t.is_active);
-              if (activeTournament) {
-                handleSendInvite(activeTournament.name, activeTournament.year);
-              }
-            }}
-            className="flex items-center gap-2 w-full md:w-auto text-sm md:text-base"
-            disabled={!tournaments.some(t => t.is_active)}
-          >
-            <MdOutlineEmail className="h-4 w-4" />
-            Send Tournament Invite
-          </Button>
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                const activeTournament = tournaments.find(t => t.is_active);
+                if (activeTournament) {
+                  handleSendInvite(activeTournament.name, activeTournament.year);
+                }
+              }}
+              className="flex items-center gap-2 w-full md:w-auto text-sm md:text-base"
+              disabled={!tournaments.some(t => t.is_active)}
+            >
+              <MdOutlineEmail className="h-4 w-4" />
+              Send Tournament Invite
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleEmailAllEntries}
+              className="flex items-center gap-2 w-full md:w-auto text-sm md:text-base"
+              disabled={!tournaments.some(t => t.is_active)}
+            >
+              <MdOutlineEmail className="h-4 w-4" />
+              Email All Entries
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 md:space-y-4">

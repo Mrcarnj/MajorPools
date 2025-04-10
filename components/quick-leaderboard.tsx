@@ -162,7 +162,7 @@ export function QuickLeaderboard() {
 
           return {
             entry_name: entry.entry_name,
-            calculated_score: entry.calculated_score,
+            calculated_score: entry.calculated_score === null ? 0 : entry.calculated_score,
             display_score: calculateDisplayScore(golferScores) as number,
             topFiveGolfers
           };
@@ -348,19 +348,13 @@ export function QuickLeaderboard() {
     };
   }, [entries]);
 
-  const rankings = calculateRankings(entries);
-  const { displayPot, donation, payouts } = calculatePrizePool(entries);
+  // Ensure entries are properly sorted by calculated_score
+  const sortedEntries = [...entries].sort((a, b) => a.calculated_score - b.calculated_score);
+  
+  const rankings = calculateRankings(sortedEntries);
+  const { displayPot, donation, payouts } = calculatePrizePool(sortedEntries);
 
-  const limitedEntries = entries.reduce((acc, entry, index) => {
-    if (index < 13) {
-      // Always include first 13
-      acc.push(entry);
-    } else if (entry.calculated_score === entries[12].calculated_score) {
-      // Include additional entries tied with 13th place
-      acc.push(entry);
-    }
-    return acc;
-  }, [] as typeof entries);
+  const limitedEntries = sortedEntries.slice(0, 15);
 
   if (entries.length === 0) {
     return (
@@ -418,9 +412,9 @@ export function QuickLeaderboard() {
         <CardTitle className="flex items-center gap-2">
           <TrophyIcon className="h-5 w-5" />
           Top Teams 
-          {tournamentStarted && (
+          {/* {tournamentStarted && (
             <span className="text-sm font-normal ml-2">(Pot: ${displayPot})</span>
-          )}
+          )} */}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-1 md:p-6">

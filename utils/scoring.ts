@@ -130,64 +130,52 @@ export function calculatePrizePool(entries: Entry[]): {
   // Get rankings with ties
   const rankings = calculateRankings(entries);
   
-  // First, group entries by their actual position
-  const positionGroups = new Map<number, string[]>();
+  // Group entries by their actual position for payout calculation
+  // We'll handle this differently - first group by calculated_score
+  const scoreGroups = new Map<number, Entry[]>();
   
-  rankings.forEach((rank, index) => {
-    if (!rank) {
-      // For null rankings (tied positions), use the previous position
-      const prevRank = rankings[index - 1];
-      if (prevRank) {
-        const position = parseInt(prevRank.replace('T', ''));
-        if (!positionGroups.has(position)) {
-          positionGroups.set(position, []);
-        }
-        positionGroups.get(position)?.push(entries[index].entry_name);
-      }
-    } else {
-      const position = parseInt(rank.replace('T', ''));
-      if (!positionGroups.has(position)) {
-        positionGroups.set(position, []);
-      }
-      positionGroups.get(position)?.push(entries[index].entry_name);
+  // Group entries by their score
+  entries.forEach(entry => {
+    if (!scoreGroups.has(entry.calculated_score)) {
+      scoreGroups.set(entry.calculated_score, []);
     }
+    scoreGroups.get(entry.calculated_score)?.push(entry);
   });
-
-  // Now calculate payouts for each position group
+  
+  // Process in score order (lowest to highest)
+  const sortedScores = Array.from(scoreGroups.keys()).sort((a, b) => a - b);
+  
   let currentPosition = 1;
-  positionGroups.forEach((entryNames, position) => {
-    const numTied = entryNames.length;
+  
+  sortedScores.forEach(score => {
+    const entriesWithScore = scoreGroups.get(score) || [];
+    const numTied = entriesWithScore.length;
+    
+    // Calculate total payout for this position group
     let totalPayout = 0;
     
-    // Special handling for position 10 ties
-    if (currentPosition === 10 || (currentPosition < 10 && currentPosition + numTied > 10)) {
-      // Get the 10th position percentage and split it among ties
-      const tenthPlacePercentage = PAYOUT_PERCENTAGES[10];
-      const splitPercentage = tenthPlacePercentage / numTied;
-      totalPayout = rawPot * splitPercentage;
-      
-      const splitPayout = Math.ceil(totalPayout);
-      entryNames.forEach(entryName => {
-        payouts.set(entryName, splitPayout);
-      });
-    } else {
-      // For positions 1-9, sum percentages and split evenly
-      for (let i = 0; i < numTied; i++) {
-        const payoutPosition = currentPosition + i;
-        if (payoutPosition <= 9) { // Only include payouts through position 9
-          totalPayout += rawPot * PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES];
-        }
+    // Sum payouts for all positions occupied by this score group
+    for (let i = 0; i < numTied; i++) {
+      const payoutPosition = currentPosition + i;
+      if (payoutPosition <= 10) { // Only include payouts through position 10
+        const percentage = PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES] || 0;
+        totalPayout += rawPot * percentage;
       }
+    }
+    
+    // Split the total payout evenly among all tied entries
+    if (totalPayout > 0 && numTied > 0) {
+      const payoutPerEntry = Math.ceil(totalPayout / numTied);
       
-      // For non-10th positions, split the total payout evenly
-      const splitPayout = Math.ceil(totalPayout / numTied);
-      entryNames.forEach(entryName => {
-        payouts.set(entryName, splitPayout);
+      // Assign the same payout to all entries in this score group
+      entriesWithScore.forEach(entry => {
+        payouts.set(entry.entry_name, payoutPerEntry);
       });
     }
     
+    // Update current position for next group
     currentPosition += numTied;
   });
-
+  
   return { totalPot, rawPot, displayPot, donation, payouts };
 } 
