@@ -41,7 +41,7 @@ export function DonationDisplay() {
           })) as Entry[];
           
           const { donation } = calculatePrizePool(entries);
-          setDonation(donation);
+          setDonation(donation + 360);
         }
       } catch (error) {
         console.error('Error fetching donation amount:', error);
@@ -67,7 +67,7 @@ export function DonationDisplay() {
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              10% of all entry fees goes directly to support the John & Matt Gaudreau Foundations.
+              10% of all entry fees throughout the year goes directly to support the John & Matt Gaudreau Foundations. This is a running total of all donations for the year.
             </p>
             <p className="text-xl font-bold text-red-500">
               Current Donation: ${donation.toFixed(2)}
