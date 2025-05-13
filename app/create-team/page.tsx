@@ -293,10 +293,10 @@ export default function CreateTeam() {
       // Organize golfers into tiers
       const tieredGolfers = {
         tier1: sortedGolfers.slice(0, 8),                    // Top 8
-        tier2: sortedGolfers.slice(8, 23),                   // Next 15
-        tier3: sortedGolfers.slice(23, 48),                  // Next 30
-        tier4: sortedGolfers.slice(48, 68),                  // Next 30
-        tier5: sortedGolfers.slice(68)                       // Remaining (including all unranked golfers)
+        tier2: sortedGolfers.slice(8, 30),                   // Next 15
+        tier3: sortedGolfers.slice(30, 60),                  // Next 30
+        tier4: sortedGolfers.slice(60, 95),                  // Next 30
+        tier5: sortedGolfers.slice(95)                       // Remaining (including all unranked golfers)
       };
 
       setGolfers(tieredGolfers as TieredGolfers);
