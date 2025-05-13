@@ -46,4 +46,4 @@ async function updateRankings() {
   }
 }
 
-updateRankings(); 
+export { updateRankings }; 
