@@ -1,6 +1,8 @@
 import { getTournament } from '../services/pga-tour/tournaments';
 import { supabaseAdmin } from '../lib/supabase-admin';
 import { updateRankings } from './update-rankings';
+import { updateOdds } from './update-odds';
+import { createDataGolfId } from './create-datagolf-id';
 
 async function setTournament() {
   try {
@@ -120,7 +122,8 @@ if (require.main === module) {
     });
 }
 
-updateRankings();
+createDataGolfId();
+updateOdds();
 
 // Export for use in other modules
 export { setTournament }; 

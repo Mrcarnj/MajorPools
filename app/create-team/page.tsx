@@ -21,6 +21,7 @@ type Golfer = {
   ranking: number;
   player_id: string;
   is_amateur: boolean;
+  odds?: string;
 };
 
 type TieredGolfers = {
@@ -264,9 +265,8 @@ export default function CreateTeam() {
       // Fetch all golfers with the tournament_id, including those with NULL rankings
       const { data, error } = await supabase
         .from('golfer_scores')
-        .select('first_name, last_name, ranking, player_id, is_amateur')
-        .eq('tournament_id', activeTournament.id)
-        .order('ranking', { ascending: true, nullsFirst: false }); // Put NULL rankings at the end
+        .select('first_name, last_name, ranking, player_id, is_amateur, odds')
+        .eq('tournament_id', activeTournament.id);
 
       if (error) {
         console.error('Error fetching golfers:', error);
@@ -281,22 +281,28 @@ export default function CreateTeam() {
         return;
       }
 
-      // Separate golfers with rankings and those without
-      const golfersWithRanking = data.filter(golfer => golfer.ranking !== null);
-      const golfersWithoutRanking = data.filter(golfer => golfer.ranking === null);
+      // Sort golfers by odds
+      const sortedGolfers = data.sort((a, b) => {
+        // Handle cases where odds might be null
+        if (!a.odds && !b.odds) return 0;
+        if (!a.odds) return 1;
+        if (!b.odds) return -1;
 
-      console.log(`${golfersWithRanking.length} golfers with ranking, ${golfersWithoutRanking.length} without ranking`);
+        // Convert odds to numbers for comparison
+        const oddsA = parseInt(a.odds);
+        const oddsB = parseInt(b.odds);
 
-      // Combine the lists, with ranked golfers first, then unranked
-      const sortedGolfers = [...golfersWithRanking, ...golfersWithoutRanking];
+        // Sort negative numbers (favorites) first, then positive numbers (underdogs)
+        return oddsA - oddsB;
+      });
 
       // Organize golfers into tiers
       const tieredGolfers = {
-        tier1: sortedGolfers.slice(0, 8),                    // Top 8
-        tier2: sortedGolfers.slice(8, 30),                   // Next 15
+        tier1: sortedGolfers.slice(0, 8),                    // Top 8 (favorites)
+        tier2: sortedGolfers.slice(8, 30),                   // Next 22
         tier3: sortedGolfers.slice(30, 60),                  // Next 30
-        tier4: sortedGolfers.slice(60, 95),                  // Next 30
-        tier5: sortedGolfers.slice(95)                       // Remaining (including all unranked golfers)
+        tier4: sortedGolfers.slice(60, 95),                  // Next 35
+        tier5: sortedGolfers.slice(95)                       // Remaining (including all golfers without odds)
       };
 
       setGolfers(tieredGolfers as TieredGolfers);
@@ -557,6 +563,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
                   </label>
                 </div>
               ))}
@@ -581,6 +588,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
                   </label>
                 </div>
               ))}
@@ -605,6 +613,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
                   </label>
                 </div>
               ))}
@@ -629,6 +638,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
                   </label>
                 </div>
               ))}
@@ -653,6 +663,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
                   </label>
                 </div>
               ))}
