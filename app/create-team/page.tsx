@@ -563,7 +563,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
+                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
                   </label>
                 </div>
               ))}
@@ -588,7 +588,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
+                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
                   </label>
                 </div>
               ))}
@@ -613,7 +613,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
+                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
                   </label>
                 </div>
               ))}
@@ -638,7 +638,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
+                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
                   </label>
                 </div>
               ))}
@@ -663,7 +663,7 @@ export default function CreateTeam() {
                   />
                   <label htmlFor={golfer.player_id} className="text-sm">
                     {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>}
+                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
                   </label>
                 </div>
               ))}
