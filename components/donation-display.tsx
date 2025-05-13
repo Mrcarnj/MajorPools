@@ -32,6 +32,8 @@ export function DonationDisplay() {
           .select('entry_name, calculated_score')
           .eq('tournament_id', tournament.id);
 
+        let runningDonation = 360; // Set base amount regardless of entries
+
         if (entriesData && entriesData.length > 0) {
           const entries = entriesData.map(entry => ({
             entry_name: entry.entry_name,
@@ -41,8 +43,10 @@ export function DonationDisplay() {
           })) as Entry[];
           
           const { donation } = calculatePrizePool(entries);
-          setDonation(360 + donation);
+          runningDonation += donation;
         }
+
+        setDonation(runningDonation);
       } catch (error) {
         console.error('Error fetching donation amount:', error);
       } finally {
