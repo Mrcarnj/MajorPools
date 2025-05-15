@@ -300,8 +300,8 @@ export default function CreateTeam() {
       const tieredGolfers = {
         tier1: sortedGolfers.slice(0, 8),                    // Top 8 (favorites)
         tier2: sortedGolfers.slice(8, 30),                   // Next 22
-        tier3: sortedGolfers.slice(30, 60),                  // Next 30
-        tier4: sortedGolfers.slice(60, 95),                  // Next 35
+        tier3: sortedGolfers.slice(30, 59),                  // Next 30
+        tier4: sortedGolfers.slice(59, 95),                  // Next 35
         tier5: sortedGolfers.slice(95)                       // Remaining (including all golfers without odds)
       };
 
