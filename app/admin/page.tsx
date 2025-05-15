@@ -455,7 +455,7 @@ Major Pools Team`;
 
       const { data: golfersData } = await supabase
         .from('golfer_scores')
-        .select('player_id, first_name, last_name, is_amateur, odds, status, tee_time')
+        .select('player_id, first_name, last_name, is_amateur, odds')
         .eq('tournament_id', activeTournament.id);
 
       if (!golfersData) return;
@@ -489,11 +489,6 @@ Major Pools Team`;
   }, []);
 
   const handleGolferClick = (entry: TournamentEntry, golferId: string, tier: string) => {
-    // Get active tournament status
-    const activeTournament = tournaments.find(t => t.is_active);
-    if (activeTournament?.status === 'Complete') {
-      return;
-    }
     setSelectedEntry(entry);
     setSelectedGolferId(golferId);
     setSelectedTier(tier);
