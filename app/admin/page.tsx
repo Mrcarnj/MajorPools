@@ -783,29 +783,46 @@ Major Pools Team`;
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Replace Golfer</DialogTitle>
+            <DialogTitle>Replace Golfer in {selectedTier?.replace('tier', 'Tier ')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Select a new golfer from the same tier to replace {selectedGolferId && getGolferName(selectedGolferId)}
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              {selectedTier && golfers[selectedTier as keyof TieredGolfers].map(golfer => (
-                <div 
-                  key={golfer.player_id}
-                  className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-muted"
-                  onClick={() => handleGolferReplace(golfer.player_id)}
-                >
-                  <Checkbox 
-                    id={golfer.player_id}
-                    checked={golfer.player_id === selectedGolferId}
-                    onCheckedChange={() => handleGolferReplace(golfer.player_id)}
-                  />
-                  <label htmlFor={golfer.player_id} className="text-sm cursor-pointer">
-                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                  </label>
-                </div>
-              ))}
+            <div className="max-h-[600px] overflow-y-auto grid grid-cols-2 gap-4">
+              {selectedTier && selectedEntry && golfers[selectedTier as keyof TieredGolfers].map(golfer => {
+                // Get the other golfer in the same tier
+                const otherGolferId = selectedGolferId === selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry] 
+                  ? selectedEntry[`${selectedTier}_golfer2` as keyof TournamentEntry]
+                  : selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry];
+                
+                // Skip if this is the other golfer already selected in this tier
+                const isOtherGolfer = golfer.player_id === otherGolferId;
+                
+                return (
+                  <div 
+                    key={golfer.player_id}
+                    className={`flex items-center space-x-2 p-2 border rounded cursor-pointer ${
+                      isOtherGolfer ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
+                    }`}
+                    onClick={() => !isOtherGolfer && handleGolferReplace(golfer.player_id)}
+                  >
+                    <Checkbox 
+                      id={golfer.player_id}
+                      checked={golfer.player_id === selectedGolferId}
+                      onCheckedChange={() => !isOtherGolfer && handleGolferReplace(golfer.player_id)}
+                      disabled={isOtherGolfer}
+                    />
+                    <label 
+                      htmlFor={golfer.player_id} 
+                      className={`text-sm ${isOtherGolfer ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                      {isOtherGolfer && ' (Already selected)'}
+                    </label>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </DialogContent>
