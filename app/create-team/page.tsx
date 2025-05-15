@@ -169,7 +169,7 @@ export default function CreateTeam() {
             tier4_golfer1: formData.selections.tier4[0],
             tier5_golfer1: formData.selections.tier5[0]
           })
-          .eq('id', existingEntry.id as any);
+          .eq('id', existingEntry.id);
 
         if (updateError) throw updateError;
         
