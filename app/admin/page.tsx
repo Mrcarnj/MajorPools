@@ -52,6 +52,8 @@ type Golfer = {
   first_name: string;
   last_name: string;
   is_amateur: boolean;
+  status?: string;
+  tee_time?: string;
 };
 
 type TieredGolfers = {
@@ -453,7 +455,7 @@ Major Pools Team`;
 
       const { data: golfersData } = await supabase
         .from('golfer_scores')
-        .select('player_id, first_name, last_name, is_amateur, odds')
+        .select('player_id, first_name, last_name, is_amateur, odds, status, tee_time')
         .eq('tournament_id', activeTournament.id);
 
       if (!golfersData) return;
@@ -487,6 +489,11 @@ Major Pools Team`;
   }, []);
 
   const handleGolferClick = (entry: TournamentEntry, golferId: string, tier: string) => {
+    // Get active tournament status
+    const activeTournament = tournaments.find(t => t.is_active);
+    if (activeTournament?.status === 'Complete') {
+      return;
+    }
     setSelectedEntry(entry);
     setSelectedGolferId(golferId);
     setSelectedTier(tier);
@@ -798,6 +805,7 @@ Major Pools Team`;
                 
                 // Skip if this is the other golfer already selected in this tier
                 const isOtherGolfer = golfer.player_id === otherGolferId;
+                const hasNotStarted = golfer.status === 'not started';
                 
                 return (
                   <div 
@@ -819,6 +827,13 @@ Major Pools Team`;
                     >
                       {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
                       {isOtherGolfer && ' (Already selected)'}
+                      <span className="block text-xs text-muted-foreground">
+                        {hasNotStarted && golfer.tee_time ? (
+                          <>Tee Time: {golfer.tee_time}</>
+                        ) : (
+                          <>Status: {golfer.status || 'Unknown'}</>
+                        )}
+                      </span>
                     </label>
                   </div>
                 );
