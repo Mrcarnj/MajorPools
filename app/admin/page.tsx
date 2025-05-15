@@ -455,7 +455,7 @@ Major Pools Team`;
 
       const { data: golfersData } = await supabase
         .from('golfer_scores')
-        .select('player_id, first_name, last_name, is_amateur, odds')
+        .select('player_id, first_name, last_name, is_amateur, odds, status, tee_time')
         .eq('tournament_id', activeTournament.id);
 
       if (!golfersData) return;
