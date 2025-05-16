@@ -3,7 +3,7 @@
 import { calculateDisplayScore, calculateRankings, type Entry, type GolferScore } from '@/utils/scoring';
 import { Archivo } from 'next/font/google';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrophyIcon, Star, Search } from 'lucide-react';
+import { TrophyIcon, Star, Search, X } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculatePrizePool } from '@/utils/scoring';
@@ -504,6 +504,14 @@ export function QuickLeaderboard() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 h-8 md:h-10 text-sm md:text-base"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full bg-foreground/90 dark:bg-white/90"
+              >
+                <X className="h-3.5 w-3.5 text-background/90 dark:text-black/90" />
+              </button>
+            )}
           </div>
           {searchQuery && filteredEntries.length > 0 && (
             <div className="mt-2 space-y-1 max-h-[200px] md:max-h-[300px] overflow-y-auto">
@@ -557,87 +565,92 @@ export function QuickLeaderboard() {
           <div className="mb-4 md:mb-6">
             <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Favorites</h3>
             <div className="space-y-1 max-h-[200px] md:max-h-[300px] overflow-y-auto">
-              {Array.from(favoriteEntries).map(entryName => {
-                const entry = entries.find(e => e.entry_name === entryName);
-                if (!entry) return null;
-                
-                const currentRank = sortedEntries.findIndex(e => e.entry_name === entryName) + 1;
-                const isMoving = !!movingEntries[entryName];
-                const isMovingUp = movingEntries[entryName] === 'up';
-                const isMovingDown = movingEntries[entryName] === 'down';
-                
-                return (
-                  <motion.div
-                    key={entryName}
-                    layout="position"
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 30,
-                      damping: 12,
-                      duration: 1.5
-                    }}
-                  >
-                    <div 
-                      className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
+              {Array.from(favoriteEntries)
+                .map(entryName => {
+                  const entry = entries.find(e => e.entry_name === entryName);
+                  if (!entry) return null;
+                  const currentRank = sortedEntries.findIndex(e => e.entry_name === entryName) + 1;
+                  return { entry, currentRank };
+                })
+                .filter((item): item is { entry: Entry; currentRank: number } => item !== null)
+                .sort((a, b) => a.currentRank - b.currentRank)
+                .map(({ entry, currentRank }) => {
+                  const isMoving = !!movingEntries[entry.entry_name];
+                  const isMovingUp = movingEntries[entry.entry_name] === 'up';
+                  const isMovingDown = movingEntries[entry.entry_name] === 'down';
+                  
+                  return (
+                    <motion.div
+                      key={entry.entry_name}
+                      layout="position"
+                      initial={{ opacity: 1 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 30,
+                        damping: 12,
+                        duration: 1.5
+                      }}
                     >
-                      <Star
-                        className="h-4 w-4 md:h-5 md:w-5 cursor-pointer text-yellow-400 fill-yellow-400 -mr-1.5"
-                        onClick={(e) => toggleFavorite(entry.entry_name, e)}
-                      />
-                      <motion.span 
-                        className={`${archivo.className} text-base md:text-lg text-foreground dark:text-muted-foreground w-6 md:w-12 text-center md:text-right`}
-                        animate={isMovingUp ? {
-                          color: ['', '#10b981', '#10b981', 'currentColor'],
-                          fontWeight: [400, 800, 800, 400],
-                          scale: [1, 1.3, 1.3, 1],
-                          textShadow: ['0 0 0px transparent', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 0px transparent']
-                        } : isMovingDown ? {
-                          color: ['', '#ef4444', '#ef4444', 'currentColor'],
-                          fontWeight: [400, 800, 800, 400],
-                          scale: [1, 1.3, 1.3, 1],
-                          textShadow: ['0 0 0px transparent', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 0px transparent']
-                        }: {}}
-                        transition={{
-                          duration: 3,
-                          times: [0, 0.1, 0.9, 1]
-                        }}
+                      <div 
+                        className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
                       >
-                        {currentRank}
-                      </motion.span>
-                      {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
-                        <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
-                          {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
-                        </span>
-                      )}
-                      <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
-                      <motion.span 
-                        className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
-                          (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
-                            ? 'text-red-600' 
-                            : 'text-muted-foreground'
-                        }`}
-                        animate={isMoving ? {
-                          scale: [1, 1.15, 1],
-                          fontWeight: [400, 800, 400],
-                        } : {}}
-                        transition={{
-                          duration: 3, 
-                          times: [0, 0.5, 1]
-                        }}
-                      >
-                        {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 
-                          ? 'E' 
-                          : (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) > 0 
-                            ? `+${entry.display_score}`
-                            : entry.display_score}
-                      </motion.span>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                        <Star
+                          className="h-4 w-4 md:h-5 md:w-5 cursor-pointer text-yellow-400 fill-yellow-400 -mr-1.5"
+                          onClick={(e) => toggleFavorite(entry.entry_name, e)}
+                        />
+                        <motion.span 
+                          className={`${archivo.className} text-base md:text-lg text-foreground dark:text-muted-foreground w-6 md:w-12 text-center md:text-right`}
+                          animate={isMovingUp ? {
+                            color: ['', '#10b981', '#10b981', 'currentColor'],
+                            fontWeight: [400, 800, 800, 400],
+                            scale: [1, 1.3, 1.3, 1],
+                            textShadow: ['0 0 0px transparent', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 0px transparent']
+                          } : isMovingDown ? {
+                            color: ['', '#ef4444', '#ef4444', 'currentColor'],
+                            fontWeight: [400, 800, 800, 400],
+                            scale: [1, 1.3, 1.3, 1],
+                            textShadow: ['0 0 0px transparent', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 0px transparent']
+                          }: {}}
+                          transition={{
+                            duration: 3,
+                            times: [0, 0.1, 0.9, 1]
+                          }}
+                        >
+                          {currentRank}
+                        </motion.span>
+                        {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
+                          <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
+                            {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
+                          </span>
+                        )}
+                        <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
+                        <motion.span 
+                          className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
+                            (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
+                              ? 'text-red-600' 
+                              : 'text-muted-foreground'
+                          }`}
+                          animate={isMoving ? {
+                            scale: [1, 1.15, 1],
+                            fontWeight: [400, 800, 400],
+                          } : {}}
+                          transition={{
+                            duration: 3, 
+                            times: [0, 0.5, 1]
+                          }}
+                        >
+                          {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 
+                            ? 'E' 
+                            : (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) > 0 
+                              ? `+${entry.display_score}`
+                              : entry.display_score}
+                        </motion.span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
             </div>
             <div className="h-[2px] bg-muted-foreground/30 dark:bg-muted-foreground/40 my-3 md:my-4" />
           </div>
