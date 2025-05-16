@@ -3,7 +3,7 @@
 import { calculateDisplayScore, calculateRankings, type Entry, type GolferScore } from '@/utils/scoring';
 import { Archivo } from 'next/font/google';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrophyIcon } from 'lucide-react';
+import { TrophyIcon, Star } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculatePrizePool } from '@/utils/scoring';
@@ -33,8 +33,75 @@ export function QuickLeaderboard() {
   const [movingEntries, setMovingEntries] = useState<Record<string, 'up' | 'down' | null>>({});
   const [animationComplete, setAnimationComplete] = useState(true);
   const [prevRankings, setPrevRankings] = useState<Record<string, number>>({});
+  const [favoriteEntries, setFavoriteEntries] = useState<Set<string>>(new Set());
   const updateCountRef = useRef(0);
   const initialLoadRef = useRef(true);
+  const favoritesInitializedRef = useRef(false);
+
+  // Load favorites from localStorage on component mount
+  useEffect(() => {
+    if (favoritesInitializedRef.current) return;
+    
+    console.log('Attempting to load favorites from localStorage...');
+    try {
+      const storedFavorites = localStorage.getItem('majorsPoolFavorites');
+      console.log('Raw stored favorites:', storedFavorites);
+      
+      if (storedFavorites) {
+        const parsedFavorites = JSON.parse(storedFavorites);
+        console.log('Parsed favorites:', parsedFavorites);
+        
+        if (Array.isArray(parsedFavorites) && parsedFavorites.length > 0) {
+          const favoritesSet = new Set(parsedFavorites);
+          console.log('Setting favorites state to:', Array.from(favoritesSet));
+          setFavoriteEntries(favoritesSet);
+        } else {
+          console.log('No valid favorites found in localStorage');
+        }
+      } else {
+        console.log('No favorites found in localStorage');
+      }
+    } catch (error) {
+      console.error('Error loading favorites from localStorage:', error);
+    }
+    
+    favoritesInitializedRef.current = true;
+  }, []);
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    if (!favoritesInitializedRef.current) return;
+    
+    console.log('Favorites changed, current favorites:', Array.from(favoriteEntries));
+    try {
+      const favoritesArray = Array.from(favoriteEntries);
+      console.log('Saving to localStorage:', favoritesArray);
+      localStorage.setItem('majorsPoolFavorites', JSON.stringify(favoritesArray));
+      console.log('Successfully saved to localStorage');
+    } catch (error) {
+      console.error('Error saving favorites to localStorage:', error);
+    }
+  }, [favoriteEntries]);
+
+  // Toggle favorite status for an entry
+  const toggleFavorite = (entryName: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row expansion when clicking star
+    console.log('Toggling favorite for:', entryName);
+    console.log('Current favorites before toggle:', Array.from(favoriteEntries));
+    
+    setFavoriteEntries(prev => {
+      const next = new Set(prev);
+      if (next.has(entryName)) {
+        next.delete(entryName);
+        console.log(`Removed ${entryName} from favorites`);
+      } else {
+        next.add(entryName);
+        console.log(`Added ${entryName} to favorites`);
+      }
+      console.log('New favorites after toggle:', Array.from(next));
+      return next;
+    });
+  };
 
   // Debugging helper to compare two arrays of entries
   const compareEntries = (oldEntries: Entry[], newEntries: Entry[]) => {
@@ -351,7 +418,7 @@ export function QuickLeaderboard() {
     };
   }, [entries]);
 
-  // Ensure entries are properly sorted by calculated_score
+  // Ensure entries are properly sorted by calculated_score only (no favorites sorting)
   const sortedEntries = [...entries].sort((a, b) => a.calculated_score - b.calculated_score);
   
   const rankings = calculateRankings(sortedEntries);
@@ -414,13 +481,98 @@ export function QuickLeaderboard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrophyIcon className="h-5 w-5" />
-          Top Teams 
-          {/* {tournamentStarted && (
-            <span className="text-sm font-normal ml-2">(Pot: ${displayPot})</span>
-          )} */}
+          Top Teams
         </CardTitle>
       </CardHeader>
       <CardContent className="p-1 md:p-6">
+        {/* Favorites Section */}
+        {favoriteEntries.size > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Favorites</h3>
+            <div className="space-y-1">
+              {Array.from(favoriteEntries).map(entryName => {
+                const entry = entries.find(e => e.entry_name === entryName);
+                if (!entry) return null;
+                
+                // Find the current rank of this entry
+                const currentRank = sortedEntries.findIndex(e => e.entry_name === entryName) + 1;
+                const isMoving = !!movingEntries[entryName];
+                const isMovingUp = movingEntries[entryName] === 'up';
+                const isMovingDown = movingEntries[entryName] === 'down';
+                
+                return (
+                  <motion.div
+                    key={entryName}
+                    layout="position"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 30,
+                      damping: 12,
+                      duration: 1.5
+                    }}
+                  >
+                    <div 
+                      className="flex items-center gap-1 md:gap-2 w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
+                    >
+                      <motion.span 
+                        className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-8 md:w-12 text-center md:text-right`}
+                        animate={isMovingUp ? {
+                          color: ['', '#10b981', '#10b981', 'currentColor'],
+                          fontWeight: [400, 800, 800, 400],
+                          scale: [1, 1.3, 1.3, 1],
+                          textShadow: ['0 0 0px transparent', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 8px rgba(16, 185, 129, 0.7)', '0 0 0px transparent']
+                        } : isMovingDown ? {
+                          color: ['', '#ef4444', '#ef4444', 'currentColor'],
+                          fontWeight: [400, 800, 800, 400],
+                          scale: [1, 1.3, 1.3, 1],
+                          textShadow: ['0 0 0px transparent', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 8px rgba(239, 68, 68, 0.7)', '0 0 0px transparent']
+                        }: {}}
+                        transition={{
+                          duration: 3,
+                          times: [0, 0.1, 0.9, 1]
+                        }}
+                      >
+                        {currentRank}
+                      </motion.span>
+                      {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
+                        <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
+                          {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
+                        </span>
+                      )}
+                      <span className="font-medium flex-1 text-center text-sm md:text-base">{entry.entry_name}</span>
+                      <motion.span 
+                        className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
+                          (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
+                            ? 'text-red-600' 
+                            : 'text-muted-foreground'
+                        }`}
+                        animate={isMoving ? {
+                          scale: [1, 1.15, 1],
+                          fontWeight: [400, 800, 400],
+                        } : {}}
+                        transition={{
+                          duration: 3, 
+                          times: [0, 0.5, 1]
+                        }}
+                      >
+                        {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 ? 'E' : entry.display_score}
+                      </motion.span>
+                      <Star
+                        className="h-5 w-5 cursor-pointer text-yellow-400 fill-yellow-400"
+                        onClick={(e) => toggleFavorite(entry.entry_name, e)}
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Main Leaderboard */}
         <div className="space-y-1">
           <AnimatePresence initial={false}>
             {limitedEntries.map((entry, index) => {
@@ -428,6 +580,7 @@ export function QuickLeaderboard() {
               const isMovingUp = movingEntries[entry.entry_name] === 'up';
               const isMovingDown = movingEntries[entry.entry_name] === 'down';
               const isHighlighted = highlightedEntries[entry.entry_name];
+              const isFavorite = favoriteEntries.has(entry.entry_name);
               
               // Only apply alternating colors when animation is complete
               const rowBgClass = animationComplete
@@ -466,21 +619,6 @@ export function QuickLeaderboard() {
                     } else if (isHighlighted) {
                       borderColor = '#fbbf24'; // Amber/gold color
                       bgColor = 'rgba(251, 191, 36, 0.1)'; // Very light amber for updates
-                    }
-
-                    // For debugging - log when a row should be animated
-                    if ((isMoving || isHighlighted) && process.env.NODE_ENV !== 'production') {
-                      // console.log(`Rendering row for ${entry.entry_name}:`, {
-                      //   direction: movingEntries[entry.entry_name],
-                      //   isMovingUp,
-                      //   isMovingDown,
-                      //   isHighlighted,
-                      //   bgColor,
-                      //   borderColor,
-                      //   borderWidth,
-                      //   borderStyle,
-                      //   animationClass: (isHighlighted || isMoving) ? 'moving-border' : ''
-                      // });
                     }
 
                     return (
@@ -548,6 +686,12 @@ export function QuickLeaderboard() {
                           >
                             {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 ? 'E' : entry.display_score}
                           </motion.span>
+                          <Star
+                            className={`h-5 w-5 cursor-pointer transition-colors ${
+                              isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
+                            }`}
+                            onClick={(e) => toggleFavorite(entry.entry_name, e)}
+                          />
                         </div>
                       </div>
                     );
