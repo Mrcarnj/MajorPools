@@ -493,7 +493,7 @@ export function QuickLeaderboard() {
           Top Teams
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0.5 px-4 md:px-6 pb-1 md:pb-6">
+      <CardContent className="pt-0.5 px-0 md:px-6 pb-1 md:pb-6">
         {/* Search Section */}
         <div className="mb-4">
           <div className="relative">
