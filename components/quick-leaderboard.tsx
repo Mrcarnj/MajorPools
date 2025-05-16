@@ -525,7 +525,7 @@ export function QuickLeaderboard() {
                     className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
                   >
                     <Star
-                      className={`h-4 w-4 md:h-5 md:w-5 cursor-pointer transition-colors -mr-1.5 ${
+                      className={`h-4 w-4 md:h-5 md:w-5 cursor-pointer transition-colors mr-1.5 md:-mr-1.5 ${
                         isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
                       }`}
                       onClick={(e) => toggleFavorite(entry.entry_name, e)}
@@ -597,7 +597,7 @@ export function QuickLeaderboard() {
                         className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
                       >
                         <Star
-                          className="h-4 w-4 md:h-5 md:w-5 cursor-pointer text-yellow-400 fill-yellow-400 -mr-1.5"
+                          className="h-4 w-4 md:h-5 md:w-5 cursor-pointer text-yellow-400 fill-yellow-400 mr-1.5 md:-mr-1.5"
                           onClick={(e) => toggleFavorite(entry.entry_name, e)}
                         />
                         <motion.span 
@@ -726,7 +726,7 @@ export function QuickLeaderboard() {
                       >
                         <div className="flex items-center w-full px-1 md:px-2">
                           <Star
-                            className={`h-4 w-4 md:h-5 md:w-5 cursor-pointer transition-colors -mr-1.5 ${
+                            className={`h-4 w-4 md:h-5 md:w-5 cursor-pointer transition-colors mr-1.5 md:-mr-1.5 ${
                               isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
                             }`}
                             onClick={(e) => toggleFavorite(entry.entry_name, e)}
