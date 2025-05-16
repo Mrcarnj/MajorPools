@@ -389,9 +389,9 @@ You can view the current leaderboard at ${window.location.origin}/leaderboard
 Best regards,
 Major Pools Team`;
 
-      // Create mailto link with BCC to all entries
-      const mailtoLink = `mailto:?bcc=${encodeURIComponent(uniqueEmails.join(','))}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      window.location.href = mailtoLink;
+      // Create Gmail URL with BCC to all entries
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      window.open(gmailUrl, '_blank');
     } catch (error) {
       console.error('Error emailing entries:', error);
     }
@@ -633,15 +633,6 @@ Major Pools Team`;
                   <MdOutlineEmail className="h-4 w-4" />
                   Send Tournament Invite
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={handleEmailAllEntries}
-                  className="flex items-center gap-2 w-full md:w-auto text-sm md:text-base"
-                  disabled={!tournaments.some(t => t.is_active)}
-                >
-                  <MdOutlineEmail className="h-4 w-4" />
-                  Email All Entries
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -674,7 +665,7 @@ Major Pools Team`;
         </TabsContent>
 
         <TabsContent value="entries">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-between items-center">
             <input
               type="text"
               placeholder="Search by entry name or email..."
@@ -682,6 +673,15 @@ Major Pools Team`;
               onChange={e => setSearchTerm(e.target.value)}
               className="border rounded px-3 py-2 w-full max-w-md"
             />
+            <Button 
+              variant="outline"
+              onClick={handleEmailAllEntries}
+              className="flex items-center gap-2"
+              disabled={!tournaments.some(t => t.is_active)}
+            >
+              <MdOutlineEmail className="h-4 w-4" />
+              Email All Entries
+            </Button>
           </div>
           <Card>
             <CardHeader>
