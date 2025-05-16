@@ -268,15 +268,15 @@ export function LiveLeaderboard() {
             <Table>
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
-                  <TableHead className="text-center md:text-left w-[60px] md:w-[100px] px-1 md:px-4">Pos</TableHead>
+                  <TableHead className="text-center md:text-left w-[36px] md:w-[60px] px-1 md:px-4">Pos</TableHead>
                   <TableHead className="px-1 md:px-4">Player</TableHead>
-                  <TableHead className="text-right w-[40px] md:w-[60px] px-1 md:px-4">Total</TableHead>
-                  <TableHead className="text-right w-[40px] md:w-[60px] px-1 md:px-4">
+                  <TableHead className="text-right w-[28px] md:w-[40px] px-1 md:px-4">Total</TableHead>
+                  <TableHead className="text-right w-[28px] md:w-[40px] px-1 md:px-4">
                     <div className="flex justify-end items-center whitespace-nowrap">
                       R{tournamentData.current_round || '-'}
                     </div>
                   </TableHead>
-                  <TableHead className="text-right w-[30px] md:w-[40px] px-1 md:pr-4">Thru</TableHead>
+                  <TableHead className="text-right w-[28px] md:w-[30px] px-1 md:pr-4">Thru</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -311,7 +311,7 @@ export function LiveLeaderboard() {
                         transition={{ type: "spring", stiffness: 30, damping: 12 }}
                         className={`relative ${rowBgClass} ${cutClass} ${highlightedRows[golferId] ? 'moving-border' : ''} ${bgColorClass}`}
                       >
-                        <TableCell className="text-center md:text-left py-2 px-1 md:px-4">
+                        <TableCell className="text-center md:text-left py-2 px-1 md:px-4 w-[36px] md:w-[60px]">
                           <motion.span
                             animate={isMovingUp ? {
                               color: ['', '#10b981', '#10b981', ''],
@@ -333,16 +333,16 @@ export function LiveLeaderboard() {
                             {showPosition ? score.position : ''}
                           </motion.span>
                         </TableCell>
-                        <TableCell className="py-2 px-1 md:px-4 whitespace-nowrap">
+                        <TableCell className="py-2 px-1 md:px-4 truncate max-w-[90px] md:max-w-none">
                           {score.first_name} {score.last_name}
                         </TableCell>
-                        <TableCell className={`text-center py-2 px-1 md:px-4 font-bold ${score.total.startsWith('-') ? 'text-red-600' : ''}`}>
+                        <TableCell className={`text-center py-2 px-1 md:px-4 font-bold w-[28px] md:w-[40px] ${score.total.startsWith('-') ? 'text-red-600' : ''}`}>
                           {score.total}
                         </TableCell>
-                        <TableCell className="text-center py-2 px-1 md:px-4">
+                        <TableCell className="text-center py-2 px-1 md:px-4 w-[28px] md:w-[40px]">
                           {score.current_round_score === '-' ? '' : score.current_round_score}
                         </TableCell>
-                        <TableCell className="text-center py-2 px-1 md:pr-4">
+                        <TableCell className="text-center py-2 px-1 md:pr-4 w-[28px] md:w-[30px]">
                           {score.position === '-' && score.tee_time
                             ? score.tee_time
                             : (tournamentData?.current_round && score.current_round_score === null && score.tee_time)

@@ -75,9 +75,14 @@ export default function Home() {
         <TournamentStatus />
       </div>
 
+      {/* Leaderboards */}
       <div className="grid gap-4 md:gap-8 md:grid-cols-2">
-        <QuickLeaderboard />
-        <LiveLeaderboard />
+        <div className="w-full max-w-[350px] md:max-w-none mx-auto">
+          <QuickLeaderboard />
+        </div>
+        <div className="w-full max-w-[350px] md:max-w-none mx-auto">
+          <LiveLeaderboard />
+        </div>
       </div>
 
       {/* Donation Display */}
