@@ -3,11 +3,12 @@
 import { calculateDisplayScore, calculateRankings, type Entry, type GolferScore } from '@/utils/scoring';
 import { Archivo } from 'next/font/google';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrophyIcon, Star } from 'lucide-react';
+import { TrophyIcon, Star, Search } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculatePrizePool } from '@/utils/scoring';
 import { motion, AnimatePresence } from "framer-motion";
+import { Input } from '@/components/ui/input';
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -34,6 +35,7 @@ export function QuickLeaderboard() {
   const [animationComplete, setAnimationComplete] = useState(true);
   const [prevRankings, setPrevRankings] = useState<Record<string, number>>({});
   const [favoriteEntries, setFavoriteEntries] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
   const updateCountRef = useRef(0);
   const initialLoadRef = useRef(true);
   const favoritesInitializedRef = useRef(false);
@@ -426,6 +428,13 @@ export function QuickLeaderboard() {
 
   const limitedEntries = sortedEntries.slice(0, 15);
 
+  // Filter entries based on search query
+  const filteredEntries = searchQuery
+    ? entries.filter(entry => 
+        entry.entry_name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
   if (entries.length === 0) {
     return (
       <Card>
@@ -478,23 +487,80 @@ export function QuickLeaderboard() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-2.5">
         <CardTitle className="flex items-center gap-2">
           <TrophyIcon className="h-5 w-5" />
           Top Teams
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-1 md:p-6">
+      <CardContent className="pt-0.5 px-1 md:px-6 pb-1 md:pb-6">
+        {/* Search Section */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search for your team..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 md:h-10 text-sm md:text-base"
+            />
+          </div>
+          {searchQuery && filteredEntries.length > 0 && (
+            <div className="mt-2 space-y-1 max-h-[200px] md:max-h-[300px] overflow-y-auto">
+              {filteredEntries.map(entry => {
+                const currentRank = sortedEntries.findIndex(e => e.entry_name === entry.entry_name) + 1;
+                const isFavorite = favoriteEntries.has(entry.entry_name);
+                
+                return (
+                  <div 
+                    key={entry.entry_name}
+                    className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
+                  >
+                    <Star
+                      className={`h-4 w-4 md:h-5 md:w-5 cursor-pointer transition-colors -mr-1.5 ${
+                        isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
+                      }`}
+                      onClick={(e) => toggleFavorite(entry.entry_name, e)}
+                    />
+                    <span className={`${archivo.className} text-base md:text-lg text-foreground dark:text-muted-foreground w-6 md:w-12 text-center md:text-right`}>
+                      {currentRank}
+                    </span>
+                    {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
+                      <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
+                        {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
+                      </span>
+                    )}
+                    <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
+                    <span className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
+                      (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
+                        ? 'text-red-600' 
+                        : 'text-muted-foreground'
+                    }`}>
+                      {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 
+                        ? 'E' 
+                        : (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) > 0 
+                          ? `+${entry.display_score}`
+                          : entry.display_score}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {searchQuery && filteredEntries.length === 0 && (
+            <p className="text-xs md:text-sm text-muted-foreground mt-2">No teams found matching "{searchQuery}"</p>
+          )}
+        </div>
+
         {/* Favorites Section */}
         {favoriteEntries.size > 0 && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Favorites</h3>
-            <div className="space-y-1">
+          <div className="mb-4 md:mb-6">
+            <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Favorites</h3>
+            <div className="space-y-1 max-h-[200px] md:max-h-[300px] overflow-y-auto">
               {Array.from(favoriteEntries).map(entryName => {
                 const entry = entries.find(e => e.entry_name === entryName);
                 if (!entry) return null;
                 
-                // Find the current rank of this entry
                 const currentRank = sortedEntries.findIndex(e => e.entry_name === entryName) + 1;
                 const isMoving = !!movingEntries[entryName];
                 const isMovingUp = movingEntries[entryName] === 'up';
@@ -515,10 +581,14 @@ export function QuickLeaderboard() {
                     }}
                   >
                     <div 
-                      className="flex items-center gap-1 md:gap-2 w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
+                      className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
                     >
+                      <Star
+                        className="h-4 w-4 md:h-5 md:w-5 cursor-pointer text-yellow-400 fill-yellow-400 -mr-1.5"
+                        onClick={(e) => toggleFavorite(entry.entry_name, e)}
+                      />
                       <motion.span 
-                        className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-8 md:w-12 text-center md:text-right`}
+                        className={`${archivo.className} text-base md:text-lg text-foreground dark:text-muted-foreground w-6 md:w-12 text-center md:text-right`}
                         animate={isMovingUp ? {
                           color: ['', '#10b981', '#10b981', 'currentColor'],
                           fontWeight: [400, 800, 800, 400],
@@ -538,13 +608,13 @@ export function QuickLeaderboard() {
                         {currentRank}
                       </motion.span>
                       {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
-                        <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
+                        <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
                           {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
                         </span>
                       )}
-                      <span className="font-medium flex-1 text-center text-sm md:text-base">{entry.entry_name}</span>
+                      <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
                       <motion.span 
-                        className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
+                        className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
                           (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
                             ? 'text-red-600' 
                             : 'text-muted-foreground'
@@ -558,17 +628,18 @@ export function QuickLeaderboard() {
                           times: [0, 0.5, 1]
                         }}
                       >
-                        {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 ? 'E' : entry.display_score}
+                        {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 
+                          ? 'E' 
+                          : (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) > 0 
+                            ? `+${entry.display_score}`
+                            : entry.display_score}
                       </motion.span>
-                      <Star
-                        className="h-5 w-5 cursor-pointer text-yellow-400 fill-yellow-400"
-                        onClick={(e) => toggleFavorite(entry.entry_name, e)}
-                      />
                     </div>
                   </motion.div>
                 );
               })}
             </div>
+            <div className="h-[2px] bg-muted-foreground/30 dark:bg-muted-foreground/40 my-3 md:my-4" />
           </div>
         )}
 
@@ -582,7 +653,6 @@ export function QuickLeaderboard() {
               const isHighlighted = highlightedEntries[entry.entry_name];
               const isFavorite = favoriteEntries.has(entry.entry_name);
               
-              // Only apply alternating colors when animation is complete
               const rowBgClass = animationComplete
                 ? index % 2 === 1 ? 'dark:bg-zinc-800/90 bg-zinc-800/10' : ''
                 : '';
@@ -602,7 +672,6 @@ export function QuickLeaderboard() {
                   }}
                   className="space-y-1"
                 >
-                  {/* Determine background and border colors for moving rows */}
                   {(() => {
                     let bgColor = undefined;
                     let borderColor = 'transparent';
@@ -610,15 +679,15 @@ export function QuickLeaderboard() {
                     let borderStyle = isMoving || isHighlighted ? 'solid' : 'none';
                     
                     if (isMoving) {
-                      borderColor = '#fbbf24'; // Amber/gold color
+                      borderColor = '#fbbf24';
                       bgColor = isMovingUp
-                        ? 'rgba(16, 185, 129, 0.3)' // More visible green
+                        ? 'rgba(16, 185, 129, 0.3)'
                         : isMovingDown
-                          ? 'rgba(239, 68, 68, 0.3)' // More visible red
-                          : 'rgba(251, 191, 36, 0.3)'; // Amber for position change without direction
+                          ? 'rgba(239, 68, 68, 0.3)'
+                          : 'rgba(251, 191, 36, 0.3)';
                     } else if (isHighlighted) {
-                      borderColor = '#fbbf24'; // Amber/gold color
-                      bgColor = 'rgba(251, 191, 36, 0.1)'; // Very light amber for updates
+                      borderColor = '#fbbf24';
+                      bgColor = 'rgba(251, 191, 36, 0.1)';
                     }
 
                     return (
@@ -642,9 +711,15 @@ export function QuickLeaderboard() {
                           });
                         }}
                       >
-                        <div className="flex items-center gap-1 md:gap-2 w-full px-1 md:px-2">
+                        <div className="flex items-center w-full px-1 md:px-2">
+                          <Star
+                            className={`h-4 w-4 md:h-5 md:w-5 cursor-pointer transition-colors -mr-1.5 ${
+                              isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
+                            }`}
+                            onClick={(e) => toggleFavorite(entry.entry_name, e)}
+                          />
                           <motion.span 
-                            className={`${archivo.className} text-lg text-foreground dark:text-muted-foreground w-8 md:w-12 text-center md:text-right`}
+                            className={`${archivo.className} text-base md:text-lg text-foreground dark:text-muted-foreground w-6 md:w-12 text-center md:text-right`}
                             animate={isMovingUp ? {
                               color: ['', '#10b981', '#10b981', 'currentColor'],
                               fontWeight: [400, 800, 800, 400],
@@ -664,13 +739,13 @@ export function QuickLeaderboard() {
                             {rankings[index] || '\u00A0'}
                           </motion.span>
                           {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
-                            <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
+                            <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
                               {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
                             </span>
                           )}
-                          <span className="font-medium flex-1 text-center text-sm md:text-base">{entry.entry_name}</span>
+                          <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
                           <motion.span 
-                            className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
+                            className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
                               (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
                                 ? 'text-red-600' 
                                 : 'text-muted-foreground'
@@ -684,24 +759,22 @@ export function QuickLeaderboard() {
                               times: [0, 0.5, 1]
                             }}
                           >
-                            {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 ? 'E' : entry.display_score}
+                            {(typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) === 0 
+                              ? 'E' 
+                              : (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) > 0 
+                                ? `+${entry.display_score}`
+                                : entry.display_score}
                           </motion.span>
-                          <Star
-                            className={`h-5 w-5 cursor-pointer transition-colors ${
-                              isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground hover:text-yellow-400'
-                            }`}
-                            onClick={(e) => toggleFavorite(entry.entry_name, e)}
-                          />
                         </div>
                       </div>
                     );
                   })()}
                   
-                  {/* Expanded content in a separate div outside of layout animation */}
+                  {/* Expanded content */}
                   <AnimatePresence mode="wait" initial={false}>
                     {expandedEntries.has(entry.entry_name) && (
                       <motion.div 
-                        className="pl-8 md:pl-12 pr-2 md:pr-4 py-1 md:py-2"
+                        className="pl-6 md:pl-12 pr-2 md:pr-4 py-1 md:py-2"
                         initial={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 1, height: "auto" }}
                         style={{ 
@@ -712,7 +785,6 @@ export function QuickLeaderboard() {
                       >
                         <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
                           {entry.allGolfers?.map((golfer: GolferScore, golferIndex: number) => {
-                            // Is this golfer in the top 5 (counted toward score)?
                             const isCounted = golferIndex < 5;
                             return (
                               <div 
