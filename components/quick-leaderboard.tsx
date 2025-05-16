@@ -534,12 +534,12 @@ export function QuickLeaderboard() {
                       {currentRank}
                     </span>
                     {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
-                      <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
+                      <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
                         {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
                       </span>
                     )}
-                    <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
-                    <span className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
+                    <span className="font-medium flex-1 text-center text-sm md:text-base truncate">{entry.entry_name}</span>
+                    <span className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
                       (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
                         ? 'text-red-600' 
                         : 'text-muted-foreground'
@@ -621,13 +621,13 @@ export function QuickLeaderboard() {
                           {currentRank}
                         </motion.span>
                         {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
-                          <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
+                          <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
                             {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
                           </span>
                         )}
-                        <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
+                        <span className="font-medium flex-1 text-center text-sm md:text-base truncate">{entry.entry_name}</span>
                         <motion.span 
-                          className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
+                          className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
                             (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
                               ? 'text-red-600' 
                               : 'text-muted-foreground'
@@ -752,13 +752,13 @@ export function QuickLeaderboard() {
                             {rankings[index] || '\u00A0'}
                           </motion.span>
                           {tournamentStarted && payouts.get(entry.entry_name) !== undefined && (
-                            <span className="text-green-600 w-10 md:w-16 text-center md:text-right text-xs md:text-base">
+                            <span className="text-green-600 w-12 md:w-16 text-center md:text-right text-sm md:text-base">
                               {(payouts.get(entry.entry_name) || 0) > 0 ? `$${payouts.get(entry.entry_name)}` : ''}
                             </span>
                           )}
-                          <span className="font-medium flex-1 text-center text-xs md:text-base truncate">{entry.entry_name}</span>
+                          <span className="font-medium flex-1 text-center text-sm md:text-base truncate">{entry.entry_name}</span>
                           <motion.span 
-                            className={`${archivo.className} w-8 md:w-12 text-center md:text-right text-base md:text-lg ${
+                            className={`${archivo.className} w-10 md:w-12 text-center md:text-right text-lg ${
                               (typeof entry.display_score === 'string' ? Number(entry.display_score) : entry.display_score) < 0 
                                 ? 'text-red-600' 
                                 : 'text-muted-foreground'
