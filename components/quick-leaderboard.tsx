@@ -578,7 +578,7 @@ export function QuickLeaderboard() {
                   const isMoving = !!movingEntries[entry.entry_name];
                   const isMovingUp = movingEntries[entry.entry_name] === 'up';
                   const isMovingDown = movingEntries[entry.entry_name] === 'down';
-                  
+                  const isExpanded = expandedEntries.has(entry.entry_name);
                   return (
                     <motion.div
                       key={entry.entry_name}
@@ -594,7 +594,18 @@ export function QuickLeaderboard() {
                       }}
                     >
                       <div 
-                        className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50"
+                        className="flex items-center w-full px-1 md:px-2 py-1 rounded-sm bg-muted/50 cursor-pointer"
+                        onClick={() => {
+                          setExpandedEntries(prev => {
+                            const next = new Set(prev);
+                            if (next.has(entry.entry_name)) {
+                              next.delete(entry.entry_name);
+                            } else {
+                              next.add(entry.entry_name);
+                            }
+                            return next;
+                          });
+                        }}
                       >
                         <Star
                           className="h-4 w-4 md:h-5 md:w-5 cursor-pointer text-yellow-400 fill-yellow-400 mr-1.5 md:-mr-1.5"
@@ -648,6 +659,43 @@ export function QuickLeaderboard() {
                               : entry.display_score}
                         </motion.span>
                       </div>
+                      {/* Expanded content */}
+                      <AnimatePresence mode="wait" initial={false}>
+                        {isExpanded && (
+                          <motion.div 
+                            className="pl-6 md:pl-12 pr-2 md:pr-4 py-1 md:py-2"
+                            initial={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 1, height: "auto" }}
+                            style={{ 
+                              position: 'relative', 
+                              zIndex: 1,
+                              visibility: isExpanded ? 'visible' : 'hidden'
+                            }}
+                          >
+                            <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
+                              {entry.allGolfers?.map((golfer: GolferScore, golferIndex: number) => {
+                                const isCounted = golferIndex < 5;
+                                return (
+                                  <div 
+                                    key={golfer.player_id} 
+                                    className={`flex items-center gap-1 ${!isCounted ? 'opacity-60 italic' : ''}`}
+                                  >
+                                    <span>
+                                      {golfer.first_name} {golfer.last_name}
+                                      {!isCounted && <span className="text-muted-foreground ml-1"></span>}
+                                    </span>
+                                    <span className={`${archivo.className} ${
+                                      golfer.total.startsWith('-') ? 'text-red-600' : ''
+                                    }`}>
+                                      ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })}
