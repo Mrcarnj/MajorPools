@@ -673,25 +673,36 @@ export function QuickLeaderboard() {
                             }}
                           >
                             <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
-                              {entry.allGolfers?.map((golfer: GolferScore, golferIndex: number) => {
-                                const isCounted = golferIndex < 5;
-                                return (
-                                  <div 
-                                    key={golfer.player_id} 
-                                    className={`flex items-center gap-1 ${!isCounted ? 'opacity-60 italic' : ''}`}
-                                  >
-                                    <span>
-                                      {golfer.first_name} {golfer.last_name}
-                                      {!isCounted && <span className="text-muted-foreground ml-1"></span>}
-                                    </span>
-                                    <span className={`${archivo.className} ${
-                                      golfer.total.startsWith('-') ? 'text-red-600' : ''
-                                    }`}>
-                                      ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                              {[...(entry.allGolfers || [])]
+                                .sort((a, b) => {
+                                  const aIsCut = a.position === 'CUT';
+                                  const bIsCut = b.position === 'CUT';
+                                  if (aIsCut && !bIsCut) return 1;
+                                  if (!aIsCut && bIsCut) return -1;
+                                  // Both are not CUT or both are CUT, sort by score
+                                  const scoreA = a.total === 'E' ? 0 : Number(String(a.total).replace('+', ''));
+                                  const scoreB = b.total === 'E' ? 0 : Number(String(b.total).replace('+', ''));
+                                  return scoreA - scoreB;
+                                })
+                                .map((golfer: GolferScore, golferIndex: number) => {
+                                  const isCounted = golferIndex < 5;
+                                  return (
+                                    <div 
+                                      key={golfer.player_id} 
+                                      className={`flex items-center gap-1 ${!isCounted ? 'opacity-60 italic' : ''}`}
+                                    >
+                                      <span>
+                                        {golfer.first_name} {golfer.last_name}
+                                        {!isCounted && <span className="text-muted-foreground ml-1"></span>}
+                                      </span>
+                                      <span className={`${archivo.className} ${
+                                        golfer.total.startsWith('-') ? 'text-red-600' : ''
+                                      }`}>
+                                        ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </motion.div>
                         )}
@@ -845,25 +856,36 @@ export function QuickLeaderboard() {
                         }}
                       >
                         <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
-                          {entry.allGolfers?.map((golfer: GolferScore, golferIndex: number) => {
-                            const isCounted = golferIndex < 5;
-                            return (
-                              <div 
-                                key={golfer.player_id} 
-                                className={`flex items-center gap-1 ${!isCounted ? 'opacity-60 italic' : ''}`}
-                              >
-                                <span>
-                                  {golfer.first_name} {golfer.last_name}
-                                  {!isCounted && <span className="text-muted-foreground ml-1"></span>}
-                                </span>
-                                <span className={`${archivo.className} ${
-                                  golfer.total.startsWith('-') ? 'text-red-600' : ''
-                                }`}>
-                                  ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
-                                </span>
-                              </div>
-                            );
-                          })}
+                          {[...(entry.allGolfers || [])]
+                            .sort((a, b) => {
+                              const aIsCut = a.position === 'CUT';
+                              const bIsCut = b.position === 'CUT';
+                              if (aIsCut && !bIsCut) return 1;
+                              if (!aIsCut && bIsCut) return -1;
+                              // Both are not CUT or both are CUT, sort by score
+                              const scoreA = a.total === 'E' ? 0 : Number(String(a.total).replace('+', ''));
+                              const scoreB = b.total === 'E' ? 0 : Number(String(b.total).replace('+', ''));
+                              return scoreA - scoreB;
+                            })
+                            .map((golfer: GolferScore, golferIndex: number) => {
+                              const isCounted = golferIndex < 5;
+                              return (
+                                <div 
+                                  key={golfer.player_id} 
+                                  className={`flex items-center gap-1 ${!isCounted ? 'opacity-60 italic' : ''}`}
+                                >
+                                  <span>
+                                    {golfer.first_name} {golfer.last_name}
+                                    {!isCounted && <span className="text-muted-foreground ml-1"></span>}
+                                  </span>
+                                  <span className={`${archivo.className} ${
+                                    golfer.total.startsWith('-') ? 'text-red-600' : ''
+                                  }`}>
+                                    ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                                  </span>
+                                </div>
+                              );
+                            })}
                         </div>
                       </motion.div>
                     )}
