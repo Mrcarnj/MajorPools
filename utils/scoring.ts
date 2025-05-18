@@ -44,22 +44,23 @@ export function calculateEntryScore(golferScores: GolferScore[]): number {
 }
 
 export function calculateDisplayScore(golferScores: GolferScore[]): number | "CUT" {
-  // Count CUT/WD/DQ positions
-  const cutCount = golferScores.filter(golfer => 
-    ['CUT', 'WD', 'DQ'].includes(golfer.position)
-  ).length;
+  // Exclude CUT/WD/DQ golfers
+  const nonCutGolfers = golferScores.filter(
+    golfer => !['CUT', 'WD', 'DQ'].includes(golfer.position)
+  );
 
-  // If 4 or more golfers are CUT/WD/DQ, return "CUT"
-  if (cutCount >= 4) return "CUT";
+  // If fewer than 5 non-CUT golfers, entry is CUT
+  if (nonCutGolfers.length < 5) return "CUT";
 
-  // Rest of the calculation remains the same
-  const numericScores = golferScores.map(golfer => {
+  // Map scores to numbers
+  const numericScores = nonCutGolfers.map(golfer => {
     if (golfer.total === 'E') return 0;
     return golfer.total.startsWith('-') 
       ? -Number(golfer.total.slice(1)) 
       : Number(golfer.total.replace('+', ''));
   });
 
+  // Sort and sum the best 5
   numericScores.sort((a, b) => a - b);
   const top5Scores = numericScores.slice(0, 5);
   return top5Scores.reduce((sum, score) => sum + score, 0);
