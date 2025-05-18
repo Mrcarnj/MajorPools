@@ -422,14 +422,25 @@ export default function Leaderboard() {
                           {entry.entry_name} 
                         </h3>
                         <div className="hidden md:flex gap-1 items-center justify-end text-md text-muted-foreground">
-                          {entry.golfers
-                            .slice(0, 5)
-                            .sort((a, b) => parseInt(a.total.replace('+', '')) - parseInt(b.total.replace('+', '')))
-                            .map(golfer => (
+                          {(() => {
+                            // Sort: non-CUT/WD/DQ by score, then CUT/WD/DQ
+                            const sorted = [...entry.golfers].sort((a, b) => {
+                              const aIsCut = ['CUT', 'WD', 'DQ'].includes(a.position);
+                              const bIsCut = ['CUT', 'WD', 'DQ'].includes(b.position);
+                              if (aIsCut && !bIsCut) return 1;
+                              if (!aIsCut && bIsCut) return -1;
+                              // Both are not CUT/WD/DQ or both are, sort by score
+                              const scoreA = a.total === 'E' ? 0 : Number(a.total.replace('+', ''));
+                              const scoreB = b.total === 'E' ? 0 : Number(b.total.replace('+', ''));
+                              return scoreA - scoreB;
+                            });
+                            // Take the first 5
+                            return sorted.slice(0, 5).map(golfer => (
                               <span key={golfer.player_id} className={golfer.total.startsWith('-') ? 'text-red-600' : ''}>
-                                {golfer.total}
+                                {['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total}
                               </span>
-                            ))}
+                            ));
+                          })()}
                         </div>
                         <motion.span 
                           className={`${archivo.className} text-lg md:text-2xl text-muted-foreground text-right ${
