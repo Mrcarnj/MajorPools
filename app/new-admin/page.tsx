@@ -584,7 +584,7 @@ Mike`;
                   >
                     {tournament.is_active ? 'Deactivate' : 'Activate'}
                   </Button>
-                  {tournament.is_active && (
+                  {tournament.is_active && tournament.status !== 'Official' && (
                     <Button
                       variant="destructive"
                       onClick={() => handleCompleteTournament(tournament.id)}
