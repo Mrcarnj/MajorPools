@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
-import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry } from '@/utils/scoring';
+import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry, calculatePrizePool } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -360,27 +360,18 @@ Major Pools Team`;
       if (!activeTournament) return;
 
       // Get all entries for active tournament
-      const { data: entries, error } = await supabase
+      const { data: entriesData } = await supabase
         .from('entries')
         .select('email')
         .eq('tournament_id', activeTournament.id);
 
-      if (error) {
-        console.error('Error fetching entries:', error);
-        return;
-      }
+      if (entriesData) {
+        // Get unique emails
+        const uniqueEmails = Array.from(new Set(entriesData.map(entry => entry.email)));
 
-      if (!entries || entries.length === 0) {
-        console.error('No entries found for active tournament');
-        return;
-      }
-
-      // Get unique emails
-      const uniqueEmails = Array.from(new Set(entries.map(entry => entry.email)));
-
-      // Create email content
-      const emailSubject = `${activeTournament.name} ${activeTournament.year} - Tournament Update`;
-      const emailBody = `Hello Major Pools Players,
+        // Create email content
+        const emailSubject = `${activeTournament.name} ${activeTournament.year} - Tournament Update`;
+        const emailBody = `Hello Major Pools Players,
 
 Thank you for participating in the ${activeTournament.name} ${activeTournament.year} pool.
 
@@ -389,9 +380,10 @@ You can view the current leaderboard at ${window.location.origin}/leaderboard
 Best regards,
 Major Pools Team`;
 
-      // Create Gmail URL with BCC to all entries
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      window.open(gmailUrl, '_blank');
+        // Create Gmail URL with BCC to all entries
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        window.open(gmailUrl, '_blank');
+      }
     } catch (error) {
       console.error('Error emailing entries:', error);
     }
@@ -401,8 +393,13 @@ Major Pools Team`;
     const tournament = tournaments.find(t => t.is_active);
     if (!tournament) return;
 
-    // Get unique emails from all affected entries
-    const uniqueEmails = Array.from(new Set(withdrawnGolferEntries.map(entry => entry.email)));
+    // Get emails only from entries in this tournament
+    const { data: entriesData } = await supabase
+      .from('entries')
+      .select('email')
+      .eq('tournament_id', tournament.id);
+    
+    const uniqueEmails = Array.from(new Set(entriesData?.map(entry => entry.email) || []));
 
     // Create email content
     const emailSubject = `Action Required: Update Your ${tournament.name} ${tournament.year} Entry`;
@@ -531,6 +528,275 @@ Major Pools Team`;
     return golfer ? `${golfer.first_name} ${golfer.last_name}${golfer.is_amateur ? ' (A)' : ''}` : 'Unknown Golfer';
   };
 
+  const handleCompleteTournament = async (tournamentId: string) => {
+    try {
+      console.log('Starting tournament completion for ID:', tournamentId);
+      
+      // 1. Get all entries for this tournament with calculated_score and display_score
+      const { data: entries, error: entriesError } = await supabase
+        .from('entries')
+        .select(`
+          id,
+          entry_name,
+          calculated_score,
+          entry_total,
+          tier1_golfer1, tier1_golfer2,
+          tier2_golfer1, tier2_golfer2,
+          tier3_golfer1, tier3_golfer2,
+          tier4_golfer1,
+          tier5_golfer1
+        `)
+        .eq('tournament_id', tournamentId)
+        .order('calculated_score', { ascending: true });
+
+      if (entriesError) {
+        console.error('Error fetching entries:', {
+          error: entriesError,
+          tournamentId,
+          timestamp: new Date().toISOString()
+        });
+        throw entriesError;
+      }
+
+      if (!entries || entries.length === 0) {
+        console.error('No entries found for tournament:', {
+          tournamentId,
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // 2. Calculate final rankings and positions
+      const entriesForRankings = entries.map(entry => ({
+        entry_name: entry.entry_name,
+        calculated_score: entry.calculated_score,
+        display_score: 0,
+        topFiveGolfers: []
+      }));
+
+      // Create a map of entry name to ranking, but keep T for all tied positions
+      const rankingMap = new Map();
+      let currentRank = 1;
+      let currentScore = entries[0]?.calculated_score;
+      let tiedEntries = [entries[0]];
+
+      entries.forEach((entry, index) => {
+        if (index === 0) return; // Skip first entry as it's already handled
+
+        if (entry.calculated_score === currentScore) {
+          // It's a tie
+          tiedEntries.push(entry);
+        } else {
+          // New score - handle previous group
+          if (tiedEntries.length > 1) {
+            // Was a tie - mark all with T
+            tiedEntries.forEach(e => {
+              rankingMap.set(e.id, `T${currentRank}`);
+            });
+          } else {
+            // Single entry
+            rankingMap.set(tiedEntries[0].id, currentRank.toString());
+          }
+          
+          // Start new group
+          currentRank = index + 1;
+          currentScore = entry.calculated_score;
+          tiedEntries = [entry];
+        }
+      });
+
+      // Handle last group
+      if (tiedEntries.length > 1) {
+        tiedEntries.forEach(e => {
+          rankingMap.set(e.id, `T${currentRank}`);
+        });
+      } else if (tiedEntries.length === 1) {
+        rankingMap.set(tiedEntries[0].id, currentRank.toString());
+      }
+
+      // 3. Get all golfer scores with the same fields as leaderboard
+      const { data: scores, error: scoresError } = await supabase
+        .from('golfer_scores')
+        .select('player_id, first_name, last_name, total, current_round_score, thru, position, status, tee_time');
+
+      if (scoresError) throw scoresError;
+
+      // Create scores map for quick lookup - same as leaderboard
+      const scoreMap = new Map(scores.map(score => [score.player_id, score]));
+
+      // 4. Calculate payouts
+      const { payouts } = calculatePrizePool(entriesForRankings);
+
+      // 5. Update each entry with scores, ranking, and payout
+      for (const entry of entries) {
+        // Transform entry data exactly like leaderboard does
+        const golfers = [
+          entry.tier1_golfer1, entry.tier1_golfer2,
+          entry.tier2_golfer1, entry.tier2_golfer2,
+          entry.tier3_golfer1, entry.tier3_golfer2,
+          entry.tier4_golfer1,
+          entry.tier5_golfer1
+        ].map(id => {
+          const score = scoreMap.get(id);
+          return {
+            player_id: id,
+            first_name: score?.first_name || 'Unknown',
+            last_name: score?.last_name || 'Golfer',
+            total: score?.total || 'N/A',
+            current_round_score: score?.current_round_score || '-',
+            thru: score?.thru === '-' && ['CUT', 'WD', 'DQ'].includes((score?.position || '') as string) 
+              ? score?.position 
+              : score?.thru || '-',
+            position: score?.position || '-',
+            status: score?.status || '-',
+            tee_time: score?.tee_time || '-'
+          };
+        });
+
+        // Calculate display score using the same function as quick leaderboard
+        const displayScore = calculateDisplayScore(golfers);
+
+        const updateData = {
+          t1g1_score: scoreMap.get(entry.tier1_golfer1)?.total,
+          t1g2_score: scoreMap.get(entry.tier1_golfer2)?.total,
+          t2g1_score: scoreMap.get(entry.tier2_golfer1)?.total,
+          t2g2_score: scoreMap.get(entry.tier2_golfer2)?.total,
+          t3g1_score: scoreMap.get(entry.tier3_golfer1)?.total,
+          t3g2_score: scoreMap.get(entry.tier3_golfer2)?.total,
+          t4g1_score: scoreMap.get(entry.tier4_golfer1)?.total,
+          t5g1_score: scoreMap.get(entry.tier5_golfer1)?.total,
+          entry_total: displayScore.toString(),
+          entry_position: rankingMap.get(entry.id),
+          payout: payouts.get(entry.entry_name) || 0
+        };
+
+        await supabase.from('entries').update(updateData).eq('id', entry.id);
+      }
+
+      // 6. Get tournament info for email
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('name, year')
+        .eq('id', tournamentId)
+        .single();
+
+      if (!tournament) {
+        throw new Error('Tournament not found');
+      }
+
+      // 7. Get updated entries with their saved totals
+      const { data: updatedEntries } = await supabase
+        .from('entries')
+        .select(`
+          id,
+          entry_name,
+          entry_total,
+          entry_position,
+          payout,
+          calculated_score,
+          tier1_golfer1, tier1_golfer2,
+          tier2_golfer1, tier2_golfer2,
+          tier3_golfer1, tier3_golfer2,
+          tier4_golfer1,
+          tier5_golfer1
+        `)
+        .eq('tournament_id', tournamentId)
+        .order('calculated_score', { ascending: true });
+
+      // 8. Prepare and send results email
+      const topEntries = updatedEntries?.slice(0, 10).map(entry => {
+        const allGolfers = [
+          { id: entry.tier1_golfer1, score: scoreMap.get(entry.tier1_golfer1)?.total, status: scoreMap.get(entry.tier1_golfer1)?.status },
+          { id: entry.tier1_golfer2, score: scoreMap.get(entry.tier1_golfer2)?.total, status: scoreMap.get(entry.tier1_golfer2)?.status },
+          { id: entry.tier2_golfer1, score: scoreMap.get(entry.tier2_golfer1)?.total, status: scoreMap.get(entry.tier2_golfer1)?.status },
+          { id: entry.tier2_golfer2, score: scoreMap.get(entry.tier2_golfer2)?.total, status: scoreMap.get(entry.tier2_golfer2)?.status },
+          { id: entry.tier3_golfer1, score: scoreMap.get(entry.tier3_golfer1)?.total, status: scoreMap.get(entry.tier3_golfer1)?.status },
+          { id: entry.tier3_golfer2, score: scoreMap.get(entry.tier3_golfer2)?.total, status: scoreMap.get(entry.tier3_golfer2)?.status },
+          { id: entry.tier4_golfer1, score: scoreMap.get(entry.tier4_golfer1)?.total, status: scoreMap.get(entry.tier4_golfer1)?.status },
+          { id: entry.tier5_golfer1, score: scoreMap.get(entry.tier5_golfer1)?.total, status: scoreMap.get(entry.tier5_golfer1)?.status }
+        ]
+          .map(g => ({
+            name: `${scoreMap.get(g.id)?.first_name || 'Unknown'} ${scoreMap.get(g.id)?.last_name || 'Golfer'}`,
+            score: g.status?.toLowerCase() === 'cut' ? 'CUT' : (g.score || 'N/A'),
+            status: g.status
+          }))
+          .sort((a, b) => {
+            // Always put CUT golfers at the end
+            if (a.score === 'CUT' && b.score !== 'CUT') return 1;
+            if (a.score !== 'CUT' && b.score === 'CUT') return -1;
+            if (a.score === 'CUT' && b.score === 'CUT') return 0;
+            
+            // For non-CUT golfers, sort by score (lowest to highest)
+            const getScoreValue = (score: string) => {
+              if (score === 'CUT') return 999;
+              if (score === 'N/A') return 998;
+              if (score === 'E') return 0;
+              return Number(score);
+            };
+            
+            const scoreA = getScoreValue(a.score);
+            const scoreB = getScoreValue(b.score);
+            return scoreA - scoreB;
+          });
+
+        return {
+          position: entry.entry_position || 'N/A',
+          entry_name: entry.entry_name,
+          entry_total: entry.entry_total,
+          payout: entry.payout || 0,
+          golfers: allGolfers
+        };
+      }) || [];
+
+      // Convert position numbers to ordinal format (1st, 2nd, 3rd, etc.)
+      const getOrdinal = (n: string) => {
+        if (n.startsWith('T')) {
+          const num = parseInt(n.slice(1));
+          return `T${num}${num === 1 ? 'st' : num === 2 ? 'nd' : num === 3 ? 'rd' : 'th'}`;
+        }
+        const num = parseInt(n);
+        return `${num}${num === 1 ? 'st' : num === 2 ? 'nd' : num === 3 ? 'rd' : 'th'}`;
+      };
+
+      const emailBody = `Hi All,
+
+The ${tournament.name} ${tournament.year} has been completed! Here are the final top 10 finishers with payout amounts:
+
+${topEntries.map(entry => 
+  `${getOrdinal(entry.position)} - ${entry.entry_name} (${entry.entry_total}) - ${entry.golfers.map(g => `${g.name} (${g.score})`).join(', ')} - $${entry.payout}`
+).join('\n')}
+
+Thank you for participating in the Major SZN Pools!
+
+Cheers,
+Mike`;
+
+      // Get emails only from entries in this tournament
+      const { data: entriesData } = await supabase
+        .from('entries')
+        .select('email')
+        .eq('tournament_id', tournamentId);
+      
+      const uniqueEmails = Array.from(new Set(entriesData?.map(entry => entry.email) || []));
+      
+      // Create Gmail URL
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(`${tournament.name} ${tournament.year} - Major SZN Pools Final Results`)}&body=${encodeURIComponent(emailBody)}`;
+      window.open(gmailUrl, '_blank');
+
+      // 9. Set tournament status to Official
+      await supabase
+        .from('tournaments')
+        .update({ status: 'Official' })
+        .eq('id', tournamentId);
+
+      // 10. Refresh tournaments list
+      fetchTournaments();
+
+    } catch (error) {
+      console.error('Error completing tournament:', error);
+    }
+  };
+
   // If still loading or redirecting, show minimal UI
   if (loading || isRedirecting) {
     return (
@@ -656,6 +922,15 @@ Major Pools Team`;
                       >
                         {tournament.is_active ? 'Deactivate' : 'Activate'}
                       </Button>
+                      {tournament.is_active && tournament.status !== 'Official' && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleCompleteTournament(tournament.id)}
+                          className="flex-1 md:flex-none"
+                        >
+                          Complete
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
