@@ -32,7 +32,7 @@ export function DonationDisplay() {
           .select('entry_name, calculated_score')
           .eq('tournament_id', tournament.id);
 
-        let runningDonation = 360; // Set base amount regardless of entries
+        let runningDonation = 550; // Set base amount regardless of entries
 
         if (entriesData && entriesData.length > 0) {
           const entries = entriesData.map(entry => ({
