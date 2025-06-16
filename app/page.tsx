@@ -48,9 +48,9 @@ export default function Home() {
   return (
     <div className="space-y-8 px-2 md:px-6">
       <section className="text-center space-y-4">
-      <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
+      {/* <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
           ATTENTION!! 6/12/2025 -- 2:45pm EST -- The database website is down, causing this page to be blank. It's out of my control, but I am monitoring it for updates!
-        </p>
+        </p> */}
         <h1 className="text-4xl font-bold tracking-tight">Majors SZN Pools</h1>
         <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
           Create your dream team of professional golfers and compete against other players
