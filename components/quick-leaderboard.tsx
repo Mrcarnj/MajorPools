@@ -675,11 +675,19 @@ export function QuickLeaderboard() {
                             <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
                               {[...(entry.allGolfers || [])]
                                 .sort((a, b) => {
+                                  // First handle CUT vs non-CUT
                                   const aIsCut = a.position === 'CUT';
                                   const bIsCut = b.position === 'CUT';
                                   if (aIsCut && !bIsCut) return 1;
                                   if (!aIsCut && bIsCut) return -1;
-                                  // Both are not CUT or both are CUT, sort by score
+                                  
+                                  // Then handle WD vs non-WD (only if neither is CUT)
+                                  const aIsWD = a.position === 'WD';
+                                  const bIsWD = b.position === 'WD';
+                                  if (aIsWD && !bIsWD) return 1;
+                                  if (!aIsWD && bIsWD) return -1;
+                                  
+                                  // If both are regular scores or both are WD, sort by score
                                   const scoreA = a.total === 'E' ? 0 : Number(String(a.total).replace('+', ''));
                                   const scoreB = b.total === 'E' ? 0 : Number(String(b.total).replace('+', ''));
                                   return scoreA - scoreB;
@@ -858,11 +866,19 @@ export function QuickLeaderboard() {
                         <div className="flex flex-wrap gap-x-2 md:gap-x-4 text-xs md:text-sm">
                           {[...(entry.allGolfers || [])]
                             .sort((a, b) => {
+                              // First handle CUT vs non-CUT
                               const aIsCut = a.position === 'CUT';
                               const bIsCut = b.position === 'CUT';
                               if (aIsCut && !bIsCut) return 1;
                               if (!aIsCut && bIsCut) return -1;
-                              // Both are not CUT or both are CUT, sort by score
+                              
+                              // Then handle WD vs non-WD (only if neither is CUT)
+                              const aIsWD = a.position === 'WD';
+                              const bIsWD = b.position === 'WD';
+                              if (aIsWD && !bIsWD) return 1;
+                              if (!aIsWD && bIsWD) return -1;
+                              
+                              // If both are regular scores or both are WD, sort by score
                               const scoreA = a.total === 'E' ? 0 : Number(String(a.total).replace('+', ''));
                               const scoreB = b.total === 'E' ? 0 : Number(String(b.total).replace('+', ''));
                               return scoreA - scoreB;
