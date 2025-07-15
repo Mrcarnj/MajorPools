@@ -348,10 +348,11 @@ Major Pools Team`;
     
     const createTeamUrl = `${window.location.origin}/create-team`;
     const emailBody = getEmailTemplate(tournamentName, createTeamUrl, tournamentYear);
+    const emailSubject = `${tournamentName} ${tournamentYear} - Welcome & Submission Form`;
     
-    // Open Gmail compose window instead of default mail client
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(`${tournamentName} ${tournamentYear} - Welcome & Submission Form`)}&body=${encodeURIComponent(emailBody)}`;
-    window.open(gmailUrl, '_blank');
+    // Use default mail client (mailto link)
+    const mailtoLink = `mailto:?bcc=${encodeURIComponent(uniqueEmails.join(','))}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.location.href = mailtoLink;
   };
 
   const handleEmailAllEntries = async () => {
