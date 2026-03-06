@@ -36,19 +36,29 @@ export async function pgaFetch(endpoint: string, params: Record<string, string> 
     }
     
     const result = await response.text();
-    
-    // Log the first 100 characters of the response to see what we're getting
-    console.log(`Response preview: ${result.substring(0, 100)}...`);
-    
+
+    // Log a longer raw preview (first 600 chars) to see structure
+    const previewLen = 600;
+    console.log(`Response preview (first ${previewLen} chars):\n${result.substring(0, previewLen)}${result.length > previewLen ? '...' : ''}\n`);
+
     // Check if the response is empty
     if (!result || result.trim() === '') {
       console.error('Empty response received from API');
       throw new Error('Empty response received from API');
     }
-    
+
     try {
       // Try to parse as JSON
-      return JSON.parse(result);
+      const parsed = JSON.parse(result);
+
+      // For schedule endpoint, log first item's full raw structure (status, purse, etc.)
+      if (endpoint === '/schedule' && parsed?.schedule?.length) {
+        console.log('First schedule item (raw structure):');
+        console.log(JSON.stringify(parsed.schedule[0], null, 2));
+        console.log('');
+      }
+
+      return parsed;
     } catch (parseError) {
       // If it's not valid JSON, check if it's an error message with single quotes
       if (result.includes("'error'")) {

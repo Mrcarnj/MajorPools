@@ -3,22 +3,22 @@ import type { Tournament, Leaderboard, Player, Scorecard } from './types';
 
 export async function getSchedule(year: string) {
   const response = await pgaFetch('/schedule', {
-    year: '2025',
+    year,
   });
   return response.schedule; // Return just the schedule array
 }
 
-export async function getTournament(tournId: string) {
+export async function getTournament(tournId: string, year: string = '2026') {
   return pgaFetch('/tournament', {
     tournId,
-    year: '2025'  // You might want to make this parameter configurable
+    year,
   });
 }
 
 export async function getTournamentLeaderboard(tournId: string) {
   const response = await pgaFetch('/leaderboard', {
     tournId,
-    year: '2025'
+    year: '2026'
   });
   
   return response; // Return all players
@@ -27,7 +27,7 @@ export async function getTournamentLeaderboard(tournId: string) {
 export async function getWorldRankings() {
   const response = await pgaFetch('/stats', {
     statId: '186',
-    year: '2025'
+    year: '2026'
   });
   
   return response.rankings; // Return just the rankings array

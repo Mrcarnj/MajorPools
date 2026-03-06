@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "update-tournament": "tsx scripts/run-update.ts"
+    "update-tournament": "tsx scripts/run-update.ts",
+    "test-schedule": "tsx scripts/test-pga-schedule.ts",
+    "upload-schedule": "tsx scripts/upload-schedule.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^1.5.0",
