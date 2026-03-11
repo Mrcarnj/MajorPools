@@ -508,9 +508,10 @@ export default function CreateTeam() {
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <h3 className="font-semibold text-header-link">Entry Instructions</h3>
             <ul className="list-disc pl-4 space-y-1 text-sm md:text-base">
-              <li>Entry fee: $25 via Venmo (@dieter21)</li>
-              <li>Include your entry name in Venmo description</li>
-              <li>Payment must be received before last group finishes 2nd round</li>
+              {/*<li>Entry fee: $25 via Venmo (@dieter21)</li>*/}
+              <li>Entry fee: FREE THIS WEEK!</li>
+              {/*<li>Include your entry name in Venmo description</li>*/}
+              {/*<li>Payment must be received before last group finishes 2nd round</li>*/}
               <li>Multiple entries encouraged</li>
             </ul>
           </div>
@@ -722,7 +723,7 @@ export default function CreateTeam() {
         </Button>
       </form>
 
-      <Dialog 
+      {/*<Dialog 
         open={showPaymentModal} 
         onOpenChange={(open) => {
           setShowPaymentModal(open);
@@ -768,7 +769,7 @@ export default function CreateTeam() {
             </DialogClose>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog>*/}
 
       {/* Add new Auth Dialog */}
       <Dialog 
