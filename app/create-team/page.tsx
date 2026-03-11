@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter } from 'next/navigation';
 import { IoIosCloseCircle, IoIosCheckmarkCircle } from "react-icons/io";
@@ -73,6 +73,45 @@ export default function CreateTeam() {
   const [authError, setAuthError] = useState('');
   const router = useRouter();
   const [submittedEmail, setSubmittedEmail] = useState('');
+  const [openOtherTier, setOpenOtherTier] = useState<string | null>(null);
+
+  const selectedGolferIds = useMemo(() => {
+    const set = new Set<string>();
+    (['tier1', 'tier2', 'tier3', 'tier4', 'tier5'] as const).forEach((tier) => {
+      formData.selections[tier].forEach((id) => set.add(id));
+    });
+    return set;
+  }, [formData.selections]);
+
+  const allGolfers = useMemo(
+    () => [...golfers.tier1, ...golfers.tier2, ...golfers.tier3, ...golfers.tier4, ...golfers.tier5],
+    [golfers]
+  );
+
+  const getOtherGolfersForTier = useCallback(
+    (tierId: string): Golfer[] => {
+      const lowerTiers: (keyof TieredGolfers)[] =
+        tierId === 'tier1' ? ['tier2', 'tier3', 'tier4', 'tier5']
+        : tierId === 'tier2' ? ['tier3', 'tier4', 'tier5']
+        : tierId === 'tier3' ? ['tier4', 'tier5']
+        : tierId === 'tier4' ? ['tier5']
+        : [];
+      const pool = lowerTiers.flatMap((t) => golfers[t]);
+      const available = pool.filter((g) => !selectedGolferIds.has(g.player_id));
+      return [...available].sort((a, b) => {
+        const ln = a.last_name.localeCompare(b.last_name, undefined, { sensitivity: 'base' });
+        return ln !== 0 ? ln : a.first_name.localeCompare(b.first_name, undefined, { sensitivity: 'base' });
+      });
+    },
+    [golfers, selectedGolferIds]
+  );
+
+  const isGolferSelectedInOtherTier = useCallback(
+    (playerId: string, currentTierId: string): boolean => {
+      return selectedGolferIds.has(playerId) && !formData.selections[currentTierId as keyof typeof formData.selections].includes(playerId);
+    },
+    [formData.selections, selectedGolferIds]
+  );
 
   // Define createEntry mutation before any conditional returns
 
@@ -546,105 +585,94 @@ export default function CreateTeam() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Tier 1 <span className="text-sm font-normal">({formData.selections.tier1.length}/2)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {golfers.tier1.map((golfer) => (
-                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <Checkbox
-                    id={golfer.player_id}
-                    checked={formData.selections.tier1.includes(golfer.player_id)}
-                    onCheckedChange={() => handleGolferSelection('tier1', golfer.player_id)}
-                  />
-                  <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
-                  </label>
+        {(['tier1', 'tier2', 'tier3', 'tier4'] as const).map((tierId) => {
+          const tierNum = tierId.slice(4);
+          const maxSelections = tierId === 'tier4' ? 1 : 2;
+          const tierGolfers = golfers[tierId];
+          const selections = formData.selections[tierId];
+          const otherSelectionIds = selections.filter((id) => !tierGolfers.some((g) => g.player_id === id));
+          const otherSelectionsAsGolfers = otherSelectionIds
+            .map((id) => allGolfers.find((g) => g.player_id === id))
+            .filter((g): g is Golfer => g != null);
+          const otherGolfers = getOtherGolfersForTier(tierId);
+          const isOtherOpen = openOtherTier === tierId;
+          return (
+            <Card key={tierId}>
+              <CardHeader>
+                <CardTitle>
+                  Tier {tierNum} <span className="text-sm font-normal">({selections.length}/{maxSelections})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {tierGolfers.map((golfer) => {
+                    const selectedHere = selections.includes(golfer.player_id);
+                    const selectedElsewhere = isGolferSelectedInOtherTier(golfer.player_id, tierId);
+                    const disabled = selectedElsewhere;
+                    return (
+                      <div
+                        key={golfer.player_id}
+                        className={`flex items-center space-x-2 p-3 border rounded-lg ${disabled ? 'opacity-60 text-muted-foreground' : ''}`}
+                      >
+                        <Checkbox
+                          id={`${tierId}-${golfer.player_id}`}
+                          checked={selectedHere}
+                          disabled={disabled}
+                          onCheckedChange={() => !disabled && handleGolferSelection(tierId, golfer.player_id)}
+                        />
+                        <label htmlFor={`${tierId}-${golfer.player_id}`} className="text-sm cursor-pointer">
+                          {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                        </label>
+                      </div>
+                    );
+                  })}
+                  {otherSelectionsAsGolfers.map((golfer) => (
+                    <div key={`other-sel-${tierId}-${golfer.player_id}`} className="flex items-center space-x-2 p-3 border rounded-lg border-header-link/50 bg-header-link/5">
+                      <Checkbox
+                        id={`other-sel-${tierId}-${golfer.player_id}`}
+                        checked={true}
+                        onCheckedChange={() => handleGolferSelection(tierId, golfer.player_id)}
+                      />
+                      <label htmlFor={`other-sel-${tierId}-${golfer.player_id}`} className="text-sm">
+                        {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                        <span className="ml-1 text-muted-foreground text-xs">(Other)</span>
+                      </label>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Tier 2 <span className="text-sm font-normal">({formData.selections.tier2.length}/2)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {golfers.tier2.map((golfer) => (
-                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <Checkbox
-                    id={golfer.player_id}
-                    checked={formData.selections.tier2.includes(golfer.player_id)}
-                    onCheckedChange={() => handleGolferSelection('tier2', golfer.player_id)}
-                  />
-                  <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
-                  </label>
+                <div className="border-t pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setOpenOtherTier((prev) => (prev === tierId ? null : tierId))}
+                    className="flex items-center gap-2 w-full p-3 border rounded-lg text-left text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  >
+                    <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${isOtherOpen ? 'rotate-90' : ''}`} />
+                    Other (choose from Tiers {tierNum === '1' ? '2–5' : tierNum === '2' ? '3–5' : tierNum === '3' ? '4–5' : '5'})
+                  </button>
+                  {isOtherOpen && otherGolfers.length > 0 && (
+                    <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2 border rounded-lg bg-muted/20">
+                      {otherGolfers.map((golfer) => (
+                        <div key={`other-${tierId}-${golfer.player_id}`} className="flex items-center space-x-2 p-2 border rounded-lg">
+                          <Checkbox
+                            id={`other-${tierId}-${golfer.player_id}`}
+                            checked={selections.includes(golfer.player_id)}
+                            onCheckedChange={() => handleGolferSelection(tierId, golfer.player_id)}
+                          />
+                          <label htmlFor={`other-${tierId}-${golfer.player_id}`} className="text-sm">
+                            {golfer.last_name}, {golfer.first_name}{golfer.is_amateur ? ' (A)' : ''}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {isOtherOpen && otherGolfers.length === 0 && (
+                    <p className="mt-2 p-2 text-sm text-muted-foreground">No other golfers available (all lower-tier golfers are already selected elsewhere).</p>
+                  )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Tier 3 <span className="text-sm font-normal">({formData.selections.tier3.length}/2)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {golfers.tier3.map((golfer) => (
-                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <Checkbox
-                    id={golfer.player_id}
-                    checked={formData.selections.tier3.includes(golfer.player_id)}
-                    onCheckedChange={() => handleGolferSelection('tier3', golfer.player_id)}
-                  />
-                  <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Tier 4 <span className="text-sm font-normal">({formData.selections.tier4.length}/1)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {golfers.tier4.map((golfer) => (
-                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <Checkbox
-                    id={golfer.player_id}
-                    checked={formData.selections.tier4.includes(golfer.player_id)}
-                    onCheckedChange={() => handleGolferSelection('tier4', golfer.player_id)}
-                  />
-                  <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          );
+        })}
 
         <Card>
           <CardHeader>
@@ -654,19 +682,27 @@ export default function CreateTeam() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {golfers.tier5.map((golfer) => (
-                <div key={golfer.player_id} className="flex items-center space-x-2 p-3 border rounded-lg">
-                  <Checkbox
-                    id={golfer.player_id}
-                    checked={formData.selections.tier5.includes(golfer.player_id)}
-                    onCheckedChange={() => handleGolferSelection('tier5', golfer.player_id)}
-                  />
-                  <label htmlFor={golfer.player_id} className="text-sm">
-                    {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                    {/* {golfer.odds && <span className="ml-2 text-muted-foreground">({golfer.odds})</span>} */}
-                  </label>
-                </div>
-              ))}
+              {golfers.tier5.map((golfer) => {
+                const selectedHere = formData.selections.tier5.includes(golfer.player_id);
+                const selectedElsewhere = isGolferSelectedInOtherTier(golfer.player_id, 'tier5');
+                const disabled = selectedElsewhere;
+                return (
+                  <div
+                    key={golfer.player_id}
+                    className={`flex items-center space-x-2 p-3 border rounded-lg ${disabled ? 'opacity-60 text-muted-foreground' : ''}`}
+                  >
+                    <Checkbox
+                      id={`tier5-${golfer.player_id}`}
+                      checked={selectedHere}
+                      disabled={disabled}
+                      onCheckedChange={() => !disabled && handleGolferSelection('tier5', golfer.player_id)}
+                    />
+                    <label htmlFor={`tier5-${golfer.player_id}`} className="text-sm cursor-pointer">
+                      {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                    </label>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
