@@ -84,6 +84,8 @@ export default function AdminDashboard() {
   const [selectedGolferId, setSelectedGolferId] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [setupTournamentLoading, setSetupTournamentLoading] = useState(false);
+  const [setupTournamentMessage, setSetupTournamentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // One-time auth check on component mount
   useEffect(() => {
@@ -337,6 +339,25 @@ Major Pools Team`;
     
     // Fetch tournaments without triggering auth checks
     fetchTournaments();
+  };
+
+  const handleSetupTournament = async () => {
+    setSetupTournamentLoading(true);
+    setSetupTournamentMessage(null);
+    try {
+      const res = await fetch('/api/setup-tournament', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSetupTournamentMessage({ type: 'error', text: data.details || data.error || 'Setup failed' });
+        return;
+      }
+      setSetupTournamentMessage({ type: 'success', text: 'Tournament setup complete' });
+      fetchTournaments();
+    } catch (err) {
+      setSetupTournamentMessage({ type: 'error', text: err instanceof Error ? err.message : 'Setup failed' });
+    } finally {
+      setSetupTournamentLoading(false);
+    }
   };
 
   const handleSendInvite = async (tournamentName: string, tournamentYear: number) => {
@@ -906,6 +927,12 @@ Mike`;
             </CardHeader>
             <CardContent>
               <div className="space-y-3 md:space-y-4">
+                {setupTournamentMessage && (
+                  <Alert variant={setupTournamentMessage.type === 'error' ? 'destructive' : 'default'} className="mb-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{setupTournamentMessage.text}</AlertDescription>
+                  </Alert>
+                )}
                 {tournaments.map(tournament => (
                   <div 
                     key={tournament.id} 
@@ -917,7 +944,7 @@ Mike`;
                         Status: {tournament.status}
                       </p>
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
                       <Button
                         variant={tournament.is_active ? "secondary" : "default"}
                         onClick={() => handleActivateTournament(tournament.id, tournament.is_active)}
@@ -925,6 +952,16 @@ Mike`;
                       >
                         {tournament.is_active ? 'Deactivate' : 'Activate'}
                       </Button>
+                      {tournament.is_active && (
+                        <Button
+                          variant="outline"
+                          onClick={handleSetupTournament}
+                          disabled={setupTournamentLoading}
+                          className="flex-1 md:flex-none"
+                        >
+                          {setupTournamentLoading ? 'Running…' : 'Setup Tournament'}
+                        </Button>
+                      )}
                       {tournament.is_active && tournament.status !== 'Official' && (
                         <Button
                           variant="destructive"

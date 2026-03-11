@@ -88,10 +88,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Donation Display */}
+      {/* Donation Display 
       <div className="mt-8 max-w-lg mx-auto">
         <DonationDisplay />
-      </div>
+      </div>*/}
     </div>
   );
 }
