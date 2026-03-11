@@ -72,33 +72,33 @@ export function Header() {
   };
 
   return (
-    <header className="border-b">
+    <header className="border-b border-border/80 bg-card/50 dark:bg-card/30 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold">
+        <Link href="/" className="text-xl font-bold text-header-link hover:text-header-link/90 transition-colors">
           Majors SZN Pools
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/leaderboard" className="hover:text-primary flex items-center">
+          <Link href="/leaderboard" className="text-header-link hover:text-header-link/80 transition-colors flex items-center">
             <MdOutlineLeaderboard className="mr-2 h-4 w-4"/>
             Leaderboard
           </Link>
           {showCreateTeam && (
-            <Link href="/create-team" className="hover:text-primary flex items-center">
+            <Link href="/create-team" className="text-header-link hover:text-header-link/80 transition-colors flex items-center">
               <RiTeamLine className="mr-2 h-4 w-4" />
               Create Team
             </Link>
           )}
           {authSession && (
             <>
-              <Link href="/dashboard" className="hover:text-primary flex items-center">
+              <Link href="/dashboard" className="text-header-link hover:text-header-link/80 transition-colors flex items-center">
                 <RxDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
               {authSession && authSession.user.user_metadata?.role === 'admin' && (
                 <button 
                   onClick={handleAdminClick}
-                  className="hover:text-primary flex items-center"
+                  className="text-header-link hover:text-header-link/80 transition-colors flex items-center"
                 >
                   <RiAdminLine className="mr-2 h-4 w-4" />
                   Admin

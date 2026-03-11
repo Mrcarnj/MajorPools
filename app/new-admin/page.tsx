@@ -507,7 +507,7 @@ Mike`;
 
   return (
     <div className="space-y-4 md:space-y-8">
-      <h1 className="text-xl md:text-2xl font-bold">Tournament Management</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-header-link">Tournament Management</h1>
       
       {withdrawnGolferEntries.length > 0 && (
         <Alert variant="destructive">

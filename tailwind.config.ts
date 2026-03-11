@@ -54,6 +54,11 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        hero: {
+          bg: 'hsl(var(--hero-bg))',
+          fg: 'hsl(var(--hero-fg))',
+        },
+        'header-link': 'hsl(var(--header-link))',
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',

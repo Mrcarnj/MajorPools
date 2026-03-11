@@ -563,7 +563,7 @@ export function QuickLeaderboard() {
         {/* Favorites Section */}
         {favoriteEntries.size > 0 && (
           <div className="mb-4 md:mb-6">
-            <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Favorites</h3>
+            <h3 className="text-xs md:text-sm font-medium text-header-link mb-2">Favorites</h3>
             <div className="space-y-1 max-h-[200px] md:max-h-[300px] overflow-y-auto">
               {Array.from(favoriteEntries)
                 .map(entryName => {

@@ -496,7 +496,7 @@ export default function UserDashboard() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6">
-      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">My Dashboard</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-header-link">My Dashboard</h1>
       
       <Tabs defaultValue="current" className="space-y-4">
         <TabsList className="w-full sm:w-auto">

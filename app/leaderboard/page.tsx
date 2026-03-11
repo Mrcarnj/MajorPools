@@ -331,7 +331,7 @@ export default function Leaderboard() {
       ) : (
         <Card className="max-w-fit mx-auto">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-['Post_Oldstyle'] italic flex items-center justify-center gap-2">
+            <CardTitle className="text-2xl font-['Post_Oldstyle'] italic flex items-center justify-center gap-2 text-header-link">
               Entry Leaderboard
               <TbGolf className="text-3xl" />
             </CardTitle>

@@ -425,7 +425,7 @@ export default function CreateTeam() {
   if (!hasActiveTournament) {
     return (
       <div className="container mx-auto py-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">No Entry Form Available</h1>
+        <h1 className="text-2xl font-bold mb-4 text-header-link">No Entry Form Available</h1>
         <p className="text-muted-foreground">
           There is no entry form due to it not being a major's week.
         </p>
@@ -436,7 +436,7 @@ export default function CreateTeam() {
   if (!showForm) {
     return (
       <div className="container mx-auto py-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Submissions Closed</h1>
+        <h1 className="text-2xl font-bold mb-4 text-header-link">Submissions Closed</h1>
         <p className="text-muted-foreground">
           Team submissions are closed due to tournament being in progress.
         </p>
@@ -460,14 +460,14 @@ export default function CreateTeam() {
   // The rest of your render logic
   return (
     <div className="space-y-8 max-w-4xl mx-auto p-0 md:p-6">
-      <h1 className="text-3xl font-bold text-center">
+      <h1 className="text-3xl font-bold text-center text-header-link">
         {activeTournament?.name} {activeTournament?.start_date ? new Date(activeTournament.start_date).getFullYear() : ''}
       </h1>
 
       <div className="prose dark:prose-invert max-w-none">
         <div className="space-y-4">
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <h3 className="font-semibold">Entry Instructions</h3>
+            <h3 className="font-semibold text-header-link">Entry Instructions</h3>
             <ul className="list-disc pl-4 space-y-1 text-sm md:text-base">
               <li>Entry fee: $25 via Venmo (@dieter21)</li>
               <li>Include your entry name in Venmo description</li>
@@ -477,7 +477,7 @@ export default function CreateTeam() {
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <h3 className="font-semibold">Rules</h3>
+            <h3 className="font-semibold text-header-link">Rules</h3>
             <p className="text-sm md:text-base">Select 8 golfers across 5 tiers:</p>
             <ul className="list-disc pl-4 space-y-1 text-sm md:text-base">
               <li>2 Golfers from Tier 1</li>

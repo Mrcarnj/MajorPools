@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { type Entry } from '@/utils/scoring';
 import { QuickLeaderboard } from '@/components/quick-leaderboard';
 import { TournamentStatus } from '@/components/tournament-status';
+import { WhereToWatch } from '@/components/where-to-watch';
 import { Button } from '@/components/ui/button';
 import { Goal as GolfBall, Trophy } from 'lucide-react';
 import Link from 'next/link';
@@ -47,35 +48,40 @@ export default function Home() {
 
   return (
     <div className="space-y-8 px-2 md:px-6">
-      <section className="text-center space-y-4">
-      {/* <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
-          ATTENTION!! 6/12/2025 -- 2:45pm EST -- The database website is down, causing this page to be blank. It's out of my control, but I am monitoring it for updates!
-        </p> */}
-        <h1 className="text-4xl font-bold tracking-tight">Majors SZN Pools</h1>
-        <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto">
-          Create your dream team of professional golfers and compete against other players
-          in real-time during golf's major tournaments.
-        </p>
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
-          {showCreateTeam && (
-            <Button asChild size="lg">
-              <Link href="/create-team">
-                <GolfBall className="mr-2 h-5 w-5" />
-                Create Team
+      {/* Hero - PGA-inspired (navy in both themes) */}
+      <section className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-hero-bg via-hero-bg to-hero-bg/95 text-hero-fg py-10 px-6 md:py-12 md:px-10 text-center shadow-lg">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--accent)/0.2),transparent)] pointer-events-none" aria-hidden />
+        <div className="relative space-y-4">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-header-link">Majors SZN Pools</h1>
+          <p className="text-sm md:text-base text-hero-fg/90 max-w-2xl mx-auto">
+            Create your dream team of professional golfers and compete in real-time during golf&apos;s major tournaments.
+          </p>
+          <div className="flex flex-col md:flex-row gap-4 justify-center pt-2">
+            {showCreateTeam && (
+              <Button asChild size="lg" className="bg-header-link hover:bg-header-link/90 text-white border-0">
+                <Link href="/create-team">
+                  <GolfBall className="mr-2 h-5 w-5" />
+                  Create Team
+                </Link>
+              </Button>
+            )}
+            <Button asChild size="lg" variant="secondary" className="bg-white/15 text-hero-fg hover:bg-white/25 border-white/30">
+              <Link href="/leaderboard">
+                <Trophy className="mr-2 h-5 w-5" />
+                View Leaderboard
               </Link>
             </Button>
-          )}
-          <Button asChild size="lg" variant="outline">
-            <Link href="/leaderboard">
-              <Trophy className="mr-2 h-5 w-5" />
-              View Leaderboard
-            </Link>
-          </Button>
+          </div>
         </div>
       </section>
 
-      <div className="flex justify-center">
+      {/* Tournament info */}
+      <div className="flex justify-center max-w-4xl mx-auto">
         <TournamentStatus />
+      </div>
+      {/* How to Watch - horizontal, under tournament */}
+      <div className="flex justify-center max-w-4xl mx-auto">
+        <WhereToWatch />
       </div>
 
       {/* Leaderboards */}

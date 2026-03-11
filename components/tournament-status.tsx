@@ -96,7 +96,7 @@ export function TournamentStatus() {
   return (
     <div className="space-y-2">
       {!tournament.is_active && (
-        <h2 className="text-base md:text-lg font-semibold text-center">Next Major:</h2>
+        <h2 className="text-base md:text-lg font-semibold text-center text-header-link">Next Major:</h2>
       )}
       <Card className="overflow-hidden bg-card/50">
         <CardHeader className="pb-2 px-2 md:px-6">

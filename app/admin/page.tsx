@@ -825,7 +825,7 @@ Mike`;
   if (loading || isRedirecting) {
     return (
       <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold mb-6 text-header-link">Admin Dashboard</h1>
         <p>Loading...</p>
       </div>
     );
@@ -833,7 +833,7 @@ Mike`;
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6 text-header-link">Admin Dashboard</h1>
       
       <Button 
         variant="outline" 

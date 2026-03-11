@@ -22,7 +22,7 @@ export default function ClientLayout({
           disableTransitionOnChange
         >
           <Header />
-          <main className="container mx-auto px-4 py-8">
+          <main className="container mx-auto px-4 py-8 min-h-[calc(100vh-4rem)] bg-gradient-to-b from-background to-muted/30 dark:to-muted/10">
             {children}
           </main>
           <Toaster />
