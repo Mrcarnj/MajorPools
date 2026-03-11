@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -490,6 +490,54 @@ export default function UserDashboard() {
     );
   };
 
+  const dashboardStats = useMemo(() => {
+    if (!historicalEntries.length) {
+      return {
+        totalEntries: 0,
+        wins: 0,
+        top3: 0,
+        winPct: 0,
+        bestTournaments: [] as { name: string; avgFinish: number }[],
+      };
+    }
+
+    let totalEntries = 0;
+    let wins = 0;
+    let top3 = 0;
+    const byTournament = new Map<string, { sum: number; count: number }>();
+
+    for (const entry of historicalEntries) {
+      const posStr = entry.entry_position;
+      if (!posStr) continue;
+
+      const clean = posStr.startsWith('T') ? posStr.slice(1) : posStr;
+      const num = parseInt(clean, 10);
+      if (!Number.isFinite(num)) continue;
+
+      totalEntries += 1;
+      if (num === 1) wins += 1;
+      if (num <= 3) top3 += 1;
+
+      const key = entry.tournament_name;
+      if (!byTournament.has(key)) {
+        byTournament.set(key, { sum: num, count: 1 });
+      } else {
+        const agg = byTournament.get(key)!;
+        agg.sum += num;
+        agg.count += 1;
+      }
+    }
+
+    const winPct = totalEntries > 0 ? (wins / totalEntries) * 100 : 0;
+
+    const bestTournaments = Array.from(byTournament.entries())
+      .map(([name, { sum, count }]) => ({ name, avgFinish: sum / count }))
+      .sort((a, b) => a.avgFinish - b.avgFinish)
+      .slice(0, 3);
+
+    return { totalEntries, wins, top3, winPct, bestTournaments };
+  }, [historicalEntries]);
+
   if (loading) {
     return <div>Loading your entries...</div>;
   }
@@ -497,7 +545,68 @@ export default function UserDashboard() {
   return (
     <div className="container mx-auto p-4 sm:p-6">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-header-link">My Dashboard</h1>
-      
+
+      <div className="mb-6 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Total Entries</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-2xl font-bold">{dashboardStats.totalEntries}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Wins</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-2xl font-bold">{dashboardStats.wins}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Top 3 Finishes</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-2xl font-bold">{dashboardStats.top3}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/80">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Win %</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-2xl font-bold">
+              {dashboardStats.totalEntries > 0 ? `${dashboardStats.winPct.toFixed(1)}%` : '—'}
+            </p>
+          </CardContent>
+        </Card>
+        {dashboardStats.bestTournaments.length > 0 && (
+          <Card className="bg-card/80 sm:col-span-2 lg:col-span-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-muted-foreground">
+                Best tournaments by average finish
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-sm text-muted-foreground">
+              <ul className="flex flex-wrap gap-3">
+                {dashboardStats.bestTournaments.map((t) => (
+                  <li
+                    key={t.name}
+                    className="rounded-full border border-header-link/70 px-3 py-1 text-xs sm:text-sm text-header-link bg-header-link/10"
+                  >
+                    <span className="font-semibold">{t.name}</span>
+                    <span className="ml-1">
+                      (avg finish {t.avgFinish.toFixed(1)})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
       <Tabs defaultValue="current" className="space-y-4">
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="current" className="flex-1 sm:flex-none">Current Tournament</TabsTrigger>

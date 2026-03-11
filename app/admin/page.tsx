@@ -10,8 +10,9 @@ import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
 import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry, calculatePrizePool } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -933,47 +934,82 @@ Mike`;
                     <AlertDescription>{setupTournamentMessage.text}</AlertDescription>
                   </Alert>
                 )}
-                {tournaments.map(tournament => (
-                  <div 
-                    key={tournament.id} 
-                    className="flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-4 border rounded-lg space-y-2 md:space-y-0"
-                  >
-                    <div>
-                      <h3 className="font-medium">{tournament.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Status: {tournament.status}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                      <Button
-                        variant={tournament.is_active ? "secondary" : "default"}
-                        onClick={() => handleActivateTournament(tournament.id, tournament.is_active)}
-                        className="flex-1 md:flex-none"
-                      >
-                        {tournament.is_active ? 'Deactivate' : 'Activate'}
-                      </Button>
-                      {tournament.is_active && (
-                        <Button
-                          variant="outline"
-                          onClick={handleSetupTournament}
-                          disabled={setupTournamentLoading}
-                          className="flex-1 md:flex-none"
+                {(() => {
+                  const completed = tournaments.filter(t => t.status === 'Official' && !t.is_active);
+                  const activeOrOther = tournaments.filter(t => !(t.status === 'Official' && !t.is_active));
+                  return (
+                    <>
+                      {activeOrOther.map(tournament => (
+                        <div
+                          key={tournament.id}
+                          className="flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-4 border rounded-lg space-y-2 md:space-y-0"
                         >
-                          {setupTournamentLoading ? 'Running…' : 'Setup Tournament'}
-                        </Button>
+                          <div>
+                            <h3 className="font-medium">{tournament.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Status: {tournament.status}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                            <Button
+                              variant={tournament.is_active ? "secondary" : "default"}
+                              onClick={() => handleActivateTournament(tournament.id, tournament.is_active)}
+                              className="flex-1 md:flex-none"
+                            >
+                              {tournament.is_active ? 'Deactivate' : 'Activate'}
+                            </Button>
+                            {tournament.is_active && (
+                              <Button
+                                variant="outline"
+                                onClick={handleSetupTournament}
+                                disabled={setupTournamentLoading}
+                                className="flex-1 md:flex-none"
+                              >
+                                {setupTournamentLoading ? 'Running…' : 'Setup Tournament'}
+                              </Button>
+                            )}
+                            {tournament.is_active && tournament.status !== 'Official' && (
+                              <Button
+                                variant="destructive"
+                                onClick={() => handleCompleteTournament(tournament.id)}
+                                className="flex-1 md:flex-none"
+                              >
+                                Complete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {completed.length > 0 && (
+                        <Collapsible defaultOpen={false} className="border rounded-lg">
+                          <CollapsibleTrigger className="group flex w-full items-center justify-between p-3 md:p-4 hover:bg-muted/50 transition-colors rounded-lg text-left">
+                            <span className="font-medium text-muted-foreground">
+                              Completed Tournaments ({completed.length})
+                            </span>
+                            <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-90" />
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="space-y-3 md:space-y-4 px-3 pb-3 md:px-4 md:pb-4 border-t">
+                              {completed.map(tournament => (
+                                <div
+                                  key={tournament.id}
+                                  className="flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-4 border rounded-lg bg-muted/20"
+                                >
+                                  <div>
+                                    <h3 className="font-medium">{tournament.name}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                      Status: {tournament.status}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       )}
-                      {tournament.is_active && tournament.status !== 'Official' && (
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleCompleteTournament(tournament.id)}
-                          className="flex-1 md:flex-none"
-                        >
-                          Complete
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    </>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
