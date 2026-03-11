@@ -2,7 +2,23 @@
 
 This directory contains scripts for updating tournament data, leaderboard information, and calculating scores for entries.
 
+## Setting up a new Tournament
+
+To set up a new tournament:
+
+1. **Set the tournament as Active** — In the admin dashboard on the website, open the tournament you want to use and set it as the active tournament.
+
+2. **Run the tournament setup script** — From the project root, run:
+   ```bash
+   npx tsx scripts/tournamentSetup.ts
+   ```
+   This runs `set-tournament`, `update-odds`, and `update-rankings` to configure the active tournament and load odds and rankings.
+
 ## Scripts
+
+### `tournamentSetup.ts`
+
+Runs the full setup for the active tournament: sets the tournament, updates odds, and updates rankings. Use this after activating a tournament in the admin dashboard (see [Setting up a new Tournament](#setting-up-a-new-tournament) above).
 
 ### `update-tournament.ts`
 

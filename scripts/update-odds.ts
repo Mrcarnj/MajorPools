@@ -4,12 +4,17 @@ async function updateOdds() {
   try {
     console.log('🎯 Updating golf odds...\n');
 
+    const apiKey = process.env.DATA_GOLF_API_KEY;
+    if (!apiKey) {
+      throw new Error('DATA_GOLF_API_KEY is not set');
+    }
+
     const url = "https://feeds.datagolf.com/betting-tools/outrights";
     const params = new URLSearchParams({
       tour: "pga",
       market: "win",
       odds_format: "american",
-      key: "f699a70c027aa740baffa1afcd2b"
+      key: apiKey
     });
 
     const response = await fetch(`${url}?${params.toString()}`);

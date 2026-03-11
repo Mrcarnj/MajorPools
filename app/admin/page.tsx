@@ -118,6 +118,7 @@ export default function AdminDashboard() {
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
+        .eq('year', 2026)
         .order('start_date', { ascending: true });
       
       if (error) {
