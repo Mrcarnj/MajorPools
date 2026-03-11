@@ -6,7 +6,74 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
+
+/** Default IANA timezone for the tournament venue (e.g. America/New_York for Augusta). */
+const DEFAULT_TOURNAMENT_TIMEZONE = 'America/New_York';
+
+/**
+ * Parses a tee time string like "8:30 AM" or "2:45 PM" into 24h hours and minutes.
+ */
+function parseTeeTimeString(teeTime: string): { hours: number; minutes: number } | null {
+  const match = teeTime.match(/^\s*(\d{1,2}):(\d{2})\s*(am|pm)\s*$/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const isPM = match[3].toLowerCase() === 'pm';
+  if (hours === 12) hours = isPM ? 12 : 0;
+  else if (isPM) hours += 12;
+  return { hours, minutes };
+}
+
+/**
+ * Converts a tournament-local tee time (e.g. "8:30 AM") to the user's local time and
+ * returns a formatted string (e.g. "5:30 AM" for PST).
+ */
+function teeTimeToUserLocal(
+  teeTime: string,
+  tournamentTimezone: string = DEFAULT_TOURNAMENT_TIMEZONE
+): string {
+  const parsed = parseTeeTimeString(teeTime);
+  if (!parsed) return teeTime;
+
+  const now = new Date();
+  const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tournamentTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = dateFormatter.formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '0';
+  const y = parseInt(get('year'), 10);
+  const m = parseInt(get('month'), 10) - 1;
+  const d = parseInt(get('day'), 10);
+
+  const noonUtc = Date.UTC(y, m, d, 12, 0, 0);
+  const tzFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tournamentTimezone,
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  });
+  const tzParts = tzFormatter.formatToParts(new Date(noonUtc));
+  const tzHour = parseInt(tzParts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  const tzMinute = parseInt(tzParts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+
+  const tournamentMins = parsed.hours * 60 + parsed.minutes;
+  const utcMs = noonUtc + (tournamentMins - (tzHour * 60 + tzMinute)) * 60 * 1000;
+  const date = new Date(utcMs);
+
+  const formatted = date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  // Compact format (e.g. "5:40am") so it stays on one line like tournament times
+  return formatted.replace(/\s+([AP]M)$/i, (_, m) => m.toLowerCase());
+}
 
 type GolferScore = {
   position: string;
@@ -27,9 +94,16 @@ export function LiveLeaderboard() {
   const [movingRows, setMovingRows] = useState<Record<string, 'up' | 'down' | null>>({});
   const [highlightedRows, setHighlightedRows] = useState<Record<string, boolean>>({});
   const [animationComplete, setAnimationComplete] = useState(true);
+  const [showLocalTime, setShowLocalTime] = useState(false);
   const prevScoresRef = useRef<Record<string, string>>({});
   const forceUpdate = useState({})[1];
   const channelRef = useRef<any>(null);
+
+  const hasTeeTimesInThru = scores.some(
+    (s) =>
+      (s.position === '-' && s.tee_time) ||
+      (tournamentData?.current_round && s.current_round_score == null && s.tee_time)
+  );
 
   const generateGolferId = (first: string, last: string) => `${last}-${first}`;
 
@@ -253,13 +327,30 @@ export function LiveLeaderboard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <span>Tournament Live Leaderboard</span>
-          {tournamentData.current_round === 2 && tournamentData.cut_score && (
-            <span className="text-sm md:text-lg font-normal">
-              Projected Cut: {tournamentData.cut_score}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {tournamentData.current_round === 2 && tournamentData.cut_score && (
+              <span className="text-sm md:text-lg font-normal">
+                Projected Cut: {tournamentData.cut_score}
+              </span>
+            )}
+            {hasTeeTimesInThru && (
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-2 py-1">
+                <Switch
+                  id="live-leaderboard-local-time"
+                  checked={showLocalTime}
+                  onCheckedChange={setShowLocalTime}
+                />
+                <Label
+                  htmlFor="live-leaderboard-local-time"
+                  className="text-xs font-normal cursor-pointer whitespace-nowrap"
+                >
+                  {showLocalTime ? 'Your time' : 'Tournament time'}
+                </Label>
+              </div>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-1 md:p-6">
@@ -344,9 +435,13 @@ export function LiveLeaderboard() {
                         </TableCell>
                         <TableCell className="text-center py-2 px-1 md:pr-4 w-[28px] md:w-[30px]">
                           {score.position === '-' && score.tee_time
-                            ? score.tee_time
+                            ? showLocalTime
+                              ? teeTimeToUserLocal(score.tee_time)
+                              : score.tee_time
                             : (tournamentData?.current_round && score.current_round_score === null && score.tee_time)
-                              ? score.tee_time
+                              ? showLocalTime
+                                ? teeTimeToUserLocal(score.tee_time)
+                                : score.tee_time
                               : score.thru}
                         </TableCell>
                       </motion.tr>
