@@ -124,6 +124,7 @@ export default function NewAdminPage() {
           const { data, error } = await supabase
             .from('tournaments')
             .select('*')
+            .eq('year', 2026)
             .order('start_date', { ascending: true });
           
           if (error) {
@@ -205,10 +206,11 @@ Major Pools Team`;
       .update({ is_active: !currentStatus })
       .eq('id', id);
 
-    // Refresh tournaments
+    // Refresh tournaments (2026 only)
     const { data } = await supabase
       .from('tournaments')
       .select('*')
+      .eq('year', 2026)
       .order('start_date', { ascending: true });
     setTournaments(data || []);
   };
@@ -470,10 +472,11 @@ Mike`;
         .update({ status: 'Official' })
         .eq('id', tournamentId);
 
-      // 9. Refresh tournaments list
+      // 9. Refresh tournaments list (2026 only)
       const { data } = await supabase
         .from('tournaments')
         .select('*')
+        .eq('year', 2026)
         .order('start_date', { ascending: true });
       setTournaments(data || []);
 
