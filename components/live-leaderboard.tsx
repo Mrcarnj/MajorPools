@@ -427,7 +427,7 @@ export function LiveLeaderboard() {
                         <TableCell className="py-2 px-1 md:px-4 truncate max-w-[90px] md:max-w-none">
                           {score.first_name} {score.last_name}
                         </TableCell>
-                        <TableCell className={`text-center py-2 px-1 md:px-4 font-bold w-[28px] md:w-[40px] ${score.total.startsWith('-') ? 'text-red-600' : ''}`}>
+                        <TableCell className={`text-center py-2 px-1 md:px-4 font-bold w-[28px] md:w-[40px] ${score.total !== '-' && score.total.startsWith('-') ? 'text-red-600' : ''}`}>
                           {score.total}
                         </TableCell>
                         <TableCell className="text-center py-2 px-1 md:px-4 w-[28px] md:w-[40px]">

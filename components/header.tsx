@@ -7,11 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoonIcon, SunIcon, UserIcon } from 'lucide-react';
+import { UserIcon } from 'lucide-react';
 import { PiSignOut } from "react-icons/pi";
 import { RxDashboard } from "react-icons/rx";
 import { RiAdminLine, RiTeamLine } from "react-icons/ri";
-import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -21,7 +20,6 @@ import { MdOutlineLeaderboard } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
   const [showCreateTeam, setShowCreateTeam] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { session: authSession } = useAuth();
@@ -73,32 +71,42 @@ export function Header() {
 
   return (
     <header className="border-b border-border/80 bg-card/50 dark:bg-card/30 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-header-link hover:text-header-link/90 transition-colors">
-          Majors SZN Pools
-        </Link>
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <div className="flex-1 flex items-center justify-start min-w-0">
+          <Link href="/" className="text-xl font-bold text-header-link hover:text-header-link/90 transition-colors flex items-center gap-2">
+            Majors SZN Pools
+            <img
+              src="/icons/thePlayers_logo.svg"
+              alt=""
+              className="h-[1.75em] w-auto shrink-0 -translate-y-0.5 ml-2"
+              width={142}
+              height={37}
+              role="presentation"
+            />
+          </Link>
+        </div>
 
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/leaderboard" className="text-header-link hover:text-header-link/80 transition-colors flex items-center">
+        <nav className="hidden md:flex flex-1 items-center justify-center space-x-4 shrink-0 whitespace-nowrap">
+          <Link href="/leaderboard" className="text-header-link hover:text-header-link/80 transition-colors flex items-center whitespace-nowrap">
             <MdOutlineLeaderboard className="mr-2 h-4 w-4"/>
             Leaderboard
           </Link>
           {showCreateTeam && (
-            <Link href="/create-team" className="text-header-link hover:text-header-link/80 transition-colors flex items-center">
+            <Link href="/create-team" className="text-header-link hover:text-header-link/80 transition-colors flex items-center whitespace-nowrap">
               <RiTeamLine className="mr-2 h-4 w-4" />
               Create Team
             </Link>
           )}
           {authSession && (
             <>
-              <Link href="/dashboard" className="text-header-link hover:text-header-link/80 transition-colors flex items-center">
+              <Link href="/dashboard" className="text-header-link hover:text-header-link/80 transition-colors flex items-center whitespace-nowrap">
                 <RxDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
               {authSession && authSession.user.user_metadata?.role === 'admin' && (
                 <button 
                   onClick={handleAdminClick}
-                  className="text-header-link hover:text-header-link/80 transition-colors flex items-center"
+                  className="text-header-link hover:text-header-link/80 transition-colors flex items-center whitespace-nowrap"
                 >
                   <RiAdminLine className="mr-2 h-4 w-4" />
                   Admin
@@ -108,17 +116,7 @@ export function Header() {
           )}
         </nav>
 
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            <SunIcon className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <MoonIcon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-
+        <div className="flex flex-1 items-center justify-end space-x-4 min-w-0">
           {authSession ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
