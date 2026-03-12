@@ -40,6 +40,19 @@ export function QuickLeaderboard() {
   const initialLoadRef = useRef(true);
   const favoritesInitializedRef = useRef(false);
 
+  const parseGolferTotalToNumber = (total: string | number): number => {
+    const value = String(total);
+    if (value === 'E' || value === '-') return 0;
+    const numeric = Number(value.replace('+', ''));
+    return isNaN(numeric) ? 0 : numeric;
+  };
+
+  const formatGolferTotalForDisplay = (total: string | number): string => {
+    const value = String(total);
+    if (value === 'E' || value === '-') return 'E';
+    return value;
+  };
+
   // Load favorites from localStorage on component mount
   useEffect(() => {
     if (favoritesInitializedRef.current) return;
@@ -497,6 +510,7 @@ export function QuickLeaderboard() {
         {/* Search Section */}
         <div className="mb-4">
           <div className="relative">
+            <h6 className="text-xs md:text-sm text-muted-foreground mb-2">Note: For testing, scores update every 5 minutes to save on API Calls for the Masters</h6>
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search for your team..."
@@ -687,10 +701,10 @@ export function QuickLeaderboard() {
                                   if (aIsWD && !bIsWD) return 1;
                                   if (!aIsWD && bIsWD) return -1;
                                   
-                                  // If both are regular scores or both are WD, sort by score
-                                  const scoreA = a.total === 'E' ? 0 : Number(String(a.total).replace('+', ''));
-                                  const scoreB = b.total === 'E' ? 0 : Number(String(b.total).replace('+', ''));
-                                  return scoreA - scoreB;
+                              // If both are regular scores or both are WD, sort by score
+                              const scoreA = parseGolferTotalToNumber(a.total);
+                              const scoreB = parseGolferTotalToNumber(b.total);
+                              return scoreA - scoreB;
                                 })
                                 .map((golfer: GolferScore, golferIndex: number) => {
                                   const isCounted = golferIndex < 5;
@@ -703,10 +717,10 @@ export function QuickLeaderboard() {
                                         {golfer.first_name} {golfer.last_name}
                                         {!isCounted && <span className="text-muted-foreground ml-1"></span>}
                                       </span>
-                                      <span className={`${archivo.className} ${
-                                        golfer.total.startsWith('-') ? 'text-red-600' : ''
-                                      }`}>
-                                        ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                                  <span className={`${archivo.className} ${
+                                    String(golfer.total).startsWith('-') ? 'text-red-600' : ''
+                                  }`}>
+                                    ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : formatGolferTotalForDisplay(golfer.total)})
                                       </span>
                                     </div>
                                   );
@@ -879,8 +893,8 @@ export function QuickLeaderboard() {
                               if (!aIsWD && bIsWD) return -1;
                               
                               // If both are regular scores or both are WD, sort by score
-                              const scoreA = a.total === 'E' ? 0 : Number(String(a.total).replace('+', ''));
-                              const scoreB = b.total === 'E' ? 0 : Number(String(b.total).replace('+', ''));
+                              const scoreA = parseGolferTotalToNumber(a.total);
+                              const scoreB = parseGolferTotalToNumber(b.total);
                               return scoreA - scoreB;
                             })
                             .map((golfer: GolferScore, golferIndex: number) => {
@@ -894,10 +908,10 @@ export function QuickLeaderboard() {
                                     {golfer.first_name} {golfer.last_name}
                                     {!isCounted && <span className="text-muted-foreground ml-1"></span>}
                                   </span>
-                                  <span className={`${archivo.className} ${
-                                    golfer.total.startsWith('-') ? 'text-red-600' : ''
-                                  }`}>
-                                    ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total})
+                                      <span className={`${archivo.className} ${
+                                        String(golfer.total).startsWith('-') ? 'text-red-600' : ''
+                                      }`}>
+                                        ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : formatGolferTotalForDisplay(golfer.total)})
                                   </span>
                                 </div>
                               );
