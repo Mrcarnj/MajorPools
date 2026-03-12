@@ -510,7 +510,7 @@ export function QuickLeaderboard() {
         {/* Search Section */}
         <div className="mb-4">
           <div className="relative">
-            <h6 className="text-xs md:text-sm text-muted-foreground mb-2">Note: For testing, scores update every 5 minutes to save on API Calls for the Masters</h6>
+            <h6 className="text-xs md:text-sm text-muted-foreground mb-2 py-3" >Note: For testing, scores update every 5 minutes to save on API Calls for the Masters</h6>
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search for your team..."
