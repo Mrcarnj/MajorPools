@@ -57,7 +57,7 @@ async function pgaFetch(endpoint, params = {}) {
 async function getTournament(tournId) {
   return pgaFetch('/tournament', {
     tournId,
-    year: '2025'  // You might want to make this parameter configurable
+    year: '2026'  // You might want to make this parameter configurable
   });
 }
 
@@ -69,7 +69,7 @@ async function getTournament(tournId) {
 async function getTournamentLeaderboard(tournId) {
   const response = await pgaFetch('/leaderboard', {
     tournId,
-    year: '2025'
+    year: '2026'
   });
   
   return response;
@@ -336,34 +336,14 @@ async function updateTournament(env) {
     // Process players in batches to reduce subrequests
     console.log(`Processing ${leaderboard.leaderboardRows.length} players in batches`);
     
-    // First, get all existing players in one request
-    const { data: existingPlayers, error: existingPlayersError } = await supabaseAdmin
-      .from('golfer_scores')
-      .select('player_id')
-      .eq('tournament_id', activeTournament.id)
-      .execute();
+    // NOTE: The database currently enforces a primary key on player_id only
+    // (golfer_scores_pkey), not on (player_id, tournament_id).
+    // To match the behaviour of the Node.js script (update-tournament.ts),
+    // we always perform an UPSERT on player_id so we never violate that
+    // constraint when the same player appears in multiple tournaments/years.
     
-    if (existingPlayersError) {
-      console.error('Error fetching existing players:', existingPlayersError);
-      throw new Error(`Failed to fetch existing players: ${JSON.stringify(existingPlayersError)}`);
-    }
-    
-    // Create a map of existing player IDs for quick lookup
-    const existingPlayerMap = new Map();
-    if (existingPlayers && Array.isArray(existingPlayers)) {
-      console.log(`Found ${existingPlayers.length} existing players`);
-      existingPlayers.forEach(player => {
-        if (player && player.player_id) {
-          existingPlayerMap.set(player.player_id, true);
-        }
-      });
-    } else {
-      console.log('No existing players found or existingPlayers is not an array:', existingPlayers);
-    }
-    
-    // Prepare batches of players to insert and update
-    const playersToInsert = [];
-    const playersToUpdate = [];
+    // Prepare batch of players to upsert
+    const playersToUpsert = [];
     
     for (const player of leaderboard.leaderboardRows) {
       const playerData = {
@@ -385,53 +365,24 @@ async function updateTournament(env) {
         tournament_id: activeTournament.id
       };
       
-      if (existingPlayerMap.has(player.playerId)) {
-        playersToUpdate.push(playerData);
-      } else {
-        playersToInsert.push(playerData);
-      }
+      playersToUpsert.push(playerData);
     }
     
-    // Insert new players in one batch request (if any)
-    if (playersToInsert.length > 0) {
-      console.log(`Inserting ${playersToInsert.length} new players in batch`);
-      const { error: insertError } = await supabaseAdmin
-        .from('golfer_scores')
-        .insert(playersToInsert);
-      
-      if (insertError) {
-        throw insertError;
-      }
-    }
-    
-    // Update existing players in batches of 10
-    if (playersToUpdate.length > 0) {
-      console.log(`Updating ${playersToUpdate.length} existing players`);
-      
-      // Since Supabase doesn't support bulk updates directly, we need to use UPSERT
-      // which will update existing records based on the primary key
+    // Upsert all players in one batch request (if any)
+    if (playersToUpsert.length > 0) {
+      console.log(`Upserting ${playersToUpsert.length} players in batch (conflict on player_id)`);
       try {
-        // First try with the compound key
-        const { error: updateError } = await supabaseAdmin
+        const { error: upsertError } = await supabaseAdmin
           .from('golfer_scores')
-          .upsert(playersToUpdate, { onConflict: 'player_id,tournament_id' });
+          .upsert(playersToUpsert, { onConflict: 'player_id' });
         
-        if (updateError) {
-          console.error('Error with compound key upsert:', updateError);
-          
-          // Try with just player_id if the compound key fails
-          console.log('Retrying with player_id only as conflict resolution...');
-          const { error: retryError } = await supabaseAdmin
-            .from('golfer_scores')
-            .upsert(playersToUpdate, { onConflict: 'player_id' });
-          
-          if (retryError) {
-            throw retryError;
-          }
+        if (upsertError) {
+          console.error('Player upsert error:', upsertError);
+          throw new Error(`Failed to upsert players: ${JSON.stringify(upsertError)}`);
         }
       } catch (error) {
-        console.error('Player upsert error:', error);
-        throw new Error(`Failed to update players: ${JSON.stringify(error)}`);
+        console.error('Unexpected player upsert error:', error);
+        throw new Error(`Failed to upsert players: ${JSON.stringify(error)}`);
       }
     }
 
