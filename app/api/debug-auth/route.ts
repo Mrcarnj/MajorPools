@@ -16,7 +16,8 @@ export async function GET() {
   const { data: { session }, error } = await supabase.auth.getSession();
   
   // Get all cookies
-  const allCookies = cookies().getAll().map(c => ({
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll().map(c => ({
     name: c.name,
     value: c.value.substring(0, 5) + '...',
   }));
