@@ -6,7 +6,10 @@ import { updateRankings } from '../../../scripts/update-rankings';
 import { updateTournament } from '../../../scripts/update-tournament';
 
 export async function POST() {
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient({
+    cookies: () => cookieStore,
+  });
 
   try {
     const {
