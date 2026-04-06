@@ -443,6 +443,8 @@ export default function UserDashboard() {
 
   const handleGolferReplace = async (newGolferId: string) => {
     if (!selectedEntry || !selectedGolferId || !selectedTier) return;
+    const userEmail = session?.user?.email?.trim();
+    if (!userEmail) return;
 
     const golferField = `${selectedTier}_golfer${selectedGolferId === selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry] ? '1' : '2'}` as keyof TournamentEntry;
     const updateData = {
@@ -458,7 +460,8 @@ export default function UserDashboard() {
       if (error) throw error;
 
       // Refresh entries
-      await fetchEntries();
+      await fetchEntries(userEmail);
+      await checkForWithdrawnGolfers(userEmail);
       
       // Check if the entry still has any withdrawn golfers
       const updatedEntry = entries.find(e => e.id === selectedEntry.id);
