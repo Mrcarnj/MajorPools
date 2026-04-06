@@ -1,21 +1,57 @@
 import { supabaseAdmin } from '../lib/supabase-admin';
 
-interface DataGolfPlayer {
-  dg_id: number;
-  name: string;
-}
+type CreateDataGolfIdOptions = {
+  playerIds?: string[];
+  onlyActiveTournamentField?: boolean;
+};
 
-async function createDataGolfId() {
+async function createDataGolfId(options: CreateDataGolfIdOptions = {}) {
   try {
-    console.log('🎯 Checking DataGolf players against our database...\n');
+    console.log('🎯 Syncing DataGolf IDs...\n');
 
-    // Fetch all golfers from our database
-    const { data: ourGolfers, error: ourGolfersError } = await supabaseAdmin
+    let targetPlayerIds = options.playerIds ?? null;
+
+    if (options.onlyActiveTournamentField) {
+      const { data: activeTournament, error: activeTournamentError } = await supabaseAdmin
+        .from('tournaments')
+        .select('id')
+        .eq('is_active', true)
+        .single();
+
+      if (activeTournamentError || !activeTournament) {
+        throw new Error('No active tournament found while building DataGolf ID scope');
+      }
+
+      const { data: fieldPlayers, error: fieldPlayersError } = await supabaseAdmin
+        .from('golfer_scores')
+        .select('player_id')
+        .eq('tournament_id', activeTournament.id);
+
+      if (fieldPlayersError) {
+        throw fieldPlayersError;
+      }
+
+      targetPlayerIds = (fieldPlayers ?? []).map((player) => player.player_id);
+      console.log(`Scoping DataGolf ID sync to active field: ${targetPlayerIds.length} players`);
+    }
+
+    let golfersQuery = supabaseAdmin
       .from('golfer_scores')
       .select('player_id, first_name, last_name, dg_id');
 
+    if (targetPlayerIds) {
+      golfersQuery = golfersQuery.in('player_id', targetPlayerIds);
+    }
+
+    const { data: ourGolfers, error: ourGolfersError } = await golfersQuery;
+
     if (ourGolfersError) {
       throw ourGolfersError;
+    }
+
+    if (!ourGolfers || ourGolfers.length === 0) {
+      console.log('No golfers found for selected scope');
+      return { success: true, updated: 0, missing: 0 };
     }
 
     // Create a map of our golfers for easy lookup
@@ -27,12 +63,17 @@ async function createDataGolfId() {
     );
 
     // Fetch DataGolf data
+    const apiKey = process.env.DATA_GOLF_API_KEY;
+    if (!apiKey) {
+      throw new Error('DATA_GOLF_API_KEY is not set');
+    }
+
     const url = "https://feeds.datagolf.com/betting-tools/outrights";
     const params = new URLSearchParams({
       tour: "pga",
       market: "win",
       odds_format: "american",
-      key: "f699a70c027aa740baffa1afcd2b"
+      key: apiKey
     });
 
     const response = await fetch(`${url}?${params.toString()}`);
@@ -43,7 +84,8 @@ async function createDataGolfId() {
     const data = await response.json();
     
     const missingPlayers: { name: string; dg_id: number }[] = [];
-    const matchedPlayers: { name: string; dg_id: number }[] = [];
+    let matchedPlayers = 0;
+    let updatedPlayers = 0;
 
     // Check each DataGolf player against our database
     for (const player of data.odds) {
@@ -51,7 +93,20 @@ async function createDataGolfId() {
       const ourGolfer = ourGolfersMap.get(fullName);
 
       if (ourGolfer) {
-        matchedPlayers.push({ name: player.player_name, dg_id: player.dg_id });
+        matchedPlayers++;
+
+        if (ourGolfer.dg_id !== player.dg_id) {
+          const { error: updateError } = await supabaseAdmin
+            .from('golfer_scores')
+            .update({ dg_id: player.dg_id })
+            .eq('player_id', ourGolfer.player_id);
+
+          if (updateError) {
+            console.error(`Failed to set dg_id for ${player.player_name}:`, updateError.message);
+          } else {
+            updatedPlayers++;
+          }
+        }
       } else {
         missingPlayers.push({ name: player.player_name, dg_id: player.dg_id });
       }
@@ -60,7 +115,9 @@ async function createDataGolfId() {
     // Print summary
     console.log('\n=== Summary ===');
     console.log(`Total DataGolf players: ${data.odds.length}`);
-    console.log(`Players in our database: ${matchedPlayers.length}`);
+    console.log(`Players in selected scope: ${ourGolfers.length}`);
+    console.log(`Players matched by name: ${matchedPlayers}`);
+    console.log(`Players with dg_id updated: ${updatedPlayers}`);
     console.log(`Players missing from our database: ${missingPlayers.length}`);
 
     if (missingPlayers.length > 0) {
@@ -68,14 +125,19 @@ async function createDataGolfId() {
       missingPlayers.forEach(player => console.log(`- ${player.name} (DG ID: ${player.dg_id})`));
     }
 
-    console.log('\n✅ DataGolf player check complete');
+    console.log('\n✅ DataGolf ID sync complete');
+    return { success: true, updated: updatedPlayers, missing: missingPlayers.length };
 
   } catch (error) {
     console.error('❌ Error:', error);
+    return { success: false, updated: 0, missing: 0 };
   }
 }
 
 export { createDataGolfId };
 
-// Execute the function
-createDataGolfId(); 
+if (require.main === module) {
+  createDataGolfId({ onlyActiveTournamentField: true })
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}

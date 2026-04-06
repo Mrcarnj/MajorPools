@@ -353,7 +353,10 @@ Major Pools Team`;
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setSetupTournamentMessage({ type: 'error', text: data.details || data.error || 'Setup failed' });
+        const debugParts = [data.details || data.error || 'Setup failed'];
+        if (data.step) debugParts.push(`step: ${data.step}`);
+        if (data.requestId) debugParts.push(`requestId: ${data.requestId}`);
+        setSetupTournamentMessage({ type: 'error', text: debugParts.join(' | ') });
         return;
       }
       setSetupTournamentMessage({ type: 'success', text: 'Tournament setup complete' });

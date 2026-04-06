@@ -1,13 +1,15 @@
-import { setTournament } from './set-tournament';
+import { setupTournamentField } from './setup-tournament-field';
 import { updateOdds } from './update-odds';
 import { updateRankings } from './update-rankings';
-import { updateTournament } from './update-tournament';
 
 async function tournamentSetup() {
-  const result = await setTournament();
-  await updateOdds();
-  await updateRankings();
-  await updateTournament();
+  const fieldSetupResult = await setupTournamentField();
+  if (!fieldSetupResult.success) {
+    throw new Error(fieldSetupResult.message);
+  }
+
+  await updateRankings({ playerIds: fieldSetupResult.playerIds });
+  await updateOdds({ playerIds: fieldSetupResult.playerIds });
 }
 
 tournamentSetup().then(() => {
