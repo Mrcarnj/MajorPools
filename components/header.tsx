@@ -12,12 +12,14 @@ import { PiSignOut } from "react-icons/pi";
 import { RxDashboard } from "react-icons/rx";
 import { RiAdminLine, RiTeamLine } from "react-icons/ri";
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { LoginModal } from '@/components/auth/login-modal';
 import { useAuth } from '@/lib/auth/auth-context';
 import { MdOutlineLeaderboard } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
+import mastersLogo from '@/components/icons/masters_logo.png';
 
 export function Header() {
   const [showCreateTeam, setShowCreateTeam] = useState(true);
@@ -75,13 +77,12 @@ export function Header() {
         <div className="flex-1 flex items-center justify-start min-w-0">
           <Link href="/" className="text-xl font-bold text-header-link hover:text-header-link/90 transition-colors flex items-center gap-2">
             Majors SZN Pools
-            <img
-              src="/icons/thePlayers_logo.svg"
+            <Image
+              src={mastersLogo}
               alt=""
-              className="h-[1.75em] w-auto shrink-0 -translate-y-0.5 ml-2"
-              width={142}
-              height={37}
+              className="h-[1.75em] w-auto shrink-0 -translate-y-[5px] ml-2"
               role="presentation"
+              priority
             />
           </Link>
         </div>
