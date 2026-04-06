@@ -346,7 +346,11 @@ Major Pools Team`;
     setSetupTournamentLoading(true);
     setSetupTournamentMessage(null);
     try {
-      const res = await fetch('/api/setup-tournament', { method: 'POST' });
+      const token = session?.access_token;
+      const res = await fetch('/api/setup-tournament', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setSetupTournamentMessage({ type: 'error', text: data.details || data.error || 'Setup failed' });

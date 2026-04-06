@@ -1,22 +1,34 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import { setTournament } from '../../../scripts/set-tournament';
 import { updateOdds } from '../../../scripts/update-odds';
 import { updateRankings } from '../../../scripts/update-rankings';
 import { updateTournament } from '../../../scripts/update-tournament';
 
-export async function POST() {
-  const cookieStore = await cookies();
-  const supabase = createRouteHandlerClient({
-    cookies: () => cookieStore,
-  });
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+export async function POST(request: Request) {
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return Response.json({ error: 'Server configuration error' }, { status: 500 });
+    }
 
-    if (!session || session.user.user_metadata?.role !== 'admin') {
+    const authHeader = request.headers.get('authorization');
+    const accessToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length)
+      : null;
+
+    if (!accessToken) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(accessToken);
+
+    if (userError || !user || user.user_metadata?.role !== 'admin') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
