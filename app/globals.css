@@ -103,7 +103,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
+    background-color: #f4f4f4;
+    background-image: url('../components/icons/azaleaLogo.png');
+    background-repeat: repeat;
+    background-size: 360px auto;
+    background-position: top left;
   }
 }
 

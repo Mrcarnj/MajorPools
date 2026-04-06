@@ -131,7 +131,7 @@ export function TournamentStatus() {
                 {format(new Date(tournament.start_date), 'MMM d')} - {format(new Date(tournament.end_date), 'MMM d, yyyy')}
               </div>
               {tournament.is_active && tournament.purse && (
-                <div className="flex items-center gap-2 text-primary">
+                <div className="flex items-center gap-2 text-header-link">
                   <TrophyIcon className="h-3 md:h-4 w-3 md:w-4" />
                   <span className="font-medium text-xs md:text-sm">${tournament.purse.toLocaleString()}</span>
                 </div>
