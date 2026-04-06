@@ -47,36 +47,53 @@ export type WatchConfig = {
   note?: string;
 };
 
-const PLAYERS_2026_CONFIG: WatchConfig = {
+const MASTERS_2026_CONFIG: WatchConfig = {
   timezone: 'America/New_York',
   timezoneLabel: 'ET',
   tv: {
-    intro: 'NBC and Golf Channel will air TV coverage of the 2026 Players Championship this week. Check out the full TV schedule below.',
+    intro: 'Live TV coverage of the 2026 Masters Tournament airs across Prime Video, ESPN, Paramount+, and CBS. Full schedule below.',
     slots: [
-      { day: 'Thursday, March 12', timeRange: '1-7 p.m.', channel: 'Golf Channel' },
-      { day: 'Friday, March 13', timeRange: '1-7 p.m.', channel: 'Golf Channel' },
-      { day: 'Saturday, March 14', timeRange: '2-7 p.m.', channel: 'NBC' },
-      { day: 'Sunday, March 15', timeRange: '1-6 p.m.', channel: 'NBC' },
+      { day: 'Thursday, April 9 (Round 1)', timeRange: '1-3 p.m.', channel: 'Prime Video' },
+      { day: 'Thursday, April 9 (Round 1)', timeRange: '3-7:30 p.m.', channel: 'ESPN' },
+      { day: 'Friday, April 10 (Round 2)', timeRange: '1-3 p.m.', channel: 'Prime Video' },
+      { day: 'Friday, April 10 (Round 2)', timeRange: '3-7:30 p.m.', channel: 'ESPN' },
+      { day: 'Saturday, April 11 (Round 3)', timeRange: '12-2 p.m.', channel: 'Paramount+' },
+      { day: 'Saturday, April 11 (Round 3)', timeRange: '2-7 p.m.', channel: 'CBS / Paramount+' },
+      { day: 'Sunday, April 12 (Round 4)', timeRange: '12-2 p.m.', channel: 'Paramount+' },
+      { day: 'Sunday, April 12 (Round 4)', timeRange: '2-7 p.m.', channel: 'CBS / Paramount+' },
     ],
   },
   streaming: {
-    intro: 'You can watch the 2026 Players Championship online via PGA Tour Live on ESPN+, including exclusive early coverage beginning at 7:30 a.m. ET on Thursday, Friday and Sunday, and 8 a.m. ET on Saturday. PGA Tour Live on ESPN+ will also provide featured group and featured hole coverage throughout the round. You can stream NBC\'s coverage on Peacock.',
+    intro: 'Additional digital coverage is available daily across official Masters platforms and partner apps.',
     options: [
-      { label: 'PGA Tour Live on ESPN+', description: 'Early coverage 7:30 a.m. ET (Thu/Fri/Sun), 8 a.m. ET (Sat); featured groups & holes', url: 'https://www.espn.com/watch/espnplus/' },
-      { label: 'Peacock', description: 'Stream NBC\'s TV coverage', url: 'https://www.peacocktv.com/' },
+      {
+        label: 'Masters.com & Masters App',
+        description: 'Exclusive "Every Shot, Every Hole" streaming with AI-powered commentary by IBM Watson',
+        url: 'https://www.masters.com/',
+      },
+      {
+        label: 'Featured Groups & Amen Corner',
+        description: 'Live daily coverage on Masters.com, Paramount+, and the ESPN App',
+      },
+      {
+        label: 'Mornings at the Masters (YouTube)',
+        description: 'Watch on the official Masters YouTube channel',
+        url: 'https://www.youtube.com/@TheMasters',
+      },
     ],
   },
   items: [],
-  note: 'All times Eastern. Check pgatour.com for latest.',
+  note: 'All times Eastern (ET). Coverage windows can change; check official broadcasters and masters.com for updates.',
 };
 
 /**
  * Key by tournament name (as stored in DB) or a slug.
  */
 export const WATCH_BY_TOURNAMENT: Record<string, WatchConfig> = {
-  'THE PLAYERS Championship': PLAYERS_2026_CONFIG,
-  'The Players Championship': PLAYERS_2026_CONFIG,
-  '2026 Players Championship': PLAYERS_2026_CONFIG,
+  'Masters Tournament': MASTERS_2026_CONFIG,
+  'The Masters': MASTERS_2026_CONFIG,
+  'The Masters Tournament': MASTERS_2026_CONFIG,
+  '2026 Masters Tournament': MASTERS_2026_CONFIG,
 };
 
 export const DEFAULT_WATCH_CONFIG: WatchConfig = {

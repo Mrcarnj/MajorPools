@@ -338,10 +338,10 @@ export default function CreateTeam() {
       // Organize golfers into tiers
       const tieredGolfers = {
         tier1: sortedGolfers.slice(0, 8),                    // Top 8 (favorites)
-        tier2: sortedGolfers.slice(8, 30),                   // Next 22
-        tier3: sortedGolfers.slice(30, 59),                  // Next 30
-        tier4: sortedGolfers.slice(59, 95),                  // Next 35
-        tier5: sortedGolfers.slice(95)                       // Remaining (including all golfers without odds)
+        tier2: sortedGolfers.slice(8, 20),                   // Next 22
+        tier3: sortedGolfers.slice(20, 40),                  // Next 30
+        tier4: sortedGolfers.slice(40, 60),                  // Next 35
+        tier5: sortedGolfers.slice(60)                       // Remaining (including all golfers without odds)
       };
 
       setGolfers(tieredGolfers as TieredGolfers);
@@ -508,10 +508,10 @@ export default function CreateTeam() {
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <h3 className="font-semibold text-header-link">Entry Instructions</h3>
             <ul className="list-disc pl-4 space-y-1 text-sm md:text-base">
+              <li>Entry fee: $25 via Venmo (@dieter21)</li>
               {/*<li>Entry fee: $25 via Venmo (@dieter21)</li>*/}
-              <li>Entry fee: FREE THIS WEEK!</li>
-              {/*<li>Include your entry name in Venmo description</li>*/}
-              {/*<li>Payment must be received before last group finishes 2nd round</li>*/}
+              <li>Include your entry name in Venmo description</li>
+              <li>Payment must be received before last group finishes 2nd round</li>
               <li>Multiple entries encouraged</li>
             </ul>
           </div>
@@ -723,7 +723,7 @@ export default function CreateTeam() {
         </Button>
       </form>
 
-      {/*<Dialog 
+      <Dialog 
         open={showPaymentModal} 
         onOpenChange={(open) => {
           setShowPaymentModal(open);
@@ -749,7 +749,7 @@ export default function CreateTeam() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl font-bold">Pay Now!</DialogTitle>
+            <DialogTitle className="text-center text-xl font-bold">ENTRY SUBMITTED - Pay Now!</DialogTitle>
             <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
             </DialogClose>
           </DialogHeader>
@@ -769,7 +769,7 @@ export default function CreateTeam() {
             </DialogClose>
           </div>
         </DialogContent>
-      </Dialog>*/}
+      </Dialog>
 
       {/* Add new Auth Dialog */}
       <Dialog 
