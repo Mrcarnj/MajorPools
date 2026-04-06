@@ -968,7 +968,7 @@ Mike`;
                                 {setupTournamentLoading ? 'Running…' : 'Setup Tournament'}
                               </Button>
                             )}
-                            {tournament.is_active && tournament.status !== 'Official' && (
+                            {tournament.is_active && (
                               <Button
                                 variant="destructive"
                                 onClick={() => handleCompleteTournament(tournament.id)}

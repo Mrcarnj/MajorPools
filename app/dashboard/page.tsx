@@ -95,7 +95,7 @@ type WithdrawnGolferEntry = {
 };
 
 export default function UserDashboard() {
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<TournamentEntry[]>([]);
   const [historicalEntries, setHistoricalEntries] = useState<HistoricalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,39 +151,36 @@ export default function UserDashboard() {
     }
   };
 
-  const fetchEntries = async () => {
+  const fetchEntries = async (userEmail: string) => {
     try {
       // First get the active tournament
       const { data: activeTournament } = await supabase
         .from('tournaments')
         .select('id, status')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (!activeTournament) {
-        setLoading(false);
-        return;
-      }
-
-      setTournamentStatus(activeTournament.status);
+      setTournamentStatus(activeTournament?.status || '');
 
       // Fetch all entries for the user
       const { data: entriesData } = await supabase
         .from('entries')
         .select(`
           *,
-          tournaments!inner(
+          tournaments(
             name,
             start_date,
             status,
             is_active
           )
         `)
-        .eq('email', session?.user?.email);
+        .ilike('email', userEmail);
 
       if (entriesData) {
         // Split entries into active and historical
-        const activeEntries = entriesData.filter(entry => entry.tournament_id === activeTournament.id);
+        const activeEntries = activeTournament
+          ? entriesData.filter(entry => entry.tournament_id === activeTournament.id)
+          : [];
         setEntries(activeEntries);
 
         // Get current scores for all golfers
@@ -198,12 +195,18 @@ export default function UserDashboard() {
 
         // Create a map of player_id to their current score info
         const scoreMap = new Map(
-          scoresData.map(score => [score.player_id, score])
+          (scoresData ?? []).map(score => [score.player_id, score])
         );
 
         // Transform historical entries data to include golfer details
         const formattedHistoricalEntries = entriesData
-          .filter(entry => !entry.tournaments.is_active)
+          .filter(entry => {
+            if (activeTournament) {
+              return entry.tournament_id !== activeTournament.id;
+            }
+            // If there is no active tournament, treat all user entries as historical.
+            return true;
+          })
           .map(entry => {
             const golferIds = [
               entry.tier1_golfer1, entry.tier1_golfer2,
@@ -241,15 +244,20 @@ export default function UserDashboard() {
 
             return {
               entry_name: entry.entry_name,
-              tournament_name: entry.tournaments.name,
-              tournament_start_date: entry.tournaments.start_date,
+              tournament_name: entry.tournaments?.name || 'Unknown Tournament',
+              tournament_start_date: entry.tournaments?.start_date || new Date().toISOString(),
               calculated_score: entry.calculated_score,
-              tournament_status: entry.tournaments.status,
-              is_active: entry.tournaments.is_active,
+              tournament_status: entry.tournaments?.status || 'Complete',
+              is_active: !!entry.tournaments?.is_active,
               entry_position: entry.entry_position,
               entry_total: entry.entry_total,
               golfers
             };
+          })
+          .sort((a, b) => {
+            const aTime = new Date(a.tournament_start_date).getTime();
+            const bTime = new Date(b.tournament_start_date).getTime();
+            return bTime - aTime;
           });
 
         setHistoricalEntries(formattedHistoricalEntries);
@@ -268,7 +276,7 @@ export default function UserDashboard() {
         .from('tournaments')
         .select('id')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (!activeTournament) return;
 
@@ -302,16 +310,19 @@ export default function UserDashboard() {
     }
   };
 
-  const checkForWithdrawnGolfers = async () => {
+  const checkForWithdrawnGolfers = async (userEmail: string) => {
     try {
       // Get active tournament
       const { data: activeTournament } = await supabase
         .from('tournaments')
         .select('id')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (!activeTournament) return;
+      if (!activeTournament) {
+        setWithdrawnGolferEntries([]);
+        return;
+      }
 
       // Get only the logged-in user's entries for active tournament
       const { data: entries } = await supabase
@@ -326,7 +337,7 @@ export default function UserDashboard() {
           tier5_golfer1
         `)
         .eq('tournament_id', activeTournament.id)
-        .eq('email', session?.user?.email);
+        .ilike('email', userEmail);
 
       if (!entries) return;
 
@@ -402,12 +413,23 @@ export default function UserDashboard() {
   };
 
   useEffect(() => {
+    if (authLoading) return;
+
+    const userEmail = session?.user?.email?.trim();
+    if (!userEmail) {
+      setEntries([]);
+      setHistoricalEntries([]);
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
-      await Promise.all([fetchEntries(), fetchGolfers()]);
-      await checkForWithdrawnGolfers();
+      setLoading(true);
+      await Promise.all([fetchEntries(userEmail), fetchGolfers()]);
+      await checkForWithdrawnGolfers(userEmail);
     };
     loadData();
-  }, [session?.user?.email]);
+  }, [authLoading, session?.user?.email]);
 
   const handleGolferClick = (entry: TournamentEntry, golferId: string, tier: string) => {
     if (tournamentStatus === 'In Progress' || tournamentStatus === 'Complete') {
