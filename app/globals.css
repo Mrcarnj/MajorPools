@@ -6,10 +6,13 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 248, 250, 252;
   --background-end-rgb: 255, 255, 255;
-  /* PGA-inspired: navy primary, green accent */
-  --pga-navy: 212 100% 25%;
-  --pga-green: 160 84% 39%;
-  --pga-slate: 215 25% 27%;
+  /* Masters-inspired palette */
+  --masters-green: 149 100% 16%; /* #005027 */
+  --augusta-green: 148 35% 31%; /* #346C50 */
+  --jungle-green: 156 37% 21%; /* #21483C */
+  --masters-yellow: 58 97% 51%; /* #FBF308 */
+  --azalea-pink: 336 72% 66%;
+  --azalea-soft: 336 55% 78%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,77 +24,77 @@
 }
 
 @keyframes highlightBorder {
-  0% { border: 4px solid rgba(16, 185, 129, 1); }
-  50% { border: 4px solid rgba(16, 185, 129, 0.5); }
-  100% { border: 4px solid rgba(16, 185, 129, 1); }
+  0% { border: 4px solid rgba(0, 80, 39, 1); }
+  50% { border: 4px solid rgba(0, 80, 39, 0.45); }
+  100% { border: 4px solid rgba(0, 80, 39, 1); }
 }
 
 .moving-border {
   animation: highlightBorder 1s infinite alternate;
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 15px rgba(0, 80, 39, 0.45);
 }
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --background: 120 24% 98%;
+    --foreground: 156 37% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 156 37% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 212 100% 25%;
+    --popover-foreground: 156 37% 16%;
+    --primary: 149 100% 16%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 160 84% 39%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 120 20% 95%;
+    --secondary-foreground: 156 37% 16%;
+    --muted: 120 20% 95%;
+    --muted-foreground: 156 15% 38%;
+    --accent: 58 97% 51%;
+    --accent-foreground: 149 100% 16%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 212 100% 25%;
-    --chart-1: 212 100% 35%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --border: 120 16% 88%;
+    --input: 120 16% 88%;
+    --ring: 149 100% 16%;
+    --chart-1: 149 100% 22%;
+    --chart-2: 148 35% 31%;
+    --chart-3: 156 37% 21%;
+    --chart-4: 58 97% 51%;
+    --chart-5: 336 72% 66%;
     --radius: 0.5rem;
-    --hero-bg: 212 100% 25%;
+    --hero-bg: 149 100% 16%;
     --hero-fg: 0 0% 100%;
-    /* PGA Tour nav link: muted golden-brown #A7976E */
-    --header-link: 43 24% 54%;
+    --header-link: 58 97% 51%;
+    --azalea-accent: 336 72% 66%;
   }
   .dark {
-    --background: 222 47% 8%;
+    --background: 156 37% 10%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
+    --card: 156 37% 13%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 156 37% 13%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 212 100% 25%;
-    --secondary: 217 33% 17%;
+    --primary: 149 100% 16%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 156 26% 18%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 160 84% 39%;
-    --accent-foreground: 0 0% 100%;
+    --muted: 156 26% 18%;
+    --muted-foreground: 120 11% 70%;
+    --accent: 58 97% 51%;
+    --accent-foreground: 149 100% 16%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 160 84% 39%;
-    --chart-1: 212 100% 50%;
-    --chart-2: 160 84% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --hero-bg: 222 47% 11%;
+    --border: 156 26% 20%;
+    --input: 156 26% 20%;
+    --ring: 58 97% 51%;
+    --chart-1: 149 100% 30%;
+    --chart-2: 148 35% 36%;
+    --chart-3: 156 37% 26%;
+    --chart-4: 58 97% 51%;
+    --chart-5: 336 55% 78%;
+    --hero-bg: 149 100% 16%;
     --hero-fg: 210 40% 98%;
-    /* PGA Tour nav link (slightly brighter on dark bg) */
-    --header-link: 43 48% 62%;
+    --header-link: 58 97% 51%;
+    --azalea-accent: 336 55% 78%;
   }
 }
 

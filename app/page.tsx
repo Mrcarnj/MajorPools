@@ -48,11 +48,12 @@ export default function Home() {
 
   return (
     <div className="space-y-8 px-2 md:px-6">
-      {/* Hero - PGA-inspired (navy in both themes) */}
-      <section className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-hero-bg via-hero-bg to-hero-bg/95 text-hero-fg py-10 px-6 md:py-12 md:px-10 text-center shadow-lg">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--header-link)/0.25),transparent)] pointer-events-none" aria-hidden />
+      {/* Hero - softened Masters gradient with subtle accents */}
+      <section className="relative rounded-2xl overflow-hidden bg-[linear-gradient(135deg,hsl(var(--hero-bg))_0%,hsl(var(--augusta-green))_58%,hsl(var(--jungle-green))_100%)] text-hero-fg py-10 px-6 md:py-12 md:px-10 text-center shadow-lg">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-20%,hsl(var(--header-link)/0.2),transparent)] pointer-events-none" aria-hidden />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_85%_115%,hsl(var(--azalea-accent)/0.14),transparent)] pointer-events-none" aria-hidden />
         <div className="relative space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-header-link">Majors SZN Pools</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-header-link/95">Majors SZN Pools</h1>
           <p className="text-sm md:text-base text-hero-fg/90 max-w-2xl mx-auto">
             Create your dream team of professional golfers and compete in real-time during golf&apos;s major tournaments.
           </p>
@@ -65,7 +66,7 @@ export default function Home() {
                 </Link>
               </Button>
             )}
-            <Button asChild size="lg" variant="secondary" className="bg-white/15 text-hero-fg hover:bg-white/25 border border-header-link/80">
+            <Button asChild size="lg" variant="secondary" className="bg-white/10 text-hero-fg hover:bg-white/20 border border-header-link/70">
               <Link href="/leaderboard">
                 <Trophy className="mr-2 h-5 w-5" />
                 View Leaderboard
