@@ -94,16 +94,21 @@ export function calculateRankings(entries: Entry[]): (string | null)[] {
 }
 
 const PAYOUT_PERCENTAGES = {
-  1: 0.202765957446809,
-  2: 0.149574468085106,
-  3: 0.12298,
-  4: 0.09638,
-  5: 0.06979, //i took away 1% from here to first to bring down to 85%
-  6: 0.06383,
-  7: 0.05319,
-  8: 0.04255,
-  9: 0.03191,
-  10: 0.02128
+  1: 0.2155,
+  2: 0.146,
+  3: 0.112,
+  4: 0.085,
+  5: 0.067,
+  6: 0.055,
+  7: 0.045,
+  8: 0.0365,
+  9: 0.03,
+  10: 0.0255,
+  11: 0.0215,
+  12: 0.0185,
+  13: 0.016,
+  14: 0.014,
+  15: 0.0125
 };
 
 // Helper function to round up to nearest 5
@@ -123,9 +128,9 @@ export function calculatePrizePool(entries: Entry[]): {
   const rawPot = entries.length * entryFee;
   const totalPot = roundUpToNearest5(rawPot);
   
-  // Calculate donation (10% of raw pot) and display pot (85% of raw pot)
+  // Calculate donation (10% of raw pot) and display pot (90% of raw pot)
   const donation = rawPot * 0.1; // Don't round down - keep decimal precision
-  const displayPot = Math.floor(rawPot * 0.85); // Display pot for leaderboard
+  const displayPot = Math.floor(rawPot * 0.9); // Display pot for leaderboard
   
   const payouts = new Map<string, number>();
   
@@ -159,7 +164,7 @@ export function calculatePrizePool(entries: Entry[]): {
     // Sum payouts for all positions occupied by this score group
     for (let i = 0; i < numTied; i++) {
       const payoutPosition = currentPosition + i;
-      if (payoutPosition <= 10) { // Only include payouts through position 10
+      if (payoutPosition <= 15) { // Only include payouts through position 15
         const percentage = PAYOUT_PERCENTAGES[payoutPosition as keyof typeof PAYOUT_PERCENTAGES] || 0;
         totalPayout += rawPot * percentage;
       }
