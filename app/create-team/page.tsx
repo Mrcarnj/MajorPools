@@ -32,6 +32,57 @@ type TieredGolfers = {
   tier5: Golfer[];
 };
 
+const BLOCKED_NAME_ERROR = "This entry name can't be used";
+const BLOCKED_ENTRY_TERMS = [
+  'fag',
+  'faggot',
+  'nigger',
+  'cunt',
+  'fuck',
+  'shit',
+  'bitch',
+  'bastard',
+  'asshole',
+  'motherfucker',
+  'slut',
+  'whore',
+  'pussy',
+  'dick',
+  'cock',
+  'twat',
+];
+
+const LEET_CHAR_MAP: Record<string, string> = {
+  '@': 'a',
+  '4': 'a',
+  '3': 'e',
+  '1': 'i',
+  '!': 'i',
+  '|': 'i',
+  '0': 'o',
+  '5': 's',
+  '$': 's',
+  '7': 't',
+  '+': 't',
+  '8': 'b',
+  '6': 'g',
+  '9': 'g',
+};
+
+const normalizeForBlockedTermCheck = (value: string) => {
+  return value
+    .toLowerCase()
+    .split('')
+    .map((char) => LEET_CHAR_MAP[char] ?? char)
+    .join('')
+    .replace(/[^a-z]/g, '');
+};
+
+const containsBlockedEntryTerm = (value: string) => {
+  const normalized = normalizeForBlockedTermCheck(value);
+  return BLOCKED_ENTRY_TERMS.some((term) => normalized.includes(term));
+};
+
 export default function CreateTeam() {
   // All hooks must be at the top level, before any conditional returns
   const { session } = useAuth();
@@ -153,6 +204,14 @@ export default function CreateTeam() {
     setSubmitting(true);
 
     try {
+      const isEntryNameValid = validateEntryName(formData.entryName);
+      const isUserEmailValid = validateEmail(formData.email);
+
+      if (!isEntryNameValid || !isUserEmailValid) {
+        setSubmitting(false);
+        return;
+      }
+
       // Check if we have an active tournament
       if (!activeTournament?.id) {
         setError('No active tournament found');
@@ -264,6 +323,10 @@ export default function CreateTeam() {
     const nameRegex = /^[a-zA-Z0-9\s]*$/;
     if (!name) {
       setEntryNameError('Entry name is required');
+      return false;
+    }
+    if (containsBlockedEntryTerm(name)) {
+      setEntryNameError(BLOCKED_NAME_ERROR);
       return false;
     }
     if (!nameRegex.test(name)) {
