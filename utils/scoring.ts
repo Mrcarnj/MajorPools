@@ -96,20 +96,20 @@ export function calculateRankings(entries: Entry[]): (string | null)[] {
 // Totals 90% of rawPot; 1st and 15th fixed; 2–14 share the rest with a steeper top-heavy curve
 // (weight ∝ 1/(rank−1)^0.67) so 2nd isn’t far below 1st while still stepping down to 15th.
 const PAYOUT_PERCENTAGES = {
-  1: 0.2155,
-  2: 0.146,
-  3: 0.112,
-  4: 0.085,
-  5: 0.067,
-  6: 0.055,
-  7: 0.045,
-  8: 0.0365,
-  9: 0.03,
-  10: 0.0255,
-  11: 0.0215,
-  12: 0.0185,
-  13: 0.016,
-  14: 0.014,
+  1: 0.2183,
+  2: 0.143,
+  3: 0.09,
+  4: 0.0686,
+  5: 0.0565,
+  6: 0.0487,
+  7: 0.0431,
+  8: 0.0389,
+  9: 0.0355,
+  10: 0.0328,
+  11: 0.0306,
+  12: 0.0287,
+  13: 0.0271,
+  14: 0.0257,
   15: 0.0125
 };
 
