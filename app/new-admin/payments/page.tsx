@@ -148,8 +148,10 @@ export default function PaymentsPage() {
 
     if (unpaidEmails.length === 0) return;
 
-    const mailtoLink = `mailto:?bcc=${unpaidEmails.join(',')}&subject=Payment Required for Golf Tournament&body=test payment email`;
-    window.location.href = mailtoLink;
+    const emailSubject = 'Payment Required for Golf Tournament';
+    const emailBody = 'test payment email';
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(unpaidEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(gmailUrl, '_blank');
   };
 
   const filterEntries = () => {

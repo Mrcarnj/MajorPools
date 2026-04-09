@@ -93,6 +93,8 @@ export function calculateRankings(entries: Entry[]): (string | null)[] {
   return rankings;
 }
 
+// Totals 90% of rawPot; 1st and 15th fixed; 2–14 share the rest with a steeper top-heavy curve
+// (weight ∝ 1/(rank−1)^0.67) so 2nd isn’t far below 1st while still stepping down to 15th.
 const PAYOUT_PERCENTAGES = {
   1: 0.2155,
   2: 0.146,

@@ -125,8 +125,10 @@ export default function PaymentsPage() {
 
     if (unpaidEmails.length === 0) return;
 
-    const mailtoLink = `mailto:?bcc=${unpaidEmails.join(',')}&subject=Payment Required for Golf Tournament&body=test payment email`;
-    window.location.href = mailtoLink;
+    const emailSubject = 'Payment Required for Golf Tournament';
+    const emailBody = 'test payment email';
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(unpaidEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(gmailUrl, '_blank');
   };
 
   const filterEntries = () => {
@@ -230,8 +232,8 @@ export default function PaymentsPage() {
   return (
     <div className="container mx-auto py-8">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-x-4">
-          <div className="flex-shrink-0">
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-4">
+          <div className="min-w-0 shrink-0">
             <CardTitle>Payment Management</CardTitle>
             {activeTournament && (
               <p className="text-muted-foreground">
@@ -239,9 +241,9 @@ export default function PaymentsPage() {
               </p>
             )}
           </div>
-          
-          <div className="flex items-center space-x-4 flex-1 max-w-xl">
-            <div className="relative flex-1">
+
+          <div className="flex w-full min-w-0 flex-col gap-3 md:flex-1 md:max-w-xl md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-2">
+            <div className="relative w-full min-w-0 md:flex-1 md:min-w-[12rem]">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search email or entry name..."
@@ -250,35 +252,47 @@ export default function PaymentsPage() {
                 className="pl-8"
               />
             </div>
-            
-            <RadioGroup 
-              value={paymentFilter} 
-              onValueChange={setPaymentFilter}
-              className="flex space-x-2"
-            >
-              <div className="flex items-center space-x-1">
-                <RadioGroupItem value="all" id="filter-all" />
-                <Label htmlFor="filter-all">All</Label>
+
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start md:contents">
+              <RadioGroup
+                value={paymentFilter}
+                onValueChange={setPaymentFilter}
+                className="flex flex-wrap items-center gap-x-4 gap-y-1"
+              >
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="all" id="filter-all" />
+                  <Label htmlFor="filter-all" className="font-normal">
+                    All
+                  </Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="paid" id="filter-paid" />
+                  <Label htmlFor="filter-paid" className="font-normal">
+                    Paid
+                  </Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="unpaid" id="filter-unpaid" />
+                  <Label htmlFor="filter-unpaid" className="font-normal">
+                    Unpaid
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              <div className="text-sm text-muted-foreground tabular-nums md:whitespace-nowrap">
+                {Object.values(filterEntries()).reduce(
+                  (acc, group) => acc + group.entries.length,
+                  0,
+                )}{' '}
+                entries
               </div>
-              <div className="flex items-center space-x-1">
-                <RadioGroupItem value="paid" id="filter-paid" />
-                <Label htmlFor="filter-paid">Paid</Label>
-              </div>
-              <div className="flex items-center space-x-1">
-                <RadioGroupItem value="unpaid" id="filter-unpaid" />
-                <Label htmlFor="filter-unpaid">Unpaid</Label>
-              </div>
-            </RadioGroup>
-            
-            <div className="text-sm text-muted-foreground whitespace-nowrap">
-              {Object.values(filterEntries()).reduce((acc, group) => acc + group.entries.length, 0)} entries
             </div>
           </div>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleSendEmails}
-            className="flex items-center gap-2 flex-shrink-0"
+            className="flex w-full shrink-0 items-center justify-center gap-2 md:w-auto"
           >
             <MdOutlineEmail className="h-4 w-4" />
             Email Unpaid

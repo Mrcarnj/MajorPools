@@ -223,11 +223,14 @@ Major Pools Team`;
     
     const uniqueEmails = Array.from(new Set(emailData?.map(entry => entry.email) || []));
     
+    if (uniqueEmails.length === 0) return;
+
     const createTeamUrl = `${window.location.origin}/create-team`;
     const emailBody = getEmailTemplate(tournamentName, createTeamUrl, tournamentYear);
-    
-    const mailtoLink = `mailto:?bcc=${encodeURIComponent(uniqueEmails.join(','))}&subject=${encodeURIComponent(`${tournamentName} ${tournamentYear} - Welcome & Submission Form`)}&body=${encodeURIComponent(emailBody)}`;
-    window.location.href = mailtoLink;
+    const emailSubject = `${tournamentName} ${tournamentYear} - Welcome & Submission Form`;
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(gmailUrl, '_blank');
   };
 
   async function handleCompleteTournament(tournamentId: string) {
