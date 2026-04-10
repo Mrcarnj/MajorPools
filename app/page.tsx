@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { type Entry } from '@/utils/scoring';
 import { QuickLeaderboard } from '@/components/quick-leaderboard';
-import { TournamentStatus } from '@/components/tournament-status';
+import { TournamentInfoSection } from '@/components/tournament-info-section';
 import { WhereToWatch } from '@/components/where-to-watch';
 import { Button } from '@/components/ui/button';
 import { Goal as GolfBall, Trophy } from 'lucide-react';
@@ -76,10 +76,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Tournament info */}
-      <div className="flex justify-center max-w-4xl mx-auto">
-        <TournamentStatus />
-      </div>
+      {/* Tournament info + weather */}
+      <TournamentInfoSection />
       {/* How to Watch - horizontal, under tournament */}
       <div className="flex justify-center max-w-4xl mx-auto">
         <WhereToWatch />

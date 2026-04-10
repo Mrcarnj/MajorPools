@@ -28,6 +28,34 @@ function parseNumber(value: unknown): number | null {
   return null;
 }
 
+function locationText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const t = value.trim();
+  return t.length ? t : null;
+}
+
+/** PGA schedule/tournament payloads expose venue on the first course. */
+function locationFromCoursesPayload(payload: unknown): {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+} {
+  const courses = (payload as Record<string, unknown>)?.courses;
+  if (!Array.isArray(courses) || !courses[0] || typeof courses[0] !== 'object') {
+    return { city: null, state: null, country: null };
+  }
+  const loc = (courses[0] as Record<string, unknown>).location;
+  if (!loc || typeof loc !== 'object') {
+    return { city: null, state: null, country: null };
+  }
+  const o = loc as Record<string, unknown>;
+  return {
+    city: locationText(o.city),
+    state: locationText(o.state),
+    country: locationText(o.country),
+  };
+}
+
 async function uploadSchedule() {
   try {
     console.log(`📅 Fetching PGA Tour schedule for ${YEAR}...\n`);
@@ -40,6 +68,23 @@ async function uploadSchedule() {
     }
 
     console.log(`Found ${schedule.length} tournaments. Uploading to database...\n`);
+
+    const { data: activeRow, error: activeError } = await supabaseAdmin
+      .from('tournaments')
+      .select('pga_tournament_id, name')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (activeError) {
+      throw new Error(`Failed to fetch active tournament: ${activeError.message}`);
+    }
+
+    const skipPgaTournamentId = activeRow?.pga_tournament_id ?? null;
+    if (skipPgaTournamentId) {
+      console.log(
+        `⏭ Skipping updates for active tournament: ${activeRow?.name ?? '(unknown)'} (pga_tournament_id ${skipPgaTournamentId})\n`
+      );
+    }
 
     // Get existing tournaments for this year
     const { data: existingTournaments, error: fetchError } = await supabaseAdmin
@@ -59,6 +104,11 @@ async function uploadSchedule() {
     let updated = 0;
 
     for (const event of schedule) {
+      if (skipPgaTournamentId != null && event.tournId === skipPgaTournamentId) {
+        console.log(`  ⏭ Skipped (active): ${event.name}`);
+        continue;
+      }
+
       const startMs = Number(event.date?.start?.$date?.$numberLong ?? event.date?.start);
       const endMs = Number(event.date?.end?.$date?.$numberLong ?? event.date?.end);
 
@@ -72,6 +122,7 @@ async function uploadSchedule() {
       let courseName: string | null = event.courses?.[0]?.courseName ?? null;
       let currentRound: number | null = parseNumber((event as Record<string, unknown>).currentRound);
       let parTotal: number | null = null;
+      let { city, state, country } = locationFromCoursesPayload(event);
 
       try {
         const tournament = await getTournament(event.tournId, YEAR);
@@ -85,6 +136,10 @@ async function uploadSchedule() {
           // par_total can be on tournament or on first course
           const t = tournament as Record<string, unknown>;
           parTotal = parseNumber(t.parTotal ?? (tournament.courses?.[0] as Record<string, unknown>)?.parTotal);
+          const fromTournament = locationFromCoursesPayload(tournament);
+          if (fromTournament.city) city = fromTournament.city;
+          if (fromTournament.state) state = fromTournament.state;
+          if (fromTournament.country) country = fromTournament.country;
         }
       } catch (err) {
         console.warn(`  ⚠️ Could not fetch /tournament for ${event.tournId} (${event.name}), using schedule data only:`, (err as Error).message);
@@ -101,6 +156,9 @@ async function uploadSchedule() {
         pga_tournament_id: event.tournId,
         pga_year: parseInt(YEAR, 10),
         course_name: courseName,
+        city,
+        state,
+        country,
         purse: purse ?? null,
         status,
         current_round: currentRound,
