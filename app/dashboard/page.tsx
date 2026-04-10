@@ -295,13 +295,13 @@ export default function UserDashboard() {
         return parseInt(a.odds) - parseInt(b.odds);
       });
 
-      // Organize golfers into tiers
+      // Organize golfers into tiers (must match app/create-team/page.tsx)
       const tieredGolfers = {
         tier1: sortedGolfers.slice(0, 8),
-        tier2: sortedGolfers.slice(8, 30),
-        tier3: sortedGolfers.slice(30, 59),
-        tier4: sortedGolfers.slice(59, 95),
-        tier5: sortedGolfers.slice(95)
+        tier2: sortedGolfers.slice(8, 20),
+        tier3: sortedGolfers.slice(20, 40),
+        tier4: sortedGolfers.slice(40, 60),
+        tier5: sortedGolfers.slice(60)
       };
 
       setGolfers(tieredGolfers);
