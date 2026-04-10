@@ -11,7 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { calculateDisplayScore } from '@/utils/scoring';
+import {
+  calculateDisplayScore,
+  calculatePrizePool,
+  type Entry as ScoringEntry,
+} from '@/utils/scoring';
 import { Archivo } from 'next/font/google';
 import { MdLeaderboard } from "react-icons/md";
 import { TbGolf } from "react-icons/tb";
@@ -142,7 +146,10 @@ export default function Leaderboard() {
 
         return {
           entry_name: entry.entry_name as string,
-          calculated_score: entry.calculated_score as number,
+          calculated_score:
+            entry.calculated_score === null || entry.calculated_score === undefined
+              ? 0
+              : (entry.calculated_score as number),
           golfers: sortGolfers(golfers as EntryGolfer[]),
           display_score: calculateDisplayScore(golfers as any)
         };
@@ -294,6 +301,14 @@ export default function Leaderboard() {
     entries.map((entry, index) => [entry.entry_name, rankings[index]])
   );
 
+  const prizePoolInputs: ScoringEntry[] = entries.map((e) => ({
+    entry_name: e.entry_name,
+    calculated_score: e.calculated_score,
+    display_score: e.display_score,
+    topFiveGolfers: [],
+  }));
+  const { payouts } = calculatePrizePool(prizePoolInputs);
+
   // Then filter entries
   const filteredEntries = entries.filter(entry => 
     entry.entry_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -394,8 +409,8 @@ export default function Leaderboard() {
                           borderStyle,
                         }}
                         className={`grid
-                          grid-cols-[2rem_auto_4rem] md:grid-cols-[2rem_minmax(200px,auto)_auto_4rem] 
-                          gap-6 items-center cursor-pointer hover:bg-muted/50 px-4 rounded-sm ${rowBgClass} ${(isHighlighted || isMoving) ? 'moving-border' : ''}`}
+                          grid-cols-[2rem_2.5rem_minmax(0,1fr)_3rem] md:grid-cols-[2rem_2.75rem_minmax(0,1fr)_13rem_3.5rem] 
+                          gap-x-3 md:gap-6 items-center cursor-pointer hover:bg-muted/50 px-4 rounded-sm ${rowBgClass} ${(isHighlighted || isMoving) ? 'moving-border' : ''}`}
                         onClick={() => toggleExpand(entry.entry_name)}
                       >
                         <motion.div 
@@ -418,30 +433,15 @@ export default function Leaderboard() {
                         >
                           {rankingMap.get(entry.entry_name) || '\u00A0'}
                         </motion.div>
-                        <h3 className="font-semibold text-sm md:text-lg">
+                        <span className="text-green-600 text-xs md:text-sm text-right tabular-nums shrink-0">
+                          {(payouts.get(entry.entry_name) || 0) > 0
+                            ? `$${payouts.get(entry.entry_name)}`
+                            : ''}
+                        </span>
+                        <h3 className="font-semibold text-sm md:text-lg min-w-0 truncate">
                           {entry.entry_name} 
                         </h3>
-                        <div className="hidden md:flex gap-1 items-center justify-end text-md text-muted-foreground">
-                          {(() => {
-                            // Sort: non-CUT/WD/DQ by score, then CUT/WD/DQ
-                            const sorted = [...entry.golfers].sort((a, b) => {
-                              const aIsCut = ['CUT', 'WD', 'DQ'].includes(a.position);
-                              const bIsCut = ['CUT', 'WD', 'DQ'].includes(b.position);
-                              if (aIsCut && !bIsCut) return 1;
-                              if (!aIsCut && bIsCut) return -1;
-                              // Both are not CUT/WD/DQ or both are, sort by score
-                              const scoreA = a.total === 'E' ? 0 : Number(a.total.replace('+', ''));
-                              const scoreB = b.total === 'E' ? 0 : Number(b.total.replace('+', ''));
-                              return scoreA - scoreB;
-                            });
-                            // Take the first 5
-                            return sorted.slice(0, 5).map(golfer => (
-                              <span key={golfer.player_id} className={golfer.total.startsWith('-') ? 'text-red-600' : ''}>
-                                {['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : golfer.total}
-                              </span>
-                            ));
-                          })()}
-                        </div>
+                        <TopFiveScoreStrip golfers={entry.golfers} />
                         <motion.span 
                           className={`${archivo.className} text-lg md:text-2xl text-muted-foreground text-right ${
                             typeof entry.display_score === 'number' && entry.display_score < 0 
@@ -527,6 +527,55 @@ export default function Leaderboard() {
 function chunk<T>(array: T[], size: number): T[][] {
   return Array.from({ length: Math.ceil(array.length / size) }, (_, index) =>
     array.slice(index * size, (index + 1) * size)
+  );
+}
+
+/** Same ordering as pool total (regular scores first, then CUT/WD/DQ by stroke). */
+function sortGolfersForPoolStrip(golfers: EntryGolfer[]): EntryGolfer[] {
+  return [...golfers].sort((a, b) => {
+    const aIsCut = ['CUT', 'WD', 'DQ'].includes(a.position);
+    const bIsCut = ['CUT', 'WD', 'DQ'].includes(b.position);
+    if (aIsCut && !bIsCut) return 1;
+    if (!aIsCut && bIsCut) return -1;
+    const scoreA = a.total === 'E' ? 0 : Number(a.total.replace('+', ''));
+    const scoreB = b.total === 'E' ? 0 : Number(b.total.replace('+', ''));
+    return scoreA - scoreB;
+  });
+}
+
+/** Fixed-width 5+4 grid so pipes line up across every row (like spreadsheet columns). */
+function TopFiveScoreStrip({ golfers }: { golfers: EntryGolfer[] }) {
+  const topFive = sortGolfersForPoolStrip(golfers).slice(0, 5);
+  return (
+    <div
+      className="hidden md:grid w-[13rem] shrink-0 justify-self-end grid-cols-[minmax(0,1fr)_10px_minmax(0,1fr)_10px_minmax(0,1fr)_10px_minmax(0,1fr)_10px_minmax(0,1fr)] items-center text-[11px] md:text-xs font-mono tabular-nums leading-none text-muted-foreground"
+      aria-label="Scores counting toward pool total"
+    >
+      {topFive.map((golfer, i) => {
+        const label = ['CUT', 'WD', 'DQ'].includes(golfer.position)
+          ? golfer.position
+          : golfer.total;
+        const red = golfer.total.startsWith('-');
+        return (
+          <Fragment key={golfer.player_id}>
+            {i > 0 ? (
+              <span
+                className="text-center text-muted-foreground/70 select-none pointer-events-none"
+                aria-hidden
+              >
+                |
+              </span>
+            ) : null}
+            <span
+              className={`text-center min-w-0 truncate ${red ? 'text-red-600' : ''}`}
+              title={label}
+            >
+              {label}
+            </span>
+          </Fragment>
+        );
+      })}
+    </div>
   );
 }
 
