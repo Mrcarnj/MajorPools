@@ -171,7 +171,7 @@ export function TournamentWeather({ tournament, loading }: Props) {
     <Card className={compactCardClass('overflow-hidden shadow-sm')}>
       <CardContent className="p-0">
         {/* Mobile: full width, wider-than-tall band below tournament status */}
-        <div className="md:hidden p-3 flex flex-col gap-2">
+        <div className="md:hidden p-3 flex flex-col gap-1.5">
           <div className="flex flex-row items-center gap-3 min-h-0">
             <WeatherConditionIcon code={data.weatherCode} className="h-9 w-9 shrink-0 text-header-link" />
             <div className="flex flex-col items-center gap-0.5 shrink-0 w-[4.25rem]">
@@ -200,16 +200,20 @@ export function TournamentWeather({ tournament, loading }: Props) {
               )}
             </div>
             <div className="flex-1 min-w-0 border-l border-border/50 pl-3">
-              <p className="text-sm font-semibold leading-tight text-foreground">{data.weekday}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{data.dateLine}</p>
-              <p className="text-[11px] font-medium text-foreground/90 leading-snug line-clamp-2 mt-1.5">
+              <div className="flex items-baseline justify-between gap-2 min-w-0">
+                <p className="text-sm font-semibold leading-tight text-foreground truncate">{data.weekday}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight shrink-0 tabular-nums text-right">
+                  {data.dateLine}
+                </p>
+              </div>
+              <p className="text-[11px] font-medium text-foreground/90 leading-snug line-clamp-2 mt-1">
                 {data.forecast}
               </p>
             </div>
           </div>
 
           <div
-            className="grid grid-cols-4 gap-x-1 gap-y-0 text-[9px] tabular-nums text-foreground/90 border-t border-border/50 pt-2"
+            className="grid grid-cols-4 gap-x-1 gap-y-0 text-[9px] tabular-nums text-foreground/90 border-t border-border/50 pt-1.5"
             role="list"
           >
             <div className="flex flex-col items-center justify-center gap-0.5 text-center min-w-0" role="listitem" title="Precipitation chance">
@@ -253,25 +257,27 @@ export function TournamentWeather({ tournament, loading }: Props) {
             </div>
           </div>
 
-          <p className="text-[9px] text-center text-muted-foreground/80 leading-tight border-t border-border/40 pt-1.5">
+          <p className="text-[9px] text-center text-muted-foreground/80 leading-tight border-t border-border/40 pt-1">
             {sourceLink}
           </p>
         </div>
 
         {/* md+: narrow vertical column beside tournament */}
-        <div className="hidden md:flex md:flex-col p-3 items-stretch gap-2">
-          <header className="text-left space-y-0">
-            <p className="text-[15px] font-semibold leading-tight tracking-tight text-foreground">
+        <div className="hidden md:flex md:flex-col p-3 items-stretch gap-1.5">
+          <header className="flex items-baseline justify-between gap-2 w-full min-w-0">
+            <p className="text-[15px] font-semibold leading-tight tracking-tight text-foreground truncate min-w-0">
               {data.weekday}
             </p>
-            <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{data.dateLine}</p>
+            <p className="text-[10px] text-muted-foreground leading-tight shrink-0 tabular-nums text-right">
+              {data.dateLine}
+            </p>
           </header>
 
-          <div className="flex justify-center py-0.5" aria-hidden>
+          <div className="flex justify-center py-0" aria-hidden>
             <WeatherConditionIcon code={data.weatherCode} className="h-10 w-10 text-header-link" />
           </div>
 
-          <div className="flex flex-col items-center gap-1 w-full">
+          <div className="flex flex-col items-center gap-0.5 w-full">
             {data.highTempF != null ? (
               <>
                 <div
@@ -297,12 +303,12 @@ export function TournamentWeather({ tournament, loading }: Props) {
             )}
           </div>
 
-          <p className="text-center text-[11px] font-medium text-foreground/90 leading-snug line-clamp-2 min-h-[2.5rem] px-0.5">
+          <p className="text-center text-[11px] font-medium text-foreground/90 leading-snug line-clamp-2 px-0.5">
             {data.forecast}
           </p>
 
           <div
-            className="grid grid-cols-2 gap-x-1 gap-y-1.5 w-full border-t border-border/50 pt-2 mt-0.5"
+            className="grid grid-cols-2 gap-x-1 gap-y-1 w-full border-t border-border/50 pt-1.5 mt-0"
             role="list"
           >
             <div
@@ -367,7 +373,7 @@ export function TournamentWeather({ tournament, loading }: Props) {
             </div>
           </div>
 
-          <p className="text-[9px] text-center text-muted-foreground/80 leading-tight pt-0.5 border-t border-border/40">
+          <p className="text-[9px] text-center text-muted-foreground/80 leading-tight pt-1 border-t border-border/40">
             {sourceLink}
           </p>
         </div>
