@@ -101,8 +101,9 @@ export function LiveLeaderboard() {
 
   const hasTeeTimesInThru = scores.some(
     (s) =>
-      (s.position === '-' && s.tee_time) ||
-      (tournamentData?.current_round && s.current_round_score == null && s.tee_time)
+      s.position !== 'CUT' &&
+      ((s.position === '-' && s.tee_time) ||
+        (tournamentData?.current_round && s.current_round_score == null && s.tee_time))
   );
 
   const generateGolferId = (first: string, last: string) => `${last}-${first}`;
@@ -130,6 +131,19 @@ export function LiveLeaderboard() {
     if (!isPM && hours === 12) totalMinutes = minutes || 0; // 12 AM is 0 hours
     
     return totalMinutes;
+  };
+
+  /** Relative to par for sorting (lower is better). Unknown totals sort last. */
+  const relativeParFromTotal = (total: string): number => {
+    const t = (total ?? '').trim();
+    if (t === '' || t === '-') return Number.MAX_SAFE_INTEGER;
+    if (t === 'E') return 0;
+    if (t.startsWith('-')) {
+      const n = Number(t.slice(1));
+      return Number.isFinite(n) ? -n : Number.MAX_SAFE_INTEGER;
+    }
+    const n = Number(t.replace(/^\+/, ''));
+    return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
   };
 
   const fetchData = async () => {
@@ -185,7 +199,15 @@ export function LiveLeaderboard() {
         // Put dash with tee times above other special positions
         if (a.position === '-' && b.position !== '-') return -1;
         if (a.position !== '-' && b.position === '-') return 1;
-        
+
+        if (a.position === 'CUT' && b.position === 'CUT') {
+          const byTotal = relativeParFromTotal(a.total) - relativeParFromTotal(b.total);
+          if (byTotal !== 0) return byTotal;
+          const nameA = `${a.last_name} ${a.first_name}`;
+          const nameB = `${b.last_name} ${b.first_name}`;
+          return nameA.localeCompare(nameB);
+        }
+
         // Sort other special positions alphabetically
         return a.position.localeCompare(b.position);
       }
@@ -434,15 +456,19 @@ export function LiveLeaderboard() {
                           {score.current_round_score === '-' ? '' : score.current_round_score}
                         </TableCell>
                         <TableCell className="text-center py-2 px-1 md:pr-4 w-[28px] md:w-[30px]">
-                          {score.position === '-' && score.tee_time
-                            ? showLocalTime
-                              ? teeTimeToUserLocal(score.tee_time)
-                              : score.tee_time
-                            : (tournamentData?.current_round && score.current_round_score === null && score.tee_time)
+                          {score.position === 'CUT'
+                            ? ''
+                            : score.position === '-' && score.tee_time
                               ? showLocalTime
                                 ? teeTimeToUserLocal(score.tee_time)
                                 : score.tee_time
-                              : score.thru}
+                              : tournamentData?.current_round &&
+                                  score.current_round_score === null &&
+                                  score.tee_time
+                                ? showLocalTime
+                                  ? teeTimeToUserLocal(score.tee_time)
+                                  : score.tee_time
+                                : score.thru}
                         </TableCell>
                       </motion.tr>
                     );
