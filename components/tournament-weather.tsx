@@ -27,6 +27,12 @@ function compactCardClass(extra = '') {
   return `bg-card/50 border-border/70 w-full md:h-full ${extra}`;
 }
 
+/** User's local calendar date YYYY-MM-DD (refetch when this changes after midnight). */
+function getLocalCalendarDay(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 type Props = {
   tournament: ActiveOrNextTournament | null;
   loading: boolean;
@@ -36,11 +42,20 @@ export function TournamentWeather({ tournament, loading }: Props) {
   const [data, setData] = useState<WeatherResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
+  const [calendarDay, setCalendarDay] = useState(getLocalCalendarDay);
 
   const city = tournament?.city != null ? String(tournament.city).trim() : '';
   const state = tournament?.state != null ? String(tournament.state).trim() : '';
   const country = tournament?.country != null ? String(tournament.country).trim() : '';
   const canFetch = Boolean(city || country);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const next = getLocalCalendarDay();
+      setCalendarDay((prev) => (prev !== next ? next : prev));
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (loading || !canFetch) {
@@ -58,8 +73,9 @@ export function TournamentWeather({ tournament, loading }: Props) {
     if (city) params.set('city', city);
     if (state) params.set('state', state);
     if (country) params.set('country', country);
+    params.set('for', calendarDay);
 
-    fetch(`/api/weather?${params.toString()}`)
+    fetch(`/api/weather?${params.toString()}`, { cache: 'no-store' })
       .then(async (res) => {
         const body = (await res.json()) as WeatherResponse & { error?: string };
         if (!res.ok) {
@@ -81,7 +97,7 @@ export function TournamentWeather({ tournament, loading }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [loading, canFetch, city, state, country]);
+  }, [loading, canFetch, city, state, country, calendarDay]);
 
   if (loading) {
     return (

@@ -149,7 +149,12 @@ async function geocodeVenue(input: {
   return hitToResult(hits[0]);
 }
 
-async function fetchDailyForecast(lat: number, lon: number): Promise<ForecastDaily | null> {
+async function fetchDailyForecast(
+  lat: number,
+  lon: number,
+  /** ISO date YYYY-MM-DD — included so Next.js fetch cache rolls forward each calendar day. */
+  calendarDay: string
+): Promise<ForecastDaily | null> {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
@@ -158,7 +163,8 @@ async function fetchDailyForecast(lat: number, lon: number): Promise<ForecastDai
     temperature_unit: 'fahrenheit',
     wind_speed_unit: 'mph',
     timezone: 'auto',
-    forecast_days: '1',
+    start_date: calendarDay,
+    end_date: calendarDay,
   });
   const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
   const res = await fetch(url, { next: { revalidate: DAILY_REVALIDATE_SECONDS } });
@@ -189,6 +195,8 @@ export async function fetchVenueWeatherToday(input: {
   city: string | null;
   state: string | null;
   country: string | null;
+  /** Client local calendar day YYYY-MM-DD — new day = new upstream cache + correct "today" forecast. */
+  calendarDay: string;
 }): Promise<VenueWeatherPayload | { error: string }> {
   const parts = [input.city, input.state, input.country].filter((p) => p && String(p).trim());
   const locationQuery = parts.join(', ');
@@ -201,7 +209,7 @@ export async function fetchVenueWeatherToday(input: {
     return { error: 'Location not found' };
   }
 
-  const daily = await fetchDailyForecast(geo.latitude, geo.longitude);
+  const daily = await fetchDailyForecast(geo.latitude, geo.longitude, input.calendarDay);
   if (!daily?.time?.length) {
     return { error: 'Forecast unavailable' };
   }
