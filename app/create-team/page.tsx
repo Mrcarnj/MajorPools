@@ -92,6 +92,8 @@ export default function CreateTeam() {
   const [formData, setFormData] = useState({
     entryName: '',
     email: session?.user?.email || '',
+    paymentMethod: 'venmo' as 'venmo' | 'zelle',
+    paymentHandle: '',
     selections: {
       tier1: [] as string[],
       tier2: [] as string[],
@@ -102,6 +104,7 @@ export default function CreateTeam() {
   });
   const [emailError, setEmailError] = useState('');
   const [entryNameError, setEntryNameError] = useState('');
+  const [paymentHandleError, setPaymentHandleError] = useState('');
   const [serverEntryNameError, setServerEntryNameError] = useState('');
   const entryNameRef = useRef<HTMLInputElement>(null);
   const [golfers, setGolfers] = useState<TieredGolfers>({
@@ -206,8 +209,9 @@ export default function CreateTeam() {
     try {
       const isEntryNameValid = validateEntryName(formData.entryName);
       const isUserEmailValid = validateEmail(formData.email);
+      const isPaymentHandleValid = validatePaymentHandle(formData.paymentMethod, formData.paymentHandle);
 
-      if (!isEntryNameValid || !isUserEmailValid) {
+      if (!isEntryNameValid || !isUserEmailValid || !isPaymentHandleValid) {
         setSubmitting(false);
         return;
       }
@@ -254,10 +258,15 @@ export default function CreateTeam() {
 
       // If entry exists with the same email, update it
       if (existingEntry && existingEntry.email === formData.email) {
+        const paymentHandle = formData.paymentMethod === 'venmo'
+          ? `@${formData.paymentHandle}`
+          : formData.paymentHandle;
         const { error: updateError } = await supabase
           .from('entries')
           .update({
             email: formData.email,
+            payment_method: formData.paymentMethod,
+            payment_handle: paymentHandle,
             tier1_golfer1: formData.selections.tier1[0],
             tier1_golfer2: formData.selections.tier1[1],
             tier2_golfer1: formData.selections.tier2[0],
@@ -276,12 +285,17 @@ export default function CreateTeam() {
       }
 
       // If no existing entry, create a new one
+      const paymentHandle = formData.paymentMethod === 'venmo'
+        ? `@${formData.paymentHandle}`
+        : formData.paymentHandle;
       const { data: entry, error } = await supabase
         .from('entries')
         .insert([
           {
             entry_name: formData.entryName,
             email: formData.email,
+            payment_method: formData.paymentMethod,
+            payment_handle: paymentHandle,
             tournament_id: activeTournament.id,
             tier1_golfer1: formData.selections.tier1[0],
             tier1_golfer2: formData.selections.tier1[1],
@@ -319,6 +333,22 @@ export default function CreateTeam() {
     return true;
   }, []);
 
+  const validatePaymentHandle = useCallback((method: 'venmo' | 'zelle', handle: string) => {
+    if (!handle) {
+      setPaymentHandleError(`${method === 'venmo' ? 'Venmo handle' : 'Zelle email'} is required`);
+      return false;
+    }
+    if (method === 'zelle') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(handle)) {
+        setPaymentHandleError('Please enter a valid email address for Zelle');
+        return false;
+      }
+    }
+    setPaymentHandleError('');
+    return true;
+  }, []);
+
   const validateEntryName = useCallback((name: string) => {
     const nameRegex = /^[a-zA-Z0-9\s]*$/;
     if (!name) {
@@ -338,8 +368,12 @@ export default function CreateTeam() {
   }, []);
 
   const isFormValid = useCallback(() => {
-    if (!formData.entryName || !formData.email) return false;
-    if (entryNameError || emailError) return false;
+    if (!formData.entryName || !formData.email || !formData.paymentHandle) return false;
+    if (entryNameError || emailError || paymentHandleError) return false;
+    if (formData.paymentMethod === 'zelle') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.paymentHandle)) return false;
+    }
     
     return (
       formData.selections.tier1.length === 2 &&
@@ -348,7 +382,7 @@ export default function CreateTeam() {
       formData.selections.tier4.length === 1 &&
       formData.selections.tier5.length === 1
     );
-  }, [formData, entryNameError, emailError]);
+  }, [formData, entryNameError, emailError, paymentHandleError]);
 
   useEffect(() => {
     setMounted(true);
@@ -646,6 +680,83 @@ export default function CreateTeam() {
                 </p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label>Payment Method</Label>
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, paymentMethod: 'venmo', paymentHandle: '' }));
+                    setPaymentHandleError('');
+                  }}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                    formData.paymentMethod === 'venmo'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted text-foreground'
+                  }`}
+                >
+                  Venmo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, paymentMethod: 'zelle', paymentHandle: '' }));
+                    setPaymentHandleError('');
+                  }}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                    formData.paymentMethod === 'zelle'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted text-foreground'
+                  }`}
+                >
+                  Zelle
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentHandle">
+                {formData.paymentMethod === 'venmo' ? 'Venmo Handle' : 'Zelle Email'}
+              </Label>
+              {formData.paymentMethod === 'venmo' ? (
+                <div className={`flex items-center border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${paymentHandleError ? 'border-red-500' : ''}`}>
+                  <span className="px-3 py-2 bg-muted text-muted-foreground border-r select-none text-sm">@</span>
+                  <input
+                    id="paymentHandle"
+                    type="text"
+                    value={formData.paymentHandle}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/@/g, '');
+                      setFormData(prev => ({ ...prev, paymentHandle: value }));
+                      validatePaymentHandle('venmo', value);
+                    }}
+                    onBlur={(e) => validatePaymentHandle('venmo', e.target.value.replace(/@/g, ''))}
+                    required
+                    placeholder="yourhandle"
+                    className="flex-1 px-3 py-2 bg-background outline-none text-sm"
+                  />
+                </div>
+              ) : (
+                <Input
+                  id="paymentHandle"
+                  type="email"
+                  value={formData.paymentHandle}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, paymentHandle: value }));
+                    validatePaymentHandle('zelle', value);
+                  }}
+                  onBlur={(e) => validatePaymentHandle('zelle', e.target.value)}
+                  required
+                  placeholder="Enter your Zelle email address"
+                  className={paymentHandleError ? 'border-red-500' : ''}
+                />
+              )}
+              {paymentHandleError && (
+                <p className="text-sm text-red-500 mt-1">{paymentHandleError}</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -797,6 +908,8 @@ export default function CreateTeam() {
             setFormData({
               entryName: '',
               email: session?.user?.email || '',
+              paymentMethod: 'venmo',
+              paymentHandle: '',
               selections: {
                 tier1: [],
                 tier2: [],

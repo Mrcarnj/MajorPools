@@ -4,97 +4,94 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 248, 250, 252;
+  --background-start-rgb: 240, 244, 250;
   --background-end-rgb: 255, 255, 255;
-  /* Masters-inspired palette */
-  --masters-green: 149 100% 16%; /* #005027 */
-  --augusta-green: 148 35% 31%; /* #346C50 */
-  --jungle-green: 156 37% 21%; /* #21483C */
-  --masters-yellow: 58 97% 51%; /* #FBF308 */
-  --azalea-pink: 336 72% 66%;
-  --azalea-soft: 336 55% 78%;
+  /* PGA Championship 2026 palette — navy & white only */
+  --pga-navy: 228 45% 19%;      /* #1B2448 deep navy */
+  --pga-navy-mid: 221 55% 35%;  /* medium navy-blue */
+  --pga-blue: 214 65% 52%;      /* bright accent blue */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 15, 23, 42;
-    --background-end-rgb: 15, 23, 42;
+    --background-start-rgb: 13, 18, 36;
+    --background-end-rgb: 13, 18, 36;
   }
 }
 
 @keyframes highlightBorder {
-  0% { border: 4px solid rgba(0, 80, 39, 1); }
-  50% { border: 4px solid rgba(0, 80, 39, 0.45); }
-  100% { border: 4px solid rgba(0, 80, 39, 1); }
+  0% { border: 4px solid hsl(228, 45%, 19%); }
+  50% { border: 4px solid hsla(228, 45%, 19%, 0.45); }
+  100% { border: 4px solid hsl(228, 45%, 19%); }
 }
 
 .moving-border {
   animation: highlightBorder 1s infinite alternate;
-  box-shadow: 0 0 15px rgba(0, 80, 39, 0.45);
+  box-shadow: 0 0 15px hsla(228, 45%, 19%, 0.45);
 }
 
 @layer base {
   :root {
-    --background: 120 24% 98%;
-    --foreground: 156 37% 16%;
+    --background: 210 30% 97%;
+    --foreground: 228 45% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 156 37% 16%;
+    --card-foreground: 228 45% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 156 37% 16%;
-    --primary: 149 100% 16%;
+    --popover-foreground: 228 45% 15%;
+    --primary: 228 45% 19%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 120 20% 95%;
-    --secondary-foreground: 156 37% 16%;
-    --muted: 120 20% 95%;
-    --muted-foreground: 156 15% 38%;
-    --accent: 58 97% 51%;
-    --accent-foreground: 149 100% 16%;
+    --secondary: 214 30% 93%;
+    --secondary-foreground: 228 45% 20%;
+    --muted: 210 20% 94%;
+    --muted-foreground: 228 20% 45%;
+    --accent: 214 65% 52%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 120 16% 88%;
-    --input: 120 16% 88%;
-    --ring: 149 100% 16%;
-    --chart-1: 149 100% 22%;
-    --chart-2: 148 35% 31%;
-    --chart-3: 156 37% 21%;
-    --chart-4: 58 97% 51%;
-    --chart-5: 336 72% 66%;
+    --border: 214 25% 87%;
+    --input: 214 25% 87%;
+    --ring: 228 45% 19%;
+    --chart-1: 228 45% 19%;
+    --chart-2: 221 55% 35%;
+    --chart-3: 214 65% 52%;
+    --chart-4: 210 50% 65%;
+    --chart-5: 210 30% 80%;
     --radius: 0.5rem;
-    --hero-bg: 149 100% 16%;
+    --hero-bg: 228 45% 19%;
     --hero-fg: 0 0% 100%;
-    --header-link: 58 97% 51%;
-    --azalea-accent: 336 72% 66%;
+    --header-link: 228 45% 19%;
+    --pga-accent: 214 65% 52%;
   }
   .dark {
-    --background: 156 37% 10%;
-    --foreground: 210 40% 98%;
-    --card: 156 37% 13%;
-    --card-foreground: 210 40% 98%;
-    --popover: 156 37% 13%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 149 100% 16%;
+    --background: 228 45% 10%;
+    --foreground: 210 40% 95%;
+    --card: 228 40% 14%;
+    --card-foreground: 210 40% 95%;
+    --popover: 228 40% 14%;
+    --popover-foreground: 210 40% 95%;
+    --primary: 228 45% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 156 26% 18%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 156 26% 18%;
-    --muted-foreground: 120 11% 70%;
-    --accent: 58 97% 51%;
-    --accent-foreground: 149 100% 16%;
+    --secondary: 228 30% 20%;
+    --secondary-foreground: 210 40% 95%;
+    --muted: 228 30% 18%;
+    --muted-foreground: 210 20% 65%;
+    --accent: 214 65% 55%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 156 26% 20%;
-    --input: 156 26% 20%;
-    --ring: 58 97% 51%;
-    --chart-1: 149 100% 30%;
-    --chart-2: 148 35% 36%;
-    --chart-3: 156 37% 26%;
-    --chart-4: 58 97% 51%;
-    --chart-5: 336 55% 78%;
-    --hero-bg: 149 100% 16%;
-    --hero-fg: 210 40% 98%;
-    --header-link: 58 97% 51%;
-    --azalea-accent: 336 55% 78%;
+    --border: 228 30% 22%;
+    --input: 228 30% 22%;
+    --ring: 228 45% 50%;
+    --chart-1: 228 45% 40%;
+    --chart-2: 221 55% 50%;
+    --chart-3: 214 65% 60%;
+    --chart-4: 210 50% 70%;
+    --chart-5: 210 30% 80%;
+    --hero-bg: 228 45% 19%;
+    --hero-fg: 210 40% 95%;
+    --header-link: 210 40% 85%;
+    --pga-accent: 214 65% 60%;
   }
 }
 
@@ -104,11 +101,27 @@
   }
   body {
     @apply text-foreground antialiased;
-    background-color: #f4f4f4;
-    background-image: url('../components/icons/azaleaLogo.png');
+    background-color: #f0f4fa;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('../components/icons/pga_championship2026.png');
     background-repeat: repeat;
-    background-size: 360px auto;
-    background-position: top left;
+    background-size: 220px auto;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: -1;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+  }
+  nav a, nav button {
+    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif;
+    font-weight: 700;
   }
 }
 

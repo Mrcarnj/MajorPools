@@ -91,6 +91,7 @@ const config: Config = {
       },
       fontFamily: {
         archivo: ["var(--font-archivo)", ...fontFamily.sans],
+        playfair: ["var(--font-playfair)", ...fontFamily.serif],
       },
     },
   },
