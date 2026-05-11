@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
+import { openGmailCompose } from '@/lib/gmail-compose';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { calculatePrizePool } from '@/utils/scoring';
@@ -229,8 +230,11 @@ Major Pools Team`;
     const emailBody = getEmailTemplate(tournamentName, createTeamUrl, tournamentYear);
     const emailSubject = `${tournamentName} ${tournamentYear} - Welcome & Submission Form`;
 
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.open(gmailUrl, '_blank');
+    await openGmailCompose({
+      bccEmails: uniqueEmails,
+      subject: emailSubject,
+      body: emailBody,
+    });
   };
 
   async function handleCompleteTournament(tournamentId: string) {

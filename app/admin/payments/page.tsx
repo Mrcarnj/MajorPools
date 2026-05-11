@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { openGmailCompose } from '@/lib/gmail-compose';
 
 type Entry = {
   id: string;
@@ -127,8 +128,11 @@ export default function PaymentsPage() {
 
     const emailSubject = 'Payment Required for Golf Tournament';
     const emailBody = 'test payment email';
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(unpaidEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.open(gmailUrl, '_blank');
+    void openGmailCompose({
+      bccEmails: unpaidEmails,
+      subject: emailSubject,
+      body: emailBody,
+    });
   };
 
   const filterEntries = () => {

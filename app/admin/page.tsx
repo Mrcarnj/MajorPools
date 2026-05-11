@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
+import { openGmailCompose } from '@/lib/gmail-compose';
 import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry, calculatePrizePool } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
@@ -382,8 +383,11 @@ Major Pools Team`;
     const emailBody = getEmailTemplate(tournamentName, createTeamUrl, tournamentYear);
     const emailSubject = `${tournamentName} ${tournamentYear} - Welcome & Submission Form`;
 
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.open(gmailUrl, '_blank');
+    await openGmailCompose({
+      bccEmails: uniqueEmails,
+      subject: emailSubject,
+      body: emailBody,
+    });
   };
 
   const handleEmailAllEntries = async () => {
@@ -413,9 +417,11 @@ You can view the current leaderboard at ${window.location.origin}/leaderboard
 Best regards,
 Major Pools Team`;
 
-        // Create Gmail URL with BCC to all entries
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-        window.open(gmailUrl, '_blank');
+        await openGmailCompose({
+          bccEmails: uniqueEmails,
+          subject: emailSubject,
+          body: emailBody,
+        });
       }
     } catch (error) {
       console.error('Error emailing entries:', error);
@@ -812,9 +818,11 @@ Mike`;
       
       const uniqueEmails = Array.from(new Set(entriesData?.map(entry => entry.email) || []));
       
-      // Create Gmail URL
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(uniqueEmails.join(','))}&su=${encodeURIComponent(`${tournament.name} ${tournament.year} - Major SZN Pools Final Results`)}&body=${encodeURIComponent(emailBody)}`;
-      window.open(gmailUrl, '_blank');
+      await openGmailCompose({
+        bccEmails: uniqueEmails,
+        subject: `${tournament.name} ${tournament.year} - Major SZN Pools Final Results`,
+        body: emailBody,
+      });
 
       // 9. Set tournament status to Official
       await supabase

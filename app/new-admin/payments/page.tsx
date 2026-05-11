@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from "@/components/ui/input";
+import { openGmailCompose } from '@/lib/gmail-compose';
 
 type PaymentEntry = {
   id: string;
@@ -150,8 +151,11 @@ export default function PaymentsPage() {
 
     const emailSubject = 'Payment Required for Golf Tournament';
     const emailBody = 'test payment email';
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(unpaidEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.open(gmailUrl, '_blank');
+    void openGmailCompose({
+      bccEmails: unpaidEmails,
+      subject: emailSubject,
+      body: emailBody,
+    });
   };
 
   const filterEntries = () => {
