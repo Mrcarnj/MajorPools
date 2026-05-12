@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MdOutlineEmail } from "react-icons/md";
 import { getEmailTemplate } from '@/lib/email-template';
 import { openGmailCompose } from '@/lib/gmail-compose';
-import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry, calculatePrizePool } from '@/utils/scoring';
+import { calculateDisplayScore, calculatePrizePool } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { AlertCircle, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -88,6 +88,9 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [setupTournamentLoading, setSetupTournamentLoading] = useState(false);
   const [setupTournamentMessage, setSetupTournamentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   // One-time auth check on component mount
   useEffect(() => {
@@ -838,6 +841,32 @@ Mike`;
     }
   };
 
+  const handleRefreshData = async () => {
+    setRefreshLoading(true);
+    setRefreshError(null);
+    try {
+      const token = session?.access_token;
+      const res = await fetch('/api/update-tournament', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.details || data.error || 'Update failed';
+        setRefreshError(msg);
+        return;
+      }
+      setRefreshSuccess(true);
+      fetchTournaments();
+      fetchEntries();
+      fetchGolfers();
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setRefreshLoading(false);
+    }
+  };
+
   // If still loading or redirecting, show minimal UI
   if (loading || isRedirecting) {
     return (
@@ -852,18 +881,22 @@ Mike`;
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-header-link">Admin Dashboard</h1>
       
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={() => {
-          fetchTournaments();
-          fetchEntries();
-          fetchGolfers();
-        }} 
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRefreshData}
+        disabled={refreshLoading}
         className="mb-4"
       >
-        Refresh Data
+        {refreshLoading ? 'Refreshing…' : 'Refresh Data'}
       </Button>
+
+      {refreshSuccess && (
+        <Alert className="mb-4 max-w-sm" onClick={() => setRefreshSuccess(false)}>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Data refreshed successfully. Click to dismiss.</AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="tournaments" className="space-y-4">
         <TabsList>
@@ -1148,6 +1181,15 @@ Mike`;
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!refreshError} onOpenChange={() => setRefreshError(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refresh Failed</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-destructive whitespace-pre-wrap break-words">{refreshError}</p>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
