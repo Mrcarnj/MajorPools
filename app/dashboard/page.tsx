@@ -298,10 +298,10 @@ export default function UserDashboard() {
       // Organize golfers into tiers (must match app/create-team/page.tsx)
       const tieredGolfers = {
         tier1: sortedGolfers.slice(0, 8),
-        tier2: sortedGolfers.slice(8, 20),
-        tier3: sortedGolfers.slice(20, 40),
-        tier4: sortedGolfers.slice(40, 60),
-        tier5: sortedGolfers.slice(60)
+        tier2: sortedGolfers.slice(8, 30),
+        tier3: sortedGolfers.slice(30, 59),
+        tier4: sortedGolfers.slice(59, 95),
+        tier5: sortedGolfers.slice(95)
       };
 
       setGolfers(tieredGolfers);
@@ -667,7 +667,7 @@ export default function UserDashboard() {
             <CardContent>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  You can click on any golfer's name to replace them with another golfer from the same tier. 
+                  You can click on any golfer's name to replace them with another golfer from the same tier or any lower tier.
                   This is available until the tournament status changes to "In Progress".
                 </p>
                 {entries.map(entry => (
@@ -856,48 +856,80 @@ export default function UserDashboard() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-h-[80vh] flex flex-col w-[95vw] sm:w-[500px]">
           <DialogHeader>
-            <DialogTitle>Replace Golfer for {selectedTier?.replace('tier', 'Tier ')}</DialogTitle>
+            <DialogTitle>Replace {selectedGolferId && getGolferName(selectedGolferId)}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto">
             <div className="space-y-4 pr-2">
               <p className="text-sm text-muted-foreground">
-                Select a new golfer from the same tier to replace {selectedGolferId && getGolferName(selectedGolferId)}
+                Choose a replacement from the same tier or any lower tier.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {selectedTier && selectedEntry && golfers[selectedTier as keyof TieredGolfers].map(golfer => {
-                  // Get the other golfer in the same tier
-                  const otherGolferId = selectedGolferId === selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry] 
-                    ? selectedEntry[`${selectedTier}_golfer2` as keyof TournamentEntry]
-                    : selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry];
-                  
-                  // Skip if this is the other golfer already selected in this tier
-                  const isOtherGolfer = golfer.player_id === otherGolferId;
-                  
+              {selectedTier && selectedEntry && (() => {
+                const tierNum = parseInt(selectedTier.replace('tier', ''));
+                const allTiers = ['tier1', 'tier2', 'tier3', 'tier4', 'tier5'] as const;
+
+                // All golfer IDs already in this entry except the one being replaced
+                const otherEntryGolferIds = new Set(
+                  [
+                    selectedEntry.tier1_golfer1, selectedEntry.tier1_golfer2,
+                    selectedEntry.tier2_golfer1, selectedEntry.tier2_golfer2,
+                    selectedEntry.tier3_golfer1, selectedEntry.tier3_golfer2,
+                    selectedEntry.tier4_golfer1, selectedEntry.tier5_golfer1
+                  ].filter(Boolean)
+                );
+                otherEntryGolferIds.delete(selectedGolferId!);
+
+                // The partner slot in the same tier (only relevant for tiers 1–3)
+                const partnerGolferId = selectedGolferId === selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry]
+                  ? selectedEntry[`${selectedTier}_golfer2` as keyof TournamentEntry]
+                  : selectedEntry[`${selectedTier}_golfer1` as keyof TournamentEntry];
+
+                return allTiers.slice(tierNum - 1).map((tier) => {
+                  const isSameTier = tier === selectedTier;
+                  const tierGolfers = golfers[tier];
+
+                  const displayGolfers = isSameTier
+                    ? tierGolfers
+                    : tierGolfers.filter(g => !otherEntryGolferIds.has(g.player_id));
+
+                  if (displayGolfers.length === 0) return null;
+
                   return (
-                    <div 
-                      key={golfer.player_id}
-                      className={`flex items-center space-x-2 p-2 border rounded cursor-pointer ${
-                        isOtherGolfer ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
-                      }`}
-                      onClick={() => !isOtherGolfer && handleGolferReplace(golfer.player_id)}
-                    >
-                      <Checkbox 
-                        id={golfer.player_id}
-                        checked={golfer.player_id === selectedGolferId}
-                        onCheckedChange={() => !isOtherGolfer && handleGolferReplace(golfer.player_id)}
-                        disabled={isOtherGolfer}
-                      />
-                      <label 
-                        htmlFor={golfer.player_id} 
-                        className={`text-sm ${isOtherGolfer ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                      >
-                        {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
-                        {isOtherGolfer && ' (Already selected)'}
-                      </label>
+                    <div key={tier}>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                        {tier.replace('tier', 'Tier ')}
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {displayGolfers.map(golfer => {
+                          const isPartner = isSameTier && golfer.player_id === partnerGolferId;
+                          return (
+                            <div
+                              key={golfer.player_id}
+                              className={`flex items-center space-x-2 p-2 border rounded ${
+                                isPartner ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted'
+                              }`}
+                              onClick={() => !isPartner && handleGolferReplace(golfer.player_id)}
+                            >
+                              <Checkbox
+                                id={`replace-${golfer.player_id}`}
+                                checked={golfer.player_id === selectedGolferId}
+                                onCheckedChange={() => !isPartner && handleGolferReplace(golfer.player_id)}
+                                disabled={isPartner}
+                              />
+                              <label
+                                htmlFor={`replace-${golfer.player_id}`}
+                                className={`text-sm ${isPartner ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                              >
+                                {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                                {isPartner && ' (Already selected)'}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
-                })}
-              </div>
+                });
+              })()}
             </div>
           </div>
         </DialogContent>
