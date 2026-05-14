@@ -86,6 +86,28 @@ const MASTERS_2026_CONFIG: WatchConfig = {
   note: 'All times Eastern (ET). Coverage windows can change; check official broadcasters and masters.com for updates.',
 };
 
+const PGA_CHAMPIONSHIP_2026_CONFIG: WatchConfig = {
+  timezone: 'America/New_York',
+  timezoneLabel: 'EDT',
+  tv: {
+    intro: 'Live TV coverage of the 2026 PGA Championship airs on ESPN+, ESPN, and CBS. All times Eastern (EDT).',
+    slots: [
+      { day: 'Thursday, May 14 (Round 1)', timeRange: '6:30 AM–12:00 PM', channel: 'ESPN+' },
+      { day: 'Thursday, May 14 (Round 1)', timeRange: '12:00–8:00 PM', channel: 'ESPN' },
+      { day: 'Friday, May 15 (Round 2)', timeRange: '6:30 AM–12:00 PM', channel: 'ESPN+' },
+      { day: 'Friday, May 15 (Round 2)', timeRange: '12:00–8:00 PM', channel: 'ESPN' },
+      { day: 'Saturday, May 16 (Round 3)', timeRange: '8:00–10:00 AM', channel: 'ESPN+' },
+      { day: 'Saturday, May 16 (Round 3)', timeRange: '10:00 AM–1:00 PM', channel: 'ESPN' },
+      { day: 'Saturday, May 16 (Round 3)', timeRange: '1:00–7:00 PM', channel: 'CBS' },
+      { day: 'Sunday, May 17 (Round 4)', timeRange: '8:00–10:00 AM', channel: 'ESPN+' },
+      { day: 'Sunday, May 17 (Round 4)', timeRange: '10:00 AM–1:00 PM', channel: 'ESPN' },
+      { day: 'Sunday, May 17 (Round 4)', timeRange: '1:00–7:00 PM', channel: 'CBS' },
+    ],
+  },
+  items: [],
+  note: 'All times Eastern (EDT). Coverage windows may change; check pga.com for updates.',
+};
+
 /**
  * Key by tournament name (as stored in DB) or a slug.
  */
@@ -94,6 +116,9 @@ export const WATCH_BY_TOURNAMENT: Record<string, WatchConfig> = {
   'The Masters': MASTERS_2026_CONFIG,
   'The Masters Tournament': MASTERS_2026_CONFIG,
   '2026 Masters Tournament': MASTERS_2026_CONFIG,
+  'PGA Championship': PGA_CHAMPIONSHIP_2026_CONFIG,
+  '2026 PGA Championship': PGA_CHAMPIONSHIP_2026_CONFIG,
+  'PGA Championship 2026': PGA_CHAMPIONSHIP_2026_CONFIG,
 };
 
 export const DEFAULT_WATCH_CONFIG: WatchConfig = {
