@@ -437,6 +437,13 @@ export function QuickLeaderboard() {
   const sortedEntries = [...entries].sort((a, b) => a.calculated_score - b.calculated_score);
   
   const rankings = calculateRankings(sortedEntries);
+  // calculateRankings sets null for 2nd+ entries in a tie group; propagate the label forward
+  const rankByName = new Map<string, string>();
+  let lastRank = '';
+  sortedEntries.forEach((entry, i) => {
+    if (rankings[i] !== null) lastRank = rankings[i]!;
+    rankByName.set(entry.entry_name, lastRank);
+  });
   const { displayPot, donation, payouts } = calculatePrizePool(sortedEntries);
 
   const limitedEntries = sortedEntries.slice(0, 15);
@@ -582,11 +589,15 @@ export function QuickLeaderboard() {
                 .map(entryName => {
                   const entry = entries.find(e => e.entry_name === entryName);
                   if (!entry) return null;
-                  const currentRank = sortedEntries.findIndex(e => e.entry_name === entryName) + 1;
+                  const currentRank = rankByName.get(entryName) ?? '';
                   return { entry, currentRank };
                 })
-                .filter((item): item is { entry: Entry; currentRank: number } => item !== null)
-                .sort((a, b) => a.currentRank - b.currentRank)
+                .filter((item): item is { entry: Entry; currentRank: string } => item !== null)
+                .sort((a, b) => {
+                  const rankA = parseInt(a.currentRank.replace('T', ''), 10);
+                  const rankB = parseInt(b.currentRank.replace('T', ''), 10);
+                  return rankA - rankB;
+                })
                 .map(({ entry, currentRank }) => {
                   const isMoving = !!movingEntries[entry.entry_name];
                   const isMovingUp = movingEntries[entry.entry_name] === 'up';
@@ -717,7 +728,7 @@ export function QuickLeaderboard() {
                                         {!isCounted && <span className="text-muted-foreground ml-1"></span>}
                                       </span>
                                   <span className={`${archivo.className} ${
-                                    String(golfer.total).startsWith('-') ? 'text-red-600' : ''
+                                    parseGolferTotalToNumber(golfer.total) < 0 ? 'text-red-600' : ''
                                   }`}>
                                     ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : formatGolferTotalForDisplay(golfer.total)})
                                       </span>
@@ -908,7 +919,7 @@ export function QuickLeaderboard() {
                                     {!isCounted && <span className="text-muted-foreground ml-1"></span>}
                                   </span>
                                       <span className={`${archivo.className} ${
-                                        String(golfer.total).startsWith('-') ? 'text-red-600' : ''
+                                        parseGolferTotalToNumber(golfer.total) < 0 ? 'text-red-600' : ''
                                       }`}>
                                         ({['CUT', 'WD', 'DQ'].includes(golfer.position) ? golfer.position : formatGolferTotalForDisplay(golfer.total)})
                                   </span>
