@@ -39,6 +39,7 @@ export function QuickLeaderboard() {
   const updateCountRef = useRef(0);
   const initialLoadRef = useRef(true);
   const favoritesInitializedRef = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parseGolferTotalToNumber = (total: string | number): number => {
     const value = String(total);
@@ -289,6 +290,13 @@ export function QuickLeaderboard() {
     fetchData();
     debug('Initial data fetch completed');
 
+    const debouncedFetch = () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        fetchData();
+      }, 1500);
+    };
+
     // Subscribe to relevant changes
     debug('Setting up real-time subscriptions');
     const channel = supabase
@@ -302,7 +310,7 @@ export function QuickLeaderboard() {
         },
         (payload) => {
           debug('Entries table changed, payload:', payload);
-          fetchData();
+          debouncedFetch();
         }
       )
       .on(
@@ -314,7 +322,7 @@ export function QuickLeaderboard() {
         },
         (payload) => {
           debug('Golfer scores table changed, payload:', payload);
-          fetchData();
+          debouncedFetch();
         }
       )
       .subscribe();
@@ -323,6 +331,7 @@ export function QuickLeaderboard() {
 
     return () => {
       debug('Cleaning up subscriptions');
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       channel.unsubscribe();
     };
   }, []);

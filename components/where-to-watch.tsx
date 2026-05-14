@@ -78,6 +78,25 @@ function WatchItemPill({ item, tournamentTZ, timezoneLabel }: { item: WatchItem;
   );
 }
 
+function dayName(day: string): string {
+  return day.split(',')[0].trim();
+}
+
+function groupTvSlots(slots: { day: string; timeRange: string; channel: string }[]) {
+  const out: { day: string; timeRange: string; channel: string }[] = [];
+  for (const slot of slots) {
+    const name = dayName(slot.day);
+    const prev = out[out.length - 1];
+    if (prev && prev.timeRange === slot.timeRange && prev.channel === slot.channel) {
+      const first = prev.day.includes(' – ') ? prev.day.split(' – ')[0] : prev.day;
+      prev.day = `${first} – ${name}`;
+    } else {
+      out.push({ day: name, timeRange: slot.timeRange, channel: slot.channel });
+    }
+  }
+  return out;
+}
+
 export function WhereToWatch({ tournamentName, className }: { tournamentName?: string | null; className?: string }) {
   const [name, setName] = useState<string | null>(tournamentName ?? null);
   const [isOpen, setIsOpen] = useState(false);
@@ -166,7 +185,7 @@ export function WhereToWatch({ tournamentName, className }: { tournamentName?: s
                         </tr>
                       </thead>
                       <tbody>
-                        {config.tv.slots.map((slot, i) => (
+                        {groupTvSlots(config.tv.slots).map((slot, i) => (
                           <tr
                             key={i}
                             className={cn(
@@ -184,10 +203,10 @@ export function WhereToWatch({ tournamentName, className }: { tournamentName?: s
                   </div>
                   {/* Mobile: stacked rows */}
                   <div className="sm:hidden divide-y divide-border/60">
-                    {config.tv.slots.map((slot, i) => (
-                      <div key={i} className="px-4 py-3 flex justify-between items-center gap-3">
+                    {groupTvSlots(config.tv.slots).map((slot, i) => (
+                      <div key={i} className="px-4 py-3 flex flex-col gap-0.5">
                         <span className="text-foreground font-medium text-sm">{slot.day}</span>
-                        <span className="text-muted-foreground text-sm shrink-0">{slot.timeRange} {config.timezoneLabel} · {slot.channel}</span>
+                        <span className="text-muted-foreground text-sm">{slot.timeRange} {config.timezoneLabel} · {slot.channel}</span>
                       </div>
                     ))}
                   </div>
