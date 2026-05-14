@@ -24,6 +24,7 @@ import pgaLogo from '@/components/icons/pga_championship2026.png';
 export function Header() {
   const [showCreateTeam, setShowCreateTeam] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginDefaultTab, setLoginDefaultTab] = useState<'login' | 'signup'>('login');
   const { session: authSession } = useAuth();
   const router = useRouter();
 
@@ -122,7 +123,7 @@ export function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <UserIcon className="h-5 w-5" />
+                  <UserIcon className="h-5 w-5 text-[hsl(228,45%,19%)]" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -148,21 +149,32 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowLoginModal(true)}
-              className="text-[hsl(228,45%,19%)] hover:text-[hsl(228,45%,19%)] hover:bg-blue-50"
-            >
-              Sign in
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setLoginDefaultTab('login'); setShowLoginModal(true); }}
+                className="text-[hsl(228,45%,19%)] hover:text-[hsl(228,45%,19%)] hover:bg-blue-50"
+              >
+                Sign In
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setLoginDefaultTab('signup'); setShowLoginModal(true); }}
+                className="text-[hsl(228,45%,19%)] hover:text-[hsl(228,45%,19%)] hover:bg-blue-50"
+              >
+                Sign Up
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        defaultTab={loginDefaultTab}
       />
     </header>
   );
