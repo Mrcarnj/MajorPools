@@ -89,7 +89,7 @@ export default function AdminDashboard() {
   const [setupTournamentLoading, setSetupTournamentLoading] = useState(false);
   const [setupTournamentMessage, setSetupTournamentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
-  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<{ status: number; statusText: string; message: string; details?: string } | null>(null);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   // One-time auth check on component mount
@@ -852,8 +852,9 @@ Mike`;
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = data.details || data.error || 'Update failed';
-        setRefreshError(msg);
+        const message = data.error || 'Update failed';
+        const details = data.details !== data.error ? data.details : undefined;
+        setRefreshError({ status: res.status, statusText: res.statusText, message, details });
         return;
       }
       setRefreshSuccess(true);
@@ -861,7 +862,9 @@ Mike`;
       fetchEntries();
       fetchGolfers();
     } catch (err) {
-      setRefreshError(err instanceof Error ? err.message : 'Update failed');
+      const message = err instanceof Error ? err.message : 'Update failed';
+      const isTimeout = message.toLowerCase().includes('timeout') || message.toLowerCase().includes('aborted');
+      setRefreshError({ status: 0, statusText: isTimeout ? 'Request Timeout' : 'Network Error', message });
     } finally {
       setRefreshLoading(false);
     }
@@ -1187,7 +1190,22 @@ Mike`;
           <DialogHeader>
             <DialogTitle>Refresh Failed</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-destructive whitespace-pre-wrap break-words">{refreshError}</p>
+          {refreshError ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-md bg-destructive/10 px-2 py-1 text-sm font-mono font-semibold text-destructive">
+                  {refreshError.status > 0 ? refreshError.status : 'ERR'}
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">{refreshError.statusText}</span>
+              </div>
+              <p className="text-sm text-destructive whitespace-pre-wrap break-words">{refreshError.message}</p>
+              {refreshError.details ? (
+                <div className="rounded-md bg-muted p-3">
+                  <p className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-words">{refreshError.details}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
 

@@ -37,12 +37,10 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true, message: result.message });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('Update tournament failed:', error);
     return Response.json(
-      {
-        error: 'Update failed',
-        details: error instanceof Error ? error.message : String(error),
-      },
+      { error: 'Unexpected server error', details: message },
       { status: 500 }
     );
   }
