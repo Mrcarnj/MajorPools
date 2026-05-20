@@ -575,7 +575,7 @@ export default function UserDashboard() {
     }
 
     const golferStats = Array.from(golferMap.values())
-      .sort((a, b) => b.payoutRate - a.payoutRate || b.timesPicked - a.timesPicked)
+      .sort((a, b) => b.timesPicked - a.timesPicked || b.payoutRate - a.payoutRate)
       .slice(0, 8);
 
     return { totalEntries, wins, totalEarnings, winPct, golferStats };
