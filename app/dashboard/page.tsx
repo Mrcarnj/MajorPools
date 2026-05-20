@@ -518,45 +518,67 @@ export default function UserDashboard() {
   };
 
   const dashboardStats = useMemo(() => {
+    type GolferStat = {
+      name: string;
+      timesPicked: number;
+      payingEntries: number;
+      missedCuts: number;
+      payoutRate: number;
+      totalEarnings: number;
+    };
+
     if (!historicalEntries.length) {
       return {
         totalEntries: 0,
         wins: 0,
         totalEarnings: 0,
         winPct: 0,
-        bestTournaments: [] as { name: string; avgFinish: number }[],
+        golferStats: [] as GolferStat[],
       };
     }
 
     const totalEntries = historicalEntries.length;
     const wins = historicalEntries.filter(e => (e.payout ?? 0) > 0).length;
     const totalEarnings = historicalEntries.reduce((sum, e) => sum + (e.payout ?? 0), 0);
+    const winPct = totalEntries > 0 ? (wins / totalEntries) * 100 : 0;
 
-    const byTournament = new Map<string, { sum: number; count: number }>();
+    const golferMap = new Map<string, GolferStat>();
     for (const entry of historicalEntries) {
-      const posStr = entry.entry_position;
-      if (!posStr) continue;
-      const clean = posStr.startsWith('T') ? posStr.slice(1) : posStr;
-      const num = parseInt(clean, 10);
-      if (!Number.isFinite(num)) continue;
-      const key = entry.tournament_name;
-      if (!byTournament.has(key)) {
-        byTournament.set(key, { sum: num, count: 1 });
-      } else {
-        const agg = byTournament.get(key)!;
-        agg.sum += num;
-        agg.count += 1;
+      const paying = (entry.payout ?? 0) > 0;
+      for (const golfer of entry.golfers) {
+        if (!golfer.player_id || golfer.first_name === 'Unknown') continue;
+        if (!golferMap.has(golfer.player_id)) {
+          golferMap.set(golfer.player_id, {
+            name: `${golfer.first_name} ${golfer.last_name}`,
+            timesPicked: 0,
+            payingEntries: 0,
+            missedCuts: 0,
+            payoutRate: 0,
+            totalEarnings: 0,
+          });
+        }
+        const stat = golferMap.get(golfer.player_id)!;
+        const dnf = ['CUT', 'WD', 'DQ'].includes((golfer.total ?? '').toUpperCase());
+        stat.timesPicked += 1;
+        if (dnf) {
+          stat.missedCuts += 1;
+        }
+        if (paying && !dnf) {
+          stat.payingEntries += 1;
+          stat.totalEarnings += entry.payout ?? 0;
+        }
       }
     }
 
-    const winPct = totalEntries > 0 ? (wins / totalEntries) * 100 : 0;
+    for (const stat of Array.from(golferMap.values())) {
+      stat.payoutRate = (stat.payingEntries / stat.timesPicked) * 100;
+    }
 
-    const bestTournaments = Array.from(byTournament.entries())
-      .map(([name, { sum, count }]) => ({ name, avgFinish: sum / count }))
-      .sort((a, b) => a.avgFinish - b.avgFinish)
-      .slice(0, 3);
+    const golferStats = Array.from(golferMap.values())
+      .sort((a, b) => b.payoutRate - a.payoutRate || b.timesPicked - a.timesPicked)
+      .slice(0, 8);
 
-    return { totalEntries, wins, totalEarnings, winPct, bestTournaments };
+    return { totalEntries, wins, totalEarnings, winPct, golferStats };
   }, [historicalEntries]);
 
   if (loading) {
@@ -606,27 +628,48 @@ export default function UserDashboard() {
             </p>
           </CardContent>
         </Card>
-        {dashboardStats.bestTournaments.length > 0 && (
+        {dashboardStats.golferStats.length > 0 && (
           <Card className="bg-card/80 sm:col-span-2 lg:col-span-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-muted-foreground">
-                Best tournaments by average finish
+                Your golfer history
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0 text-sm text-muted-foreground">
-              <ul className="flex flex-wrap gap-3">
-                {dashboardStats.bestTournaments.map((t) => (
-                  <li
-                    key={t.name}
-                    className="rounded-full border border-header-link/70 px-3 py-1 text-xs sm:text-sm text-header-link bg-header-link/10"
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                {dashboardStats.golferStats.map((g) => (
+                  <div
+                    key={g.name}
+                    className="flex flex-col gap-0.5 rounded-lg border bg-background/50 px-3 py-2"
                   >
-                    <span className="font-semibold">{t.name}</span>
-                    <span className="ml-1">
-                      (avg finish {t.avgFinish.toFixed(1)})
-                    </span>
-                  </li>
+                    <span className="text-sm font-semibold leading-tight">{g.name}</span>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        Picked <span className="font-medium text-foreground">{g.timesPicked}×</span>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Payout rate{' '}
+                        <span className={`font-medium ${g.payoutRate > 0 ? 'text-green-500' : 'text-foreground'}`}>
+                          {g.payoutRate.toFixed(0)}%
+                        </span>
+                      </span>
+                      {g.missedCuts > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          CUT/WD/DQ <span className="font-medium text-red-500">{g.missedCuts}×</span>
+                        </span>
+                      )}
+                      {g.totalEarnings > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Earned{' '}
+                          <span className="font-medium text-foreground">
+                            ${g.totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </CardContent>
           </Card>
         )}
