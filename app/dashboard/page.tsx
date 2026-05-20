@@ -52,6 +52,7 @@ type HistoricalEntry = {
   is_active: boolean;
   entry_position?: string;
   entry_total?: string;
+  payout?: number;
   golfers: Array<{
     player_id: string;
     first_name: string;
@@ -251,6 +252,7 @@ export default function UserDashboard() {
               is_active: !!entry.tournaments?.is_active,
               entry_position: entry.entry_position,
               entry_total: entry.entry_total,
+              payout: entry.payout ?? 0,
               golfers
             };
           })
@@ -520,29 +522,23 @@ export default function UserDashboard() {
       return {
         totalEntries: 0,
         wins: 0,
-        top3: 0,
+        totalEarnings: 0,
         winPct: 0,
         bestTournaments: [] as { name: string; avgFinish: number }[],
       };
     }
 
-    let totalEntries = 0;
-    let wins = 0;
-    let top3 = 0;
-    const byTournament = new Map<string, { sum: number; count: number }>();
+    const totalEntries = historicalEntries.length;
+    const wins = historicalEntries.filter(e => (e.payout ?? 0) > 0).length;
+    const totalEarnings = historicalEntries.reduce((sum, e) => sum + (e.payout ?? 0), 0);
 
+    const byTournament = new Map<string, { sum: number; count: number }>();
     for (const entry of historicalEntries) {
       const posStr = entry.entry_position;
       if (!posStr) continue;
-
       const clean = posStr.startsWith('T') ? posStr.slice(1) : posStr;
       const num = parseInt(clean, 10);
       if (!Number.isFinite(num)) continue;
-
-      totalEntries += 1;
-      if (num === 1) wins += 1;
-      if (num <= 3) top3 += 1;
-
       const key = entry.tournament_name;
       if (!byTournament.has(key)) {
         byTournament.set(key, { sum: num, count: 1 });
@@ -560,7 +556,7 @@ export default function UserDashboard() {
       .sort((a, b) => a.avgFinish - b.avgFinish)
       .slice(0, 3);
 
-    return { totalEntries, wins, top3, winPct, bestTournaments };
+    return { totalEntries, wins, totalEarnings, winPct, bestTournaments };
   }, [historicalEntries]);
 
   if (loading) {
@@ -590,15 +586,19 @@ export default function UserDashboard() {
         </Card>
         <Card className="bg-card/80">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">Top 3 Finishes</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Total Earnings</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <p className="text-2xl font-bold">{dashboardStats.top3}</p>
+            <p className="text-2xl font-bold">
+              {dashboardStats.totalEarnings > 0
+                ? `$${dashboardStats.totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '—'}
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-card/80">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground">Win %</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Payout %</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <p className="text-2xl font-bold">
