@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { calculateEntryScore } from '@/utils/scoring';
 import type { GolferScore } from '@/utils/scoring';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
@@ -7,21 +7,21 @@ import { cookies } from 'next/headers';
 export async function GET() {
   try {
     // Get all entries
-    const { data: entries, error: entriesError } = await supabase
+    const { data: entries, error: entriesError } = await supabaseAdmin
       .from('entries')
       .select('*');
 
     if (entriesError) throw entriesError;
 
     // Get all current scores
-    const { data: scores, error: scoresError } = await supabase
+    const { data: scores, error: scoresError } = await supabaseAdmin
       .from('golfer_scores')
       .select('player_id, total, position');
 
     if (scoresError) throw scoresError;
 
     // Create scores map for quick lookup
-    const scoresMap = new Map(scores.map(s => [s.player_id, s]));
+    const scoresMap = new Map(scores.map((s: { player_id: any; }) => [s.player_id, s]));
 
     // Calculate score for each entry
     for (const entry of entries) {
@@ -34,13 +34,13 @@ export async function GET() {
       ].map(id => scoresMap.get(id))
         .filter((score): score is GolferScore => {
           if (!score) return false;
-          return 'total' in score && 'position' in score && 'player_id' in score;
+          return 'total' in score && 'position' in score && 'player_id' in score && typeof score.total === 'number' && typeof score.position === 'number' && typeof score.player_id === 'string';
         });
 
       const entryScore = calculateEntryScore(golferScores);
 
       // Update entry score in database
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('entries')
         .update({ calculated_score: entryScore })
         .eq('id', entry.id);

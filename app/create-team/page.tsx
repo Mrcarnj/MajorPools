@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
-import { X, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter } from 'next/navigation';
 import { IoIosCloseCircle, IoIosCheckmarkCircle } from "react-icons/io";
@@ -82,6 +82,9 @@ const containsBlockedEntryTerm = (value: string) => {
   const normalized = normalizeForBlockedTermCheck(value);
   return BLOCKED_ENTRY_TERMS.some((term) => normalized.includes(term));
 };
+
+const normalizeForDuplicateCheck = (name: string) =>
+  name.toLowerCase().replace(/\s+/g, '');
 
 export default function CreateTeam() {
   // All hooks must be at the top level, before any conditional returns
@@ -202,7 +205,7 @@ export default function CreateTeam() {
     });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
 
@@ -238,57 +241,17 @@ export default function CreateTeam() {
           .insert({ email: formData.email });
       }
 
-      // Check if an entry with the same name already exists for this tournament
-      const normalizedEntryName = formData.entryName.toLowerCase().replace(/\s+/g, ' ').trim();
-      const { data: existingEntry } = await supabase
-        .from('entries')
-        .select('id, email')
-        .eq('tournament_id', activeTournament.id)
-        .ilike('entry_name', normalizedEntryName)
-        .maybeSingle();
-
-      // If entry exists but with a different email, reject it
-      if (existingEntry && existingEntry.email !== formData.email) {
-        setError('An entry with this name already exists for this tournament by another user');
-        setEntryNameError('An entry with this name already exists for this tournament by another user');
+      // Reject if entry name already exists (case and space insensitive)
+      const isDuplicate = await checkDuplicateEntryName(formData.entryName);
+      if (isDuplicate) {
         entryNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setSubmitting(false);
         return;
       }
-
-      // If entry exists with the same email, update it
-      if (existingEntry && existingEntry.email === formData.email) {
-        const paymentHandle = formData.paymentMethod === 'venmo'
-          ? `@${formData.paymentHandle}`
-          : formData.paymentHandle;
-        const { error: updateError } = await supabase
-          .from('entries')
-          .update({
-            email: formData.email,
-            payment_method: formData.paymentMethod,
-            payment_handle: paymentHandle,
-            tier1_golfer1: formData.selections.tier1[0],
-            tier1_golfer2: formData.selections.tier1[1],
-            tier2_golfer1: formData.selections.tier2[0],
-            tier2_golfer2: formData.selections.tier2[1],
-            tier3_golfer1: formData.selections.tier3[0],
-            tier3_golfer2: formData.selections.tier3[1],
-            tier4_golfer1: formData.selections.tier4[0],
-            tier5_golfer1: formData.selections.tier5[0]
-          })
-          .eq('id', existingEntry.id);
-
-        if (updateError) throw updateError;
-        
-        setShowPaymentModal(true);
-        return;
-      }
-
-      // If no existing entry, create a new one
       const paymentHandle = formData.paymentMethod === 'venmo'
         ? `@${formData.paymentHandle}`
         : formData.paymentHandle;
-      const { data: entry, error } = await supabase
+      const { error } = await supabase
         .from('entries')
         .insert([
           {
@@ -374,7 +337,7 @@ export default function CreateTeam() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.paymentHandle)) return false;
     }
-    
+
     return (
       formData.selections.tier1.length === 2 &&
       formData.selections.tier2.length === 2 &&
@@ -383,6 +346,28 @@ export default function CreateTeam() {
       formData.selections.tier5.length === 1
     );
   }, [formData, entryNameError, emailError, paymentHandleError]);
+
+  const checkDuplicateEntryName = useCallback(async (name: string): Promise<boolean> => {
+    if (!name || !activeTournament?.id) return false;
+
+    const { data: entries } = await supabase
+      .from('entries')
+      .select('entry_name')
+      .eq('tournament_id', activeTournament.id);
+
+    if (!entries?.length) return false;
+
+    const normalized = normalizeForDuplicateCheck(name);
+    const isDuplicate = entries.some(
+      (e) => normalizeForDuplicateCheck(e.entry_name) === normalized
+    );
+
+    if (isDuplicate) {
+      setServerEntryNameError('This entry name is already taken for this tournament');
+    }
+
+    return isDuplicate;
+  }, [activeTournament?.id]);
 
   useEffect(() => {
     setMounted(true);
@@ -646,7 +631,10 @@ export default function CreateTeam() {
                   validateEntryName(value);
                   setServerEntryNameError('');
                 }}
-                onBlur={(e) => validateEntryName(e.target.value)}
+                onBlur={async (e) => {
+                  const isValid = validateEntryName(e.target.value);
+                  if (isValid) await checkDuplicateEntryName(e.target.value);
+                }}
                 required
                 placeholder="Enter your team name"
                 className={entryNameError || serverEntryNameError ? 'border-red-500' : ''}
