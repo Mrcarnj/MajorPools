@@ -613,7 +613,7 @@ export default function UserDashboard() {
           <CardContent className="pt-0">
             <p className="text-2xl font-bold">
               {dashboardStats.totalEarnings > 0
-                ? `$${dashboardStats.totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                ? `$${dashboardStats.totalEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
                 : '—'}
             </p>
           </CardContent>
@@ -662,7 +662,7 @@ export default function UserDashboard() {
                         <span className="text-xs text-muted-foreground">
                           Earned{' '}
                           <span className="font-medium text-foreground">
-                            ${g.totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ${g.totalEarnings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                           </span>
                         </span>
                       )}
@@ -885,6 +885,11 @@ export default function UserDashboard() {
                         )}
                         {entry.entry_total && (
                           <p className="text-sm text-muted-foreground">Final Score: {entry.entry_total}</p>
+                        )}
+                        {(entry.payout ?? 0) > 0 && (
+                          <p className="text-sm font-medium text-green-500">
+                            Payout: ${(entry.payout!).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          </p>
                         )}
                       </div>
                     </div>
