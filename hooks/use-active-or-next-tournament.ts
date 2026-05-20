@@ -17,6 +17,7 @@ export type ActiveOrNextTournament = Record<string, unknown> & {
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  isMajor?: boolean | null;
 };
 
 export function useActiveOrNextTournament() {
@@ -45,6 +46,7 @@ export function useActiveOrNextTournament() {
       const { data: nextTournament } = await supabase
         .from('tournaments')
         .select('*')
+        .eq('isMajor', true)
         .gt('start_date', today)
         .order('start_date', { ascending: true })
         .limit(1)
