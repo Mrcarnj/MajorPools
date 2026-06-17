@@ -147,7 +147,7 @@ export function WhereToWatch({ tournamentName, className }: { tournamentName?: s
       >
         <CardTitle className="flex items-center justify-center gap-2.5 text-lg font-semibold tracking-tight">
           <span className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent shrink-0">
               <Tv className="h-4 w-4" aria-hidden />
             </span>
             How to Watch

@@ -6,10 +6,10 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 240, 244, 250;
   --background-end-rgb: 255, 255, 255;
-  /* PGA Championship 2026 palette — navy & white only */
-  --pga-navy: 228 45% 19%;      /* #1B2448 deep navy */
-  --pga-navy-mid: 221 55% 35%;  /* medium navy-blue */
-  --pga-blue: 214 65% 52%;      /* bright accent blue */
+  /* US Open palette — navy, red, trophy grey & white */
+  --pga-navy: 205 100% 17%;     /* #003358 US Open navy */
+  --pga-navy-mid: 205 90% 27%;  /* lighter navy */
+  --pga-blue: 353 82% 42%;      /* #C41327 US Open red accent */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,77 +21,77 @@
 }
 
 @keyframes highlightBorder {
-  0% { border: 4px solid hsl(228, 45%, 19%); }
-  50% { border: 4px solid hsla(228, 45%, 19%, 0.45); }
-  100% { border: 4px solid hsl(228, 45%, 19%); }
+  0% { border: 4px solid hsl(205, 100%, 17%); }
+  50% { border: 4px solid hsla(205, 100%, 17%, 0.45); }
+  100% { border: 4px solid hsl(205, 100%, 17%); }
 }
 
 .moving-border {
   animation: highlightBorder 1s infinite alternate;
-  box-shadow: 0 0 15px hsla(228, 45%, 19%, 0.45);
+  box-shadow: 0 0 15px hsla(205, 100%, 17%, 0.45);
 }
 
 @layer base {
   :root {
-    --background: 210 30% 97%;
-    --foreground: 228 45% 15%;
+    --background: 205 30% 97%;
+    --foreground: 205 60% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 228 45% 15%;
+    --card-foreground: 205 60% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 228 45% 15%;
-    --primary: 228 45% 19%;
+    --popover-foreground: 205 60% 14%;
+    --primary: 205 100% 17%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 214 30% 93%;
-    --secondary-foreground: 228 45% 20%;
-    --muted: 210 20% 94%;
-    --muted-foreground: 228 20% 45%;
-    --accent: 214 65% 52%;
+    --secondary: 205 25% 93%;
+    --secondary-foreground: 205 100% 18%;
+    --muted: 200 15% 94%;
+    --muted-foreground: 205 15% 42%;
+    --accent: 353 82% 42%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 353 82% 42%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 25% 87%;
-    --input: 214 25% 87%;
-    --ring: 228 45% 19%;
-    --chart-1: 228 45% 19%;
-    --chart-2: 221 55% 35%;
-    --chart-3: 214 65% 52%;
-    --chart-4: 210 50% 65%;
-    --chart-5: 210 30% 80%;
+    --border: 205 20% 87%;
+    --input: 205 20% 87%;
+    --ring: 205 100% 17%;
+    --chart-1: 205 100% 17%;
+    --chart-2: 205 90% 27%;
+    --chart-3: 353 82% 42%;
+    --chart-4: 200 4% 74%;
+    --chart-5: 205 30% 80%;
     --radius: 0.5rem;
-    --hero-bg: 228 45% 19%;
+    --hero-bg: 205 100% 17%;
     --hero-fg: 0 0% 100%;
-    --header-link: 228 45% 19%;
-    --pga-accent: 214 65% 52%;
+    --header-link: 205 100% 17%;
+    --pga-accent: 353 82% 42%;
   }
   .dark {
-    --background: 228 45% 10%;
-    --foreground: 210 40% 95%;
-    --card: 228 40% 14%;
-    --card-foreground: 210 40% 95%;
-    --popover: 228 40% 14%;
-    --popover-foreground: 210 40% 95%;
-    --primary: 228 45% 38%;
+    --background: 205 50% 9%;
+    --foreground: 205 30% 95%;
+    --card: 205 45% 13%;
+    --card-foreground: 205 30% 95%;
+    --popover: 205 45% 13%;
+    --popover-foreground: 205 30% 95%;
+    --primary: 205 80% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 228 30% 20%;
-    --secondary-foreground: 210 40% 95%;
-    --muted: 228 30% 18%;
-    --muted-foreground: 210 20% 65%;
-    --accent: 214 65% 55%;
+    --secondary: 205 35% 20%;
+    --secondary-foreground: 205 30% 95%;
+    --muted: 205 35% 17%;
+    --muted-foreground: 205 15% 65%;
+    --accent: 353 75% 52%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
+    --destructive: 353 70% 40%;
     --destructive-foreground: 0 0% 98%;
-    --border: 228 30% 22%;
-    --input: 228 30% 22%;
-    --ring: 228 45% 50%;
-    --chart-1: 228 45% 40%;
-    --chart-2: 221 55% 50%;
-    --chart-3: 214 65% 60%;
-    --chart-4: 210 50% 70%;
-    --chart-5: 210 30% 80%;
-    --hero-bg: 228 45% 19%;
-    --hero-fg: 210 40% 95%;
-    --header-link: 210 40% 85%;
-    --pga-accent: 214 65% 60%;
+    --border: 205 35% 22%;
+    --input: 205 35% 22%;
+    --ring: 205 80% 50%;
+    --chart-1: 205 80% 45%;
+    --chart-2: 205 70% 55%;
+    --chart-3: 353 75% 55%;
+    --chart-4: 200 4% 74%;
+    --chart-5: 205 30% 80%;
+    --hero-bg: 205 100% 17%;
+    --hero-fg: 205 30% 95%;
+    --header-link: 205 30% 90%;
+    --pga-accent: 353 75% 55%;
   }
 }
 
@@ -101,26 +101,28 @@
   }
   body {
     @apply text-foreground antialiased;
-    background-color: #f0f4fa;
+    background-color: #eef3f7;
     position: relative;
   }
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url('../components/icons/pga_championship2026.png');
+    background-image: url('../components/icons/usopenlogo.png');
     background-repeat: repeat;
-    background-size: 220px auto;
-    opacity: 0.25;
+    background-size: 240px auto;
+    opacity: 0.1;
     pointer-events: none;
     z-index: -1;
   }
+  /* US Open brand typography — headlines in Arial Bold ("Aria Bold" per the guide) */
   h1, h2, h3, h4 {
-    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif;
+    font-family: Arial, 'Arial Bold', 'Helvetica Neue', Helvetica, sans-serif;
     font-weight: 700;
+    letter-spacing: -0.01em;
   }
   nav a, nav button {
-    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif;
+    font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
     font-weight: 700;
   }
 }

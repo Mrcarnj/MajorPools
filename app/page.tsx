@@ -49,7 +49,7 @@ export default function Home() {
   return (
     <div className="space-y-8 px-2 md:px-6">
       {/* Hero - styled to match tournament info card */}
-      <section className="relative rounded-2xl overflow-hidden bg-card/55 border border-border/70 text-foreground py-10 px-6 md:py-12 md:px-10 text-center shadow-lg backdrop-blur-sm">
+      <section className="relative rounded-2xl overflow-hidden bg-card/40 border border-border/70 text-foreground py-10 px-6 md:py-12 md:px-10 text-center shadow-lg backdrop-blur-sm">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-20%,hsl(var(--header-link)/0.1),transparent)] pointer-events-none" aria-hidden />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_85%_115%,hsl(var(--pga-accent)/0.1),transparent)] pointer-events-none" aria-hidden />
         <div className="relative space-y-4">
@@ -68,7 +68,7 @@ export default function Home() {
             )}
             <Button asChild size="lg" variant="secondary" className="bg-card/70 text-foreground hover:bg-card/90 border border-header-link/70">
               <Link href="/leaderboard">
-                <Trophy className="mr-2 h-5 w-5" />
+                <Trophy className="mr-2 h-5 w-5 text-accent" />
                 View Leaderboard
               </Link>
             </Button>

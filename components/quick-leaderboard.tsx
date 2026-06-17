@@ -469,7 +469,7 @@ export function QuickLeaderboard() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrophyIcon className="h-5 w-5" />
+            <TrophyIcon className="h-5 w-5 text-accent" />
             Top Teams
           </CardTitle>
         </CardHeader>
@@ -494,7 +494,7 @@ export function QuickLeaderboard() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrophyIcon className="h-5 w-5" />
+            <TrophyIcon className="h-5 w-5 text-accent" />
             Registered Teams
           </CardTitle>
         </CardHeader>
@@ -518,7 +518,7 @@ export function QuickLeaderboard() {
     <Card>
       <CardHeader className="pb-2.5">
         <CardTitle className="flex items-center gap-2">
-          <TrophyIcon className="h-5 w-5" />
+          <TrophyIcon className="h-5 w-5 text-accent" />
           Top Teams
         </CardTitle>
       </CardHeader>

@@ -1,14 +1,13 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import ClientLayout from '@/app/client-layout';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
-const inter = Inter({ subsets: ['latin'] });
-const playfair = Playfair_Display({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-playfair',
-  weight: ['700', '800', '900'],
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -26,7 +25,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.png" type="image/png" />
       </head>
-      <body className={`${inter.className} ${playfair.variable}`}>
+      <body className={`${inter.className} ${inter.variable}`}>
         <ClientLayout>
           {children}
         </ClientLayout>
