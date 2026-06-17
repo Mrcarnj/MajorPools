@@ -1,3 +1,4 @@
+import './load-env';
 import { getTournament } from '../services/pga-tour/tournaments';
 import { supabaseAdmin } from '../lib/supabase-admin';
 

@@ -1,3 +1,4 @@
+import './load-env';
 import { supabaseAdmin } from '../lib/supabase-admin';
 import { createDataGolfId } from './create-datagolf-id';
 

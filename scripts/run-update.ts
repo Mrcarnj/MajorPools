@@ -1,3 +1,4 @@
+import './load-env';
 import { updateTournament } from './update-tournament';
 
 // This script is designed to be run by a scheduler (like cron)

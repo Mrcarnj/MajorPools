@@ -1,3 +1,4 @@
+import './load-env';
 import { setupTournamentField } from './setup-tournament-field';
 import { updateOdds } from './update-odds';
 import { updateRankings } from './update-rankings';
