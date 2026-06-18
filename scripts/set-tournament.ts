@@ -4,7 +4,6 @@ import { getTournament } from '../services/pga-tour/tournaments';
 import { supabaseAdmin } from '../lib/supabase-admin';
 import { updateRankings } from './update-rankings';
 import { updateOdds } from './update-odds';
-import { createDataGolfId } from './create-datagolf-id';
 
 async function setTournament() {
   try {
@@ -111,21 +110,25 @@ async function setTournament() {
   }
 }
 
-// Execute the function if this script is run directly
+// Execute the function if this script is run directly.
+// NOTE: odds/rankings are run here (scoped to the active field) instead of at
+// module scope so that importing this file (e.g. from /api/setup-tournament)
+// does NOT trigger background jobs. This mirrors the API route's flow so the
+// CLI and the admin "Setup Tournament" button behave identically.
 if (require.main === module) {
-  setTournament()
-    .then(result => {
-      if (result.success) {
-        console.log(result.message);
-      } else {
-        console.error(result.message);
-        process.exit(1);
-      }
-    });
+  (async () => {
+    const result = await setTournament();
+    if (!result.success) {
+      console.error(result.message);
+      process.exit(1);
+    }
+    console.log(result.message);
+
+    await updateOdds({ onlyActiveTournamentField: true });
+    await updateRankings({ onlyActiveTournamentField: true });
+    process.exit(0);
+  })();
 }
 
-createDataGolfId();
-updateOdds();
-
 // Export for use in other modules
-export { setTournament }; 
+export { setTournament };

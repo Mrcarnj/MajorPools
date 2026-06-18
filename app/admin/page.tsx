@@ -11,10 +11,21 @@ import { getEmailTemplate } from '@/lib/email-template';
 import { openGmailCompose } from '@/lib/gmail-compose';
 import { calculateDisplayScore, calculatePrizePool } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ChevronRight } from "lucide-react";
+import { AlertCircle, ChevronRight, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Set to false to disable logging
@@ -357,10 +368,13 @@ Major Pools Team`;
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const debugParts = [data.details || data.error || 'Setup failed'];
-        if (data.step) debugParts.push(`step: ${data.step}`);
+        const headline = data.step
+          ? `Setup failed at step "${data.step}"`
+          : (data.error || 'Setup failed');
+        const debugParts = [`${headline} (HTTP ${res.status})`];
+        if (data.details) debugParts.push(`why: ${data.details}`);
         if (data.requestId) debugParts.push(`requestId: ${data.requestId}`);
-        setSetupTournamentMessage({ type: 'error', text: debugParts.join(' | ') });
+        setSetupTournamentMessage({ type: 'error', text: debugParts.join(' — ') });
         return;
       }
       setSetupTournamentMessage({ type: 'success', text: 'Tournament setup complete' });
@@ -555,6 +569,23 @@ Major Pools Team`;
       setShowEditDialog(false);
     } catch (error) {
       console.error('Error updating entry:', error);
+    }
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) throw error;
+
+      // Refresh entries
+      fetchEntries();
+      checkForWithdrawnGolfers();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
     }
   };
 
@@ -1101,9 +1132,40 @@ Mike`;
                     <Card key={entry.id}>
                       <CardContent className="pt-6">
                         <div className="space-y-4">
-                          <div>
-                            <h3 className="font-semibold">{entry.entry_name}</h3>
-                            <p className="text-sm text-muted-foreground">{entry.email}</p>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-semibold">{entry.entry_name}</h3>
+                              <p className="text-sm text-muted-foreground">{entry.email}</p>
+                            </div>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-red-500 shrink-0"
+                                  aria-label="Delete entry"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete "{entry.entry_name}" ({entry.email}). This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-red-500 hover:bg-red-600 text-white"
+                                    onClick={() => handleDeleteEntry(entry.id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>

@@ -9,7 +9,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { calculateDisplayScore, type GolferScore, calculateRankings, type Entry } from '@/utils/scoring';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Trash2 } from "lucide-react";
 
 type TournamentEntry = {
   id: string;
@@ -487,6 +499,26 @@ export default function UserDashboard() {
     }
   };
 
+  const handleDeleteEntry = async (entryId: string) => {
+    const userEmail = session?.user?.email?.trim();
+    if (!userEmail) return;
+
+    try {
+      const { error } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) throw error;
+
+      // Refresh entries
+      await fetchEntries(userEmail);
+      await checkForWithdrawnGolfers(userEmail);
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
+  };
+
   const getGolferName = (golferId: string) => {
     // First check if this is a withdrawn golfer
     const withdrawnEntry = withdrawnGolferEntries.find(entry => 
@@ -717,9 +749,42 @@ export default function UserDashboard() {
                   <Card key={entry.id}>
                     <CardContent className="pt-6">
                       <div className="space-y-4">
-                        <div>
-                          <h3 className="font-semibold">{entry.entry_name}</h3>
-                          <p className="text-sm text-muted-foreground">{entry.email}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-semibold">{entry.entry_name}</h3>
+                            <p className="text-sm text-muted-foreground">{entry.email}</p>
+                          </div>
+                          {tournamentStatus !== 'In Progress' && tournamentStatus !== 'Complete' && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-red-500 shrink-0"
+                                  aria-label="Delete entry"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete "{entry.entry_name}". This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-red-500 hover:bg-red-600 text-white"
+                                    onClick={() => handleDeleteEntry(entry.id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                           <div>

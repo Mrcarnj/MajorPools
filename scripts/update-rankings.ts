@@ -67,9 +67,11 @@ async function updateRankings(options: UpdateRankingsOptions = {}) {
     }
 
     console.log(`✅ Rankings update complete (${updatedCount} players updated)`);
-
+    return { success: true, message: `Rankings update complete (${updatedCount} players updated)` };
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Error:', error);
+    return { success: false, message: `Error: ${message}` };
   }
 }
 

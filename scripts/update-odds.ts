@@ -113,9 +113,11 @@ async function updateOdds(options: UpdateOddsOptions = {}) {
     }
 
     console.log(`✅ Odds update complete (${updatedCount} players updated)`);
-
+    return { success: true, message: `Odds update complete (${updatedCount} players updated)` };
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Error:', error);
+    return { success: false, message: `Error: ${message}` };
   }
 }
 
