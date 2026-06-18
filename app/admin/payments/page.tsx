@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { supabase } from '@/lib/supabase';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -191,9 +191,8 @@ export default function PaymentsPage() {
 
       // For multiple entries, render expandable group
       return (
-        <>
-          <TableRow 
-            key={email}
+        <Fragment key={email}>
+          <TableRow
             className="cursor-pointer hover:bg-muted/50"
             onClick={() => toggleExpanded(email)}
           >
@@ -226,7 +225,7 @@ export default function PaymentsPage() {
               </TableCell>
             </TableRow>
           ))}
-        </>
+        </Fragment>
       );
     });
   };

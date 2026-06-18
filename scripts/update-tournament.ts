@@ -49,9 +49,19 @@ Major Pools Team`;
   }
 }
 
-async function updateTournament() {
+type UpdateResult = {
+  success: boolean;
+  message: string;
+  stage: string;
+  details?: string;
+};
+
+async function updateTournament(): Promise<UpdateResult> {
+  // Tracks the current phase so any thrown error can be attributed to a stage.
+  let stage = 'init';
   try {
     // Get the active tournament first
+    stage = 'fetch-active-tournament';
     const { data: activeTournament, error: tournamentError } = await supabaseAdmin
       .from('tournaments')
       .select('id, name, pga_tournament_id, status, year')
@@ -59,22 +69,25 @@ async function updateTournament() {
       .single();
 
     if (tournamentError || !activeTournament) {
-      throw new Error('No active tournament found');
+      throw new Error(tournamentError?.message || 'No active tournament found');
     }
 
     // Only proceed with email notifications if tournament hasn't started
     const shouldSendEmails = activeTournament.status !== 'In Progress';
 
     // 1. Update tournament status and current round
+    stage = 'fetch-pga-tournament';
     const tournamentData = await getTournament(activeTournament.pga_tournament_id);
-    
+
     // 2. Get leaderboard data (moved up to combine with tournament status update)
+    stage = 'fetch-pga-leaderboard';
     const leaderboard = await getTournamentLeaderboard(activeTournament.pga_tournament_id);
     
     // Extract cut score from cutLines array
     const cutScore = leaderboard.cutLines?.[0]?.cutScore;
     
     // Update tournament status, current round, and cut score in a single database call
+    stage = 'update-tournament-row';
     const { error: updateTournamentError } = await supabaseAdmin
       .from('tournaments')
       .update({
@@ -93,6 +106,7 @@ async function updateTournament() {
     }
 
     // Get all current golfers in the database for this tournament
+    stage = 'fetch-existing-golfers';
     const { data: existingGolfers, error: existingGolfersError } = await supabaseAdmin
       .from('golfer_scores')
       .select('player_id')
@@ -108,6 +122,7 @@ async function updateTournament() {
     // Set tournament_id to NULL for any golfers who are no longer in the tournament
     const golfersToRemove = existingGolfers.filter(golfer => !activePlayerIds.has(golfer.player_id));
     if (golfersToRemove.length > 0) {
+      stage = 'remove-withdrawn-golfers';
       const { error: removeError } = await supabaseAdmin
         .from('golfer_scores')
         .update({ tournament_id: null })
@@ -119,6 +134,7 @@ async function updateTournament() {
 
       // If tournament hasn't started, send emails for affected entries
       if (shouldSendEmails) {
+        stage = 'notify-withdrawn-golfers';
         // Get all entries for this tournament
         const { data: entries } = await supabaseAdmin
           .from('entries')
@@ -232,6 +248,7 @@ async function updateTournament() {
     }
 
     // Process each player in the leaderboard
+    stage = 'upsert-golfer-scores';
     for (const player of leaderboard.leaderboardRows) {
       // First check if player exists
       const { data: existingPlayer } = await supabaseAdmin
@@ -281,6 +298,7 @@ async function updateTournament() {
 
     // 3. Calculate scores for all entries
     // Get all entries for this tournament
+    stage = 'fetch-entries';
     const { data: entries, error: entriesError } = await supabaseAdmin
       .from('entries')
       .select('*')
@@ -291,6 +309,7 @@ async function updateTournament() {
     }
 
     // Get all current scores
+    stage = 'fetch-golfer-scores';
     const { data: scores, error: scoresError } = await supabaseAdmin
       .from('golfer_scores')
       .select('player_id, total, position')
@@ -304,6 +323,7 @@ async function updateTournament() {
     const scoresMap = new Map(scores.map(s => [s.player_id, s]));
 
     // Calculate score for each entry
+    stage = 'calculate-entry-scores';
     for (const entry of entries) {
       const golferScores = [
         entry.tier1_golfer1, entry.tier1_golfer2,
@@ -333,6 +353,7 @@ async function updateTournament() {
     }
     
     // Verify all entries have calculated_score updated
+    stage = 'verify';
     const { data: verifyEntries, error: verifyError } = await supabaseAdmin
       .from('entries')
       .select('id, entry_name, calculated_score')
@@ -357,9 +378,16 @@ async function updateTournament() {
       console.log('SUCCESS: All entries have calculated scores updated.');
     }
 
-    return { success: true, message: 'Tournament updated successfully' };
+    return { success: true, message: 'Tournament updated successfully', stage: 'complete' };
   } catch (error) {
-    return { success: false, message: `Error: ${error instanceof Error ? error.message : String(error)}` };
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`[update-tournament] failed at stage "${stage}":`, error);
+    return {
+      success: false,
+      message: `Failed at stage "${stage}": ${reason}`,
+      stage,
+      details: reason,
+    };
   }
 }
 

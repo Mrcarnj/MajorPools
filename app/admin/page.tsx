@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   const [setupTournamentLoading, setSetupTournamentLoading] = useState(false);
   const [setupTournamentMessage, setSetupTournamentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
-  const [refreshError, setRefreshError] = useState<{ status: number; statusText: string; message: string; details?: string } | null>(null);
+  const [refreshError, setRefreshError] = useState<{ status: number; statusText: string; message: string; details?: string; step?: string; requestId?: string } | null>(null);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   // One-time auth check on component mount
@@ -883,9 +883,23 @@ Mike`;
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = data.error || 'Update failed';
-        const details = data.details !== data.error ? data.details : undefined;
-        setRefreshError({ status: res.status, statusText: res.statusText, message, details });
+        // A killed/timed-out serverless function returns an HTML error page, so
+        // `data` is empty here — fall back to a clear timeout explanation.
+        const isTimeout = res.status === 504 || res.status === 502;
+        const message =
+          data.error ||
+          (isTimeout
+            ? 'The server took too long and the request timed out before finishing.'
+            : 'Update failed');
+        const details = data.details && data.details !== data.error ? data.details : undefined;
+        setRefreshError({
+          status: res.status,
+          statusText: res.statusText,
+          message,
+          details,
+          step: data.step,
+          requestId: data.requestId,
+        });
         return;
       }
       setRefreshSuccess(true);
@@ -1260,11 +1274,20 @@ Mike`;
                 </span>
                 <span className="text-sm font-medium text-muted-foreground">{refreshError.statusText}</span>
               </div>
+              {refreshError.step ? (
+                <p className="text-sm">
+                  <span className="font-medium">Failed at stage: </span>
+                  <span className="font-mono">{refreshError.step}</span>
+                </p>
+              ) : null}
               <p className="text-sm text-destructive whitespace-pre-wrap break-words">{refreshError.message}</p>
               {refreshError.details ? (
                 <div className="rounded-md bg-muted p-3">
                   <p className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-words">{refreshError.details}</p>
                 </div>
+              ) : null}
+              {refreshError.requestId ? (
+                <p className="text-xs text-muted-foreground font-mono">requestId: {refreshError.requestId}</p>
               ) : null}
             </div>
           ) : null}
