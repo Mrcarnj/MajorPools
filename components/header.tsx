@@ -19,7 +19,7 @@ import { LoginModal } from '@/components/auth/login-modal';
 import { useAuth } from '@/lib/auth/auth-context';
 import { MdOutlineLeaderboard } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
-import usOpenLogo from '@/components/icons/usopenlogo.png';
+import theOpenLogo from '@/components/icons/the-open-navy.png';
 
 export function Header() {
   const [showCreateTeam, setShowCreateTeam] = useState(true);
@@ -73,15 +73,15 @@ export function Header() {
   };
 
   return (
-    <header className="border-b border-[hsl(205,20%,87%)] bg-white sticky top-0 z-50" style={{'--header-link': '205 100% 17%'} as React.CSSProperties}>
+    <header className="border-b border-[hsl(214,22%,86%)] bg-white sticky top-0 z-50" style={{'--header-link': '216 75% 14%'} as React.CSSProperties}>
       <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
         <div className="flex-1 flex items-center justify-start min-w-0">
           <Link href="/" className="text-xl font-bold text-header-link hover:text-header-link/90 transition-colors flex items-center gap-2">
             Majors SZN Pools
             <Image
-              src={usOpenLogo}
-              alt="US Open"
-              className="h-[1.5em] w-auto shrink-0 ml-2"
+              src={theOpenLogo}
+              alt="The Open"
+              className="h-[1.6em] w-auto shrink-0 ml-2"
               priority
             />
           </Link>
@@ -122,7 +122,7 @@ export function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <UserIcon className="h-5 w-5 text-[hsl(353,82%,42%)]" />
+                  <UserIcon className="h-5 w-5 text-[hsl(216,75%,14%)]" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -153,7 +153,7 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={() => { setLoginDefaultTab('login'); setShowLoginModal(true); }}
-                className="text-[hsl(205,100%,17%)] hover:text-[hsl(205,100%,17%)] hover:bg-[hsl(205,30%,95%)]"
+                className="text-[hsl(216,75%,14%)] hover:text-[hsl(216,75%,14%)] hover:bg-[hsl(214,30%,93%)]"
               >
                 Sign In
               </Button>
@@ -161,7 +161,7 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={() => { setLoginDefaultTab('signup'); setShowLoginModal(true); }}
-                className="text-[hsl(205,100%,17%)] hover:text-[hsl(205,100%,17%)] hover:bg-[hsl(205,30%,95%)]"
+                className="text-[hsl(216,75%,14%)] hover:text-[hsl(216,75%,14%)] hover:bg-[hsl(214,30%,93%)]"
               >
                 Sign Up
               </Button>
