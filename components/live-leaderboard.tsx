@@ -10,8 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 
-/** Default IANA timezone for the tournament venue (e.g. America/New_York for Augusta). */
-const DEFAULT_TOURNAMENT_TIMEZONE = 'America/New_York';
+/** Default IANA timezone for the tournament venue. Royal Birkdale, England → Europe/London. */
+const DEFAULT_TOURNAMENT_TIMEZONE = 'Europe/London';
 
 /**
  * Parses a tee time string like "8:30 AM" or "2:45 PM" into 24h hours and minutes.
