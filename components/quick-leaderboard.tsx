@@ -499,9 +499,46 @@ export function QuickLeaderboard() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-1 md:p-6">
+          {/* Search Section */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search for your team..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 md:h-10 text-sm md:text-base"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full bg-foreground/90 dark:bg-white/90"
+                >
+                  <X className="h-3.5 w-3.5 text-background/90 dark:text-black/90" />
+                </button>
+              )}
+            </div>
+            {searchQuery && filteredEntries.length > 0 && (
+              <div className="mt-2 space-y-1 max-h-[200px] md:max-h-[300px] overflow-y-auto">
+                {filteredEntries.map(entry => (
+                  <div
+                    key={entry.entry_name}
+                    className="flex items-center gap-2 w-full px-2 py-1 rounded-sm bg-muted/50"
+                  >
+                    <span className="font-medium flex-1 text-sm md:text-base truncate">{entry.entry_name}</span>
+                    <span className="text-green-600 text-xs md:text-sm whitespace-nowrap">Registered ✓</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchQuery && filteredEntries.length === 0 && (
+              <p className="text-xs md:text-sm text-muted-foreground mt-2">No teams found matching "{searchQuery}"</p>
+            )}
+          </div>
+
           <div className="space-y-1 max-h-[420px] overflow-y-auto pr-2">
             {sortedEntries.map((entry) => (
-              <div 
+              <div
                 key={entry.entry_name}
                 className="rounded-sm px-2 py-1 hover:bg-muted/50"
               >

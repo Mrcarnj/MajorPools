@@ -108,6 +108,41 @@ const PGA_CHAMPIONSHIP_2026_CONFIG: WatchConfig = {
   note: 'All times Eastern (EDT). Coverage windows may change; check pga.com for updates.',
 };
 
+const OPEN_CHAMPIONSHIP_2026_CONFIG: WatchConfig = {
+  timezone: 'America/New_York',
+  timezoneLabel: 'ET',
+  tv: {
+    intro: 'The 2026 Open Championship at Royal Birkdale (July 16–19) airs across Peacock, USA Network, and NBC. All times Eastern (ET).',
+    slots: [
+      { day: 'Thursday, July 16 (Round 1)', timeRange: '1:30–4:00 AM', channel: 'Peacock' },
+      { day: 'Thursday, July 16 (Round 1)', timeRange: '4:00 AM–3:30 PM', channel: 'USA Network' },
+      { day: 'Friday, July 17 (Round 2)', timeRange: '1:30–4:00 AM', channel: 'Peacock' },
+      { day: 'Friday, July 17 (Round 2)', timeRange: '4:00 AM–3:30 PM', channel: 'USA Network' },
+      { day: 'Saturday, July 18 (Round 3)', timeRange: '5:00–7:00 AM', channel: 'USA Network' },
+      { day: 'Saturday, July 18 (Round 3)', timeRange: '7:00 AM–3:00 PM', channel: 'NBC' },
+      { day: 'Sunday, July 19 (Round 4)', timeRange: '4:00–7:00 AM', channel: 'USA Network' },
+      { day: 'Sunday, July 19 (Round 4)', timeRange: '7:00 AM–2:00 PM', channel: 'NBC' },
+    ],
+  },
+  streaming: {
+    intro: 'Every round streams live. Peacock carries the exclusive early coverage plus featured groups; Golf Channel Mobile simulcasts the USA Network feed.',
+    options: [
+      {
+        label: 'Peacock Premium',
+        description: 'Exclusive early-round coverage (Rounds 1–2), featured groups all four days, and NBC simulcasts on the weekend',
+        url: 'https://www.peacocktv.com/',
+      },
+      {
+        label: 'Golf Channel Mobile',
+        description: 'Simulcasts of the USA Network coverage for all four rounds',
+        url: 'https://www.golfchannel.com/',
+      },
+    ],
+  },
+  items: [],
+  note: 'All times Eastern (ET); play is at Royal Birkdale in England (BST). Coverage windows can change — check nbcsports.com and theopen.com for updates.',
+};
+
 /**
  * Key by tournament name (as stored in DB) or a slug.
  */
@@ -119,6 +154,12 @@ export const WATCH_BY_TOURNAMENT: Record<string, WatchConfig> = {
   'PGA Championship': PGA_CHAMPIONSHIP_2026_CONFIG,
   '2026 PGA Championship': PGA_CHAMPIONSHIP_2026_CONFIG,
   'PGA Championship 2026': PGA_CHAMPIONSHIP_2026_CONFIG,
+  'The Open': OPEN_CHAMPIONSHIP_2026_CONFIG,
+  'The Open Championship': OPEN_CHAMPIONSHIP_2026_CONFIG,
+  'Open Championship': OPEN_CHAMPIONSHIP_2026_CONFIG,
+  '2026 Open Championship': OPEN_CHAMPIONSHIP_2026_CONFIG,
+  'The 2026 Open Championship': OPEN_CHAMPIONSHIP_2026_CONFIG,
+  'British Open': OPEN_CHAMPIONSHIP_2026_CONFIG,
 };
 
 export const DEFAULT_WATCH_CONFIG: WatchConfig = {
