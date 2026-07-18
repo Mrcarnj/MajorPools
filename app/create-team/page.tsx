@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/lib/auth/auth-context';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { isPrepaidEmail } from '@/lib/prepaid-emails';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -257,6 +258,7 @@ export default function CreateTeam() {
           {
             entry_name: formData.entryName,
             email: formData.email,
+            has_paid: isPrepaidEmail(formData.email),
             payment_method: formData.paymentMethod,
             payment_handle: paymentHandle,
             tournament_id: activeTournament.id,

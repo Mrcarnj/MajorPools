@@ -67,6 +67,8 @@ type Golfer = {
   is_amateur: boolean;
   status?: string;
   tee_time?: string;
+  total?: string;
+  position?: string;
 };
 
 type TieredGolfers = {
@@ -508,7 +510,7 @@ Major Pools Team`;
 
       const { data: golfersData } = await supabase
         .from('golfer_scores')
-        .select('player_id, first_name, last_name, is_amateur, odds, status, tee_time')
+        .select('player_id, first_name, last_name, is_amateur, odds, status, tee_time, total, position')
         .eq('tournament_id', activeTournament.id);
 
       if (!golfersData) return;
@@ -1313,7 +1315,11 @@ Mike`;
                 // Skip if this is the other golfer already selected in this tier
                 const isOtherGolfer = golfer.player_id === otherGolferId;
                 const hasNotStarted = golfer.status === 'not started';
-                
+                const isOut = ['CUT', 'WD', 'DQ'].includes(golfer.position || '');
+                const scoreLabel = isOut || !golfer.total || golfer.total === '-'
+                  ? null
+                  : golfer.total === 'E' ? 'E' : golfer.total;
+
                 return (
                   <div 
                     key={golfer.player_id}
@@ -1333,12 +1339,13 @@ Mike`;
                       className={`text-sm ${isOtherGolfer ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {golfer.first_name} {golfer.last_name}{golfer.is_amateur ? ' (A)' : ''}
+                      {scoreLabel && <span className="ml-1 font-medium">({scoreLabel})</span>}
                       {isOtherGolfer && ' (Already selected)'}
                       <span className="block text-xs text-muted-foreground">
                         {hasNotStarted && golfer.tee_time ? (
                           <>Tee Time: {golfer.tee_time}</>
                         ) : (
-                          <>Status: {golfer.status || 'Unknown'}</>
+                          <>Status: {isOut ? golfer.position : (golfer.status || 'Unknown')}</>
                         )}
                       </span>
                     </label>
